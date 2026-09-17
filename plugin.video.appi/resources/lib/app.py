@@ -367,33 +367,42 @@ def _send_items(items):
         xbmcplugin.addDirectoryItems(HANDLE, items[start:start + DIRECTORY_CHUNK], totalItems=total)
 
 
-def _finish(cache_to_disc=True):
-    xbmcplugin.endOfDirectory(HANDLE, cacheToDisc=cache_to_disc)
+def _finish(cache_to_disc=True, update_listing=False):
+    xbmcplugin.endOfDirectory(
+        HANDLE,
+        updateListing=update_listing,
+        cacheToDisc=cache_to_disc,
+    )
 
 
 def _navigation_tuples(action, page, pages, **params):
-    result = []
+    previous = []
+    following = []
     if page > 1:
-        result.append(_folder_tuple(
+        previous.append(_folder_tuple(
             'Previous page ({}/{})'.format(page - 1, pages),
-            _url(action, page=page - 1, **params),
+            _url(action, page=page - 1, replace=1, **params),
         ))
     if page < pages:
-        result.append(_folder_tuple(
+        following.append(_folder_tuple(
             'Next page ({}/{})'.format(page + 1, pages),
-            _url(action, page=page + 1, **params),
+            _url(action, page=page + 1, replace=1, **params),
         ))
-    return result
+    return previous, following
+
+
+def _replace_requested(value):
+    return str(value or '').lower() in {'1', 'true', 'yes', 'on'}
 
 
 def show_root():
     entries = [
         _folder_tuple('Movies', _url('movies', page=1)),
+        _folder_tuple('Search Movies', _url('search', scope='movies')),
         _folder_tuple('TV Shows', _url('tvshows', page=1)),
+        _folder_tuple('Search TV Shows', _url('search', scope='tv')),
         _folder_tuple('Recently Played Movies', _url('recent_movies', page=1)),
         _folder_tuple('Recently Played TV Shows', _url('recent_tvshows', page=1)),
-        _folder_tuple('Search Movies', _url('search', scope='movies')),
-        _folder_tuple('Search TV Shows', _url('search', scope='tv')),
         _folder_tuple('Refresh Movie List', _url('refresh_movies')),
         _folder_tuple('Refresh TV Show List', _url('refresh_tv')),
         _folder_tuple('Refresh All Lists', _url('refresh_all')),
@@ -403,14 +412,18 @@ def show_root():
     _finish()
 
 
-def show_movies(page=1):
+def show_movies(page=1, replace=False):
     items = sort_movies(_load_movies(), _int_setting('movie_sort', 0))
     current, page, pages, total = paginate(items, page, _page_size())
     xbmcplugin.setContent(HANDLE, 'movies')
-    tuples = [_playable_tuple(item, 'movies') for item in current]
-    tuples.extend(_navigation_tuples('movies', page, pages))
+    previous, following = _navigation_tuples('movies', page, pages)
+    tuples = list(previous)
+    if page == 1:
+        tuples.append(_folder_tuple('Search Movies', _url('search', scope='movies')))
+    tuples.extend(_playable_tuple(item, 'movies') for item in current)
+    tuples.extend(following)
     _send_items(tuples)
-    _finish()
+    _finish(update_listing=_replace_requested(replace))
 
 
 def _show_tuple(show):
@@ -428,24 +441,30 @@ def _show_tuple(show):
     return _folder_tuple(label, _url('seasons', show_key=show['show_key']), info, context)
 
 
-def show_tvshows(page=1):
+def show_tvshows(page=1, replace=False):
     shows = sort_shows(_load_tv_shows(), _int_setting('tv_sort', 0))
     current, page, pages, total = paginate(shows, page, _page_size())
     xbmcplugin.setContent(HANDLE, 'tvshows')
-    tuples = [_show_tuple(show) for show in current]
-    tuples.extend(_navigation_tuples('tvshows', page, pages))
+    previous, following = _navigation_tuples('tvshows', page, pages)
+    tuples = list(previous)
+    if page == 1:
+        tuples.append(_folder_tuple('Search TV Shows', _url('search', scope='tv')))
+    tuples.extend(_show_tuple(show) for show in current)
+    tuples.extend(following)
     _send_items(tuples)
-    _finish()
+    _finish(update_listing=_replace_requested(replace))
 
 
-def show_recent_movies(page=1):
+def show_recent_movies(page=1, replace=False):
     entries = playback_history.recent_movies(limit=100)
     current, page, pages, total = paginate(entries, page, _page_size())
     xbmcplugin.setContent(HANDLE, 'movies')
-    tuples = [_playable_tuple(item, 'movies', resume=True) for item in current]
-    tuples.extend(_navigation_tuples('recent_movies', page, pages))
+    previous, following = _navigation_tuples('recent_movies', page, pages)
+    tuples = list(previous)
+    tuples.extend(_playable_tuple(item, 'movies', resume=True) for item in current)
+    tuples.extend(following)
     _send_items(tuples)
-    _finish()
+    _finish(update_listing=_replace_requested(replace))
 
 
 def _recent_show_entry(key):
@@ -455,7 +474,7 @@ def _recent_show_entry(key):
     return None
 
 
-def show_recent_tvshows(page=1):
+def show_recent_tvshows(page=1, replace=False):
     recent = playback_history.recent_shows(limit=100)
     summary_map = {show.get('show_key'): show for show in _load_tv_shows()}
     visible = []
@@ -465,7 +484,8 @@ def show_recent_tvshows(page=1):
             visible.append((entry, summary))
     current, page, pages, total = paginate(visible, page, _page_size())
     xbmcplugin.setContent(HANDLE, 'tvshows')
-    tuples = []
+    previous, following = _navigation_tuples('recent_tvshows', page, pages)
+    tuples = list(previous)
     for entry, summary in current:
         title = summary.get('show_title') or entry.get('show_title') or 'TV Show'
         label = summary.get('group_title') or title
@@ -481,9 +501,9 @@ def show_recent_tvshows(page=1):
         tuples.append(_folder_tuple(
             label, _url('recent_show', show_key=summary['show_key']), info, context
         ))
-    tuples.extend(_navigation_tuples('recent_tvshows', page, pages))
+    tuples.extend(following)
     _send_items(tuples)
-    _finish()
+    _finish(update_listing=_replace_requested(replace))
 
 
 def _episode_sort_key(item):
@@ -579,7 +599,7 @@ def show_episodes(key, season):
     _finish()
 
 
-def search(scope, query=None, page=1):
+def search(scope, query=None, page=1, replace=False):
     scope = scope if scope in {'movies', 'tv'} else 'movies'
     if query is None:
         label = 'Search Movies' if scope == 'movies' else 'Search TV Shows'
@@ -600,10 +620,14 @@ def search(scope, query=None, page=1):
         matches = sort_movies(matches, _int_setting('movie_sort', 0))
         current, page, pages, total = paginate(matches, page, _page_size())
         xbmcplugin.setContent(HANDLE, 'movies')
-        tuples = [_playable_tuple(item, 'movies') for item in current]
-        tuples.extend(_navigation_tuples('search', page, pages, scope='movies', query=query))
+        previous, following = _navigation_tuples(
+            'search', page, pages, scope='movies', query=query
+        )
+        tuples = list(previous)
+        tuples.extend(_playable_tuple(item, 'movies') for item in current)
+        tuples.extend(following)
         _send_items(tuples)
-        _finish()
+        _finish(update_listing=_replace_requested(replace))
         return
 
     matches = [
@@ -613,10 +637,14 @@ def search(scope, query=None, page=1):
     matches = sort_shows(matches, _int_setting('tv_sort', 0))
     current, page, pages, total = paginate(matches, page, _page_size())
     xbmcplugin.setContent(HANDLE, 'tvshows')
-    tuples = [_show_tuple(show) for show in current]
-    tuples.extend(_navigation_tuples('search', page, pages, scope='tv', query=query))
+    previous, following = _navigation_tuples(
+        'search', page, pages, scope='tv', query=query
+    )
+    tuples = list(previous)
+    tuples.extend(_show_tuple(show) for show in current)
+    tuples.extend(following)
     _send_items(tuples)
-    _finish()
+    _finish(update_listing=_replace_requested(replace))
 
 
 def _probe_kind(catalog_name, ref, media_url):
@@ -829,13 +857,13 @@ def _run_action(params):
     if action == 'root':
         show_root()
     elif action == 'movies':
-        show_movies(params.get('page', 1))
+        show_movies(params.get('page', 1), params.get('replace'))
     elif action == 'tvshows':
-        show_tvshows(params.get('page', 1))
+        show_tvshows(params.get('page', 1), params.get('replace'))
     elif action == 'recent_movies':
-        show_recent_movies(params.get('page', 1))
+        show_recent_movies(params.get('page', 1), params.get('replace'))
     elif action == 'recent_tvshows':
-        show_recent_tvshows(params.get('page', 1))
+        show_recent_tvshows(params.get('page', 1), params.get('replace'))
     elif action == 'recent_show':
         show_recent_show(params.get('show_key', ''))
     elif action == 'seasons':
@@ -843,7 +871,12 @@ def _run_action(params):
     elif action == 'episodes':
         show_episodes(params.get('show_key', ''), params.get('season'))
     elif action == 'search':
-        search(params.get('scope', 'movies'), params.get('query'), params.get('page', 1))
+        search(
+            params.get('scope', 'movies'),
+            params.get('query'),
+            params.get('page', 1),
+            params.get('replace'),
+        )
     elif action == 'play_ref':
         play_ref(params)
     elif action == 'configure_playback':

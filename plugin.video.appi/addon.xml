@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <addon id="plugin.video.appi"
        name="Appi"
-       version="0.6.0"
+       version="0.6.1"
        provider-name="Eyecon">
   <requires>
     <import addon="xbmc.python" version="3.0.1"/>
@@ -17,6 +17,6 @@
     <platform>all</platform>
     <license>GPL-3.0-or-later</license>
     <source>https://github.com/ihabmmali/appi</source>
-    <news>0.6.0 - Add fixed-size paged browsing, M3U-order recently-added sorting, long-hold playback options, and Recently Played Movies/TV Shows with resume positions, while retaining indexed TV browsing, MP4 buffering and subtitle persistence.</news>
+    <news>0.6.1 - Restore prominent movie/TV search access, keep search queries intact across pages, add 25-500 item page-size choices, and replace the current listing when moving between pages.</news>
   </extension>
 </addon>

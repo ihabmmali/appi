@@ -205,6 +205,10 @@ msgctxt "#32230"
 msgid "50 items"
 msgstr "50 items"
 
+msgctxt "#32229"
+msgid "25 items"
+msgstr "25 items"
+
 msgctxt "#32231"
 msgid "100 items"
 msgstr "100 items"
@@ -220,3 +224,7 @@ msgstr "200 items"
 msgctxt "#32234"
 msgid "300 items"
 msgstr "300 items"
+
+msgctxt "#32235"
+msgid "500 items"
+msgstr "500 items"

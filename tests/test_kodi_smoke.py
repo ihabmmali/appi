@@ -65,7 +65,7 @@ xp=types.ModuleType('xbmcplugin'); xp.SORT_METHOD_TITLE_IGNORE_THE=1; xp.SORT_ME
 xp.addDirectoryItems=lambda h,items,totalItems=0: state['items'].extend(items) or True
 xp.setContent=lambda h,c: state['content'].append(c)
 xp.addSortMethod=lambda h,m: state['sort'].append(m)
-xp.endOfDirectory=lambda *a,**k: state['ended'].append(True) or True
+xp.endOfDirectory=lambda *a,**k: state['ended'].append({'args':a,'kwargs':k}) or True
 xp.setResolvedUrl=lambda *a,**k: True
 sys.modules['xbmcplugin']=xp
 from resources.lib import app, playback_prefs
@@ -73,17 +73,40 @@ movies=[{'kind':'movie','display_title':'Movie %03d (2025)'%i,'title':'Movie %03
 shows=[{'show_key':'tt%03d\\x1fShow %03d\\x1f2025'%(i,i),'cache_name':'tv_show_%d'%i,'show_title':'Show %03d'%i,'group_title':'Show %03d (2025)'%i,'year':2025,'tvg_id':'tt%03d'%i,'seasons':[1],'episode_count':1} for i in range(30)]
 eps=[{'kind':'episode','display_title':'Show 000 (2025) S01 E01','show_title':'Show 000','year':2025,'tvg_id':'tt000','season':1,'episode':1,'media_url':'https://x/e'}]
 app._load_movies=lambda: movies; app._load_tv_shows=lambda: shows; app._load_show_episodes=lambda key: eps
+app.show_root()
+root_labels=[entry[1].label for entry in state['items']]
+assert root_labels[:4]==['Movies','Search Movies','TV Shows','Search TV Shows'], root_labels
+state['items'].clear(); state['ended'].clear()
 app.show_movies(1)
+assert len(state['items'])==27, len(state['items'])
+assert state['items'][0][1].label=='Search Movies'
+assert state['items'][1][1].label=='Movie 000 (2025)'
+assert state['items'][-1][1].label.startswith('Next page')
+assert 'replace=1' in state['items'][-1][0]
+assert state['items'][1][1].context and 'configure_playback' in state['items'][1][1].context[0][1]
+state['items'].clear(); state['ended'].clear()
+app.show_tvshows(2, True)
+assert len(state['items'])==6, len(state['items'])
+assert state['items'][0][1].label.startswith('Previous page')
+show_item=state['items'][1][1]
+assert show_item.context and 'Playback options for this show' in show_item.context[0][0]
+assert state['ended'][-1]['kwargs'].get('updateListing') is True
+state['items'].clear(); state['ended'].clear()
+Dialog.input_answers=['Movie 0']
+app.search('movies')
 assert len(state['items'])==26, len(state['items'])
 assert state['items'][0][1].label=='Movie 000 (2025)'
-assert state['items'][-1][1].label.startswith('Next page')
-assert state['items'][0][1].context and 'configure_playback' in state['items'][0][1].context[0][1]
-state['items'].clear()
-app.show_tvshows(2)
+next_search=state['items'][-1]
+assert next_search[1].label.startswith('Next page')
+assert 'scope=movies' in next_search[0] and 'query=Movie+0' in next_search[0]
+assert 'replace=1' in next_search[0]
+state['items'].clear(); state['ended'].clear()
+app.search('movies','Movie 0',2,True)
 assert len(state['items'])==6, len(state['items'])
-show_item=state['items'][0][1]
-assert show_item.context and 'Playback options for this show' in show_item.context[0][0]
-state['items'].clear()
+assert state['items'][0][1].label.startswith('Previous page')
+assert 'scope=movies' in state['items'][0][0] and 'query=Movie+0' in state['items'][0][0]
+assert state['ended'][-1]['kwargs'].get('updateListing') is True
+state['items'].clear(); state['ended'].clear()
 app.show_seasons(shows[0]['show_key']); assert len(state['items'])==1 and state['content'][-1]=='seasons'; state['items'].clear()
 app.show_episodes(shows[0]['show_key'],'1'); assert len(state['items'])==1 and state['content'][-1]=='episodes'
 li=ListItem(); app._configure_hls(li); assert li.props.get('inputstream')=='inputstream.adaptive'; assert li.props.get('inputstream.adaptive.stream_selection_type')=='ask-quality'
