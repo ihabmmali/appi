@@ -42,11 +42,36 @@ def build_zip(directory, addon_id, version):
     sidecar.unlink(missing_ok=True)
 
     with zipfile.ZipFile(output, 'w', compression=zipfile.ZIP_DEFLATED, compresslevel=9) as archive:
+        # Kodi's InstallFromZip enumerates the archive root and requires exactly one
+        # folder. Write directory entries explicitly instead of relying on the ZIP
+        # reader to synthesize them from file paths.
+        directories = {Path(addon_id)}
+        files = []
         for path in sorted(directory.rglob('*')):
-            if path.is_dir() or excluded(path):
+            if excluded(path):
                 continue
-            arcname = (Path(addon_id) / path.relative_to(directory)).as_posix()
-            info = zipfile.ZipInfo(arcname, date_time=(1980, 1, 1, 0, 0, 0))
+            relative = path.relative_to(directory)
+            arcpath = Path(addon_id) / relative
+            if path.is_dir():
+                directories.add(arcpath)
+            else:
+                files.append((path, arcpath))
+                parent = arcpath.parent
+                while parent != Path('.'):
+                    directories.add(parent)
+                    if parent == Path(addon_id):
+                        break
+                    parent = parent.parent
+
+        for directory_path in sorted(directories, key=lambda p: (len(p.parts), p.as_posix())):
+            name = directory_path.as_posix().rstrip('/') + '/'
+            info = zipfile.ZipInfo(name, date_time=(1980, 1, 1, 0, 0, 0))
+            info.compress_type = zipfile.ZIP_STORED
+            info.external_attr = ((0o040755 & 0xFFFF) << 16) | 0x10
+            archive.writestr(info, b'')
+
+        for path, arcpath in files:
+            info = zipfile.ZipInfo(arcpath.as_posix(), date_time=(1980, 1, 1, 0, 0, 0))
             info.compress_type = zipfile.ZIP_DEFLATED
             info.external_attr = (0o100644 & 0xFFFF) << 16
             archive.writestr(info, path.read_bytes(), compress_type=zipfile.ZIP_DEFLATED, compresslevel=9)
@@ -86,12 +111,13 @@ def clean_old_root_packages(current_names):
                 path.unlink()
 
 
-def build_pages_entry(plugin_zip, repository_zip):
+def build_pages_entry(plugin_zip):
     root_plugin = ROOT / plugin_zip.name
-    root_repo = ROOT / repository_zip.name
     shutil.copy2(plugin_zip, root_plugin)
-    shutil.copy2(repository_zip, root_repo)
-    clean_old_root_packages({root_plugin.name, root_repo.name})
+    # The Kodi file-source page is intentionally direct-install only. Repository
+    # packages remain under repository.appi/ for development/optional future use,
+    # but are not copied to or listed at the Pages root.
+    clean_old_root_packages({root_plugin.name})
 
     html = '''<!doctype html>
 <html lang="en">
@@ -103,10 +129,9 @@ def build_pages_entry(plugin_zip, repository_zip):
 <body>
   <h1>Appi Kodi Add-on</h1>
   <p><a href="{plugin}">{plugin}</a></p>
-  <p><a href="{repository}">{repository}</a> (optional update repository)</p>
 </body>
 </html>
-'''.format(plugin=root_plugin.name, repository=root_repo.name)
+'''.format(plugin=root_plugin.name)
     (ROOT / 'index.html').write_text(html, encoding='utf-8')
 
 
@@ -117,13 +142,12 @@ def main():
         built[addon_id] = build_zip(directory, addon_id, version)
 
     build_addons_xml()
-    build_pages_entry(built['plugin.video.appi'], built['repository.appi'])
+    build_pages_entry(built['plugin.video.appi'])
 
     print('Built:')
     for addon_id, path in built.items():
         print('  {} -> {}'.format(addon_id, path.relative_to(ROOT)))
     print('  direct plugin bootstrap -> {}'.format(built['plugin.video.appi'].name))
-    print('  optional repository bootstrap -> {}'.format(built['repository.appi'].name))
     print('  repository index -> addons.xml')
     print('  checksum -> addons.xml.sha256')
     print('  GitHub Pages -> index.html')

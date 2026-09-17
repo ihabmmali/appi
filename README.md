@@ -9,9 +9,7 @@ Add this source in Kodi File Manager:
 `https://ihabmmali.github.io/appi/`
 
 Then use **Add-ons -> Install from zip file -> Appi** and select the current
-`plugin.video.appi-<version>.zip` file. The `repository.appi-<version>.zip`
-shown beside it is optional and is only needed if you want Kodi repository-based
-updates.
+`plugin.video.appi-<version>.zip` file. The file-source page intentionally lists only the Appi add-on ZIP.
 
 ## Catalogue behaviour
 

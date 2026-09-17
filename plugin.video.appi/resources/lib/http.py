@@ -1,7 +1,7 @@
 from urllib.request import Request, urlopen
 
 
-DEFAULT_USER_AGENT = 'Kodi Appi/0.4.0'
+DEFAULT_USER_AGENT = 'Kodi Appi/0.4.1'
 
 
 def fetch_text(url, timeout=20):
