@@ -46,7 +46,10 @@ def load(name):
 
 
 def save(name, items):
-    _write(name, {'fetched_at': datetime.now(timezone.utc).isoformat(), 'items': items})
+    _write(name, {
+        'fetched_at': datetime.now(timezone.utc).isoformat(),
+        'items': items,
+    })
 
 
 def load_object(name):
@@ -59,8 +62,9 @@ def save_object(name, value):
 
 
 def remove(name):
+    path = _path(name)
     try:
-        os.remove(_path(name))
+        os.remove(path)
     except FileNotFoundError:
         pass
 

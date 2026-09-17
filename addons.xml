@@ -1,6 +1,6 @@
 <?xml version='1.0' encoding='utf-8'?>
 <addons>
-  <addon id="plugin.video.appi" name="Appi" version="0.5.1" provider-name="Eyecon">
+  <addon id="plugin.video.appi" name="Appi" version="0.6.0" provider-name="Eyecon">
     <requires>
       <import addon="xbmc.python" version="3.0.1" />
       <import addon="inputstream.adaptive" version="21.0.0" optional="true" />
@@ -11,11 +11,11 @@
     <extension point="xbmc.service" library="service.py" />
     <extension point="xbmc.addon.metadata">
       <summary lang="en_GB">Movies and TV shows from user-configured M3U feeds</summary>
-      <description lang="en_GB">Appi caches configurable movie and TV M3U catalogues, provides fast indexed browsing and scoped search, controls HLS quality and MP4 buffering, and can persist downloaded subtitles for replay.</description>
+      <description lang="en_GB">Appi caches configurable movie and TV M3U catalogues, provides paged indexed browsing, scoped search and recently played/resume lists, controls HLS quality and MP4 buffering, and can persist downloaded subtitles for replay.</description>
       <platform>all</platform>
       <license>GPL-3.0-or-later</license>
       <source>https://github.com/ihabmmali/appi</source>
-      <news>0.5.1 - Fix settings-label localization regression while retaining indexed browsing, sorting, HLS quality control, MP4 buffering controls, visible Fire TV errors, and persistent subtitle reuse.</news>
+      <news>0.6.0 - Add fixed-size paged browsing, M3U-order recently-added sorting, long-hold playback options, and Recently Played Movies/TV Shows with resume positions, while retaining indexed TV browsing, MP4 buffering and subtitle persistence.</news>
     </extension>
   </addon>
   <addon id="repository.appi" name="Appi Repository" version="1.2.0" provider-name="Eyecon">

@@ -1,4 +1,5 @@
 import hashlib
+import math
 
 
 def show_key(item):
@@ -24,7 +25,7 @@ def build_tv_groups(episodes):
     for episode in episodes:
         groups.setdefault(show_key(episode), []).append(episode)
     summaries = []
-    for key, items in groups.items():
+    for source_index, (key, items) in enumerate(groups.items()):
         first = items[0]
         seasons = sorted({item.get('season') for item in items if item.get('season') is not None})
         summaries.append({
@@ -36,6 +37,9 @@ def build_tv_groups(episodes):
             'tvg_id': first.get('tvg_id') or '',
             'seasons': seasons,
             'episode_count': len(items),
+            # Preserve first appearance in the provider feed for the
+            # "Recently added (M3U order)" browsing mode.
+            'source_index': source_index,
         })
     return summaries, groups
 
@@ -49,6 +53,11 @@ def sort_movies(items, mode=0):
         return sorted(items, key=lambda item: (-(item.get('year') or 0), title_key(item)))
     if mode == 3:
         return sorted(items, key=lambda item: ((item.get('year') or 9999), title_key(item)))
+    if mode == 4:
+        # parse_m3u() and dedupe() preserve source order.
+        return items
+    if mode == 5:
+        return list(reversed(items))
     return sorted(items, key=title_key)
 
 
@@ -61,4 +70,28 @@ def sort_shows(items, mode=0):
         return sorted(items, key=lambda item: (-(item.get('year') or 0), title_key(item)))
     if mode == 3:
         return sorted(items, key=lambda item: ((item.get('year') or 9999), title_key(item)))
+    if mode == 4:
+        # The indexed show list is written in first-appearance order from the
+        # provider feed, including indexes created by 0.5.x.
+        return items
+    if mode == 5:
+        return list(reversed(items))
     return sorted(items, key=title_key)
+
+
+def paginate(items, page=1, page_size=100):
+    items = list(items)
+    try:
+        page = int(page)
+    except (TypeError, ValueError):
+        page = 1
+    try:
+        page_size = int(page_size)
+    except (TypeError, ValueError):
+        page_size = 100
+    page_size = min(500, max(25, page_size))
+    total = len(items)
+    pages = max(1, int(math.ceil(float(total) / float(page_size))))
+    page = min(pages, max(1, page))
+    start = (page - 1) * page_size
+    return items[start:start + page_size], page, pages, total

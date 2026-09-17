@@ -1,6 +1,9 @@
+import time
+
 import xbmc
 import xbmcaddon
 
+from . import playback_history
 from . import subtitle_store
 
 ADDON = xbmcaddon.Addon()
@@ -12,12 +15,34 @@ def _enabled(setting, default=True):
 
 
 class AppiPlayer(xbmc.Player):
-    def _apply_saved(self):
-        if not _enabled('persist_subtitles', True) or not _enabled('auto_saved_subtitles', True):
-            return
-        session = subtitle_store.load_session()
+    def __init__(self):
+        super().__init__()
+        self._search_opened_key = None
+
+    def _subtitle_session(self):
+        return subtitle_store.load_session() or {}
+
+    def _apply_session_subtitles(self):
+        session = self._subtitle_session()
         if not session:
             return
+        mode = session.get('subtitle_mode') or 'global'
+        key = session.get('key')
+
+        if mode == 'search':
+            if key and key != self._search_opened_key:
+                self._search_opened_key = key
+                try:
+                    xbmc.executebuiltin('ActivateWindow(subtitlesearch)')
+                except Exception as exc:
+                    xbmc.log('Appi could not open subtitle search: {}'.format(exc), xbmc.LOGWARNING)
+            return
+
+        if mode == 'off':
+            return
+        if mode == 'global' and not _enabled('auto_saved_subtitles', True):
+            return
+
         path = subtitle_store.last_saved_subtitle(session.get('catalog', ''), session.get('ref', ''))
         if path:
             try:
@@ -26,8 +51,17 @@ class AppiPlayer(xbmc.Player):
             except Exception as exc:
                 xbmc.log('Appi could not restore saved subtitles: {}'.format(exc), xbmc.LOGWARNING)
 
+    def _capture_progress(self):
+        if not self.isPlayingVideo():
+            return
+        try:
+            playback_history.update_progress(self.getTime(), self.getTotalTime())
+        except Exception as exc:
+            xbmc.log('Appi playback progress capture failed: {}'.format(exc), xbmc.LOGWARNING)
+
     def onAVStarted(self):
-        self._apply_saved()
+        self._apply_session_subtitles()
+        self._capture_progress()
 
     def onAVChange(self):
         if _enabled('persist_subtitles', True):
@@ -35,33 +69,44 @@ class AppiPlayer(xbmc.Player):
                 subtitle_store.capture_temp_changes()
             except Exception as exc:
                 xbmc.log('Appi subtitle capture failed: {}'.format(exc), xbmc.LOGWARNING)
+        self._capture_progress()
 
-    def _finish(self):
+    def _finish(self, completed=False):
         if _enabled('persist_subtitles', True):
             try:
                 subtitle_store.capture_temp_changes()
             except Exception:
                 pass
         subtitle_store.clear_session()
+        playback_history.finish_session(completed=completed)
+        self._search_opened_key = None
 
     def onPlayBackStopped(self):
-        self._finish()
+        self._finish(completed=False)
 
     def onPlayBackEnded(self):
-        self._finish()
+        self._finish(completed=True)
 
     def onPlayBackError(self):
-        self._finish()
+        self._finish(completed=False)
 
 
 def run():
     monitor = xbmc.Monitor()
     player = AppiPlayer()
+    next_progress_poll = 0.0
     while not monitor.abortRequested():
-        if player.isPlayingVideo() and _enabled('persist_subtitles', True):
+        playing = player.isPlayingVideo()
+        if playing and _enabled('persist_subtitles', True):
             try:
                 subtitle_store.capture_temp_changes()
             except Exception as exc:
                 xbmc.log('Appi subtitle polling failed: {}'.format(exc), xbmc.LOGWARNING)
+        now = time.monotonic()
+        if playing and now >= next_progress_poll:
+            player._capture_progress()
+            next_progress_poll = now + 5.0
+        if not playing:
+            next_progress_poll = 0.0
         if monitor.waitForAbort(2.0):
             break

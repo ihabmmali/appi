@@ -2,6 +2,7 @@ import json
 
 import xbmc
 
+
 CACHE_SETTINGS = {
     'buffer_mode': 'filecache.buffermode',
     'memory_mb': 'filecache.memorysize',
@@ -10,7 +11,12 @@ CACHE_SETTINGS = {
 
 
 def _rpc(method, params):
-    request = {'jsonrpc': '2.0', 'id': 1, 'method': method, 'params': params}
+    request = {
+        'jsonrpc': '2.0',
+        'id': 1,
+        'method': method,
+        'params': params,
+    }
     response = json.loads(xbmc.executeJSONRPC(json.dumps(request)))
     if 'error' in response:
         raise RuntimeError(response['error'].get('message') or str(response['error']))
@@ -27,8 +33,14 @@ def _set(setting_id, value):
 
 
 def apply_mp4_cache(memory_mb=64, read_factor=4):
+    """Apply Kodi's native HTTP file-cache settings before opening a plain MP4.
+
+    Kodi 21 moved these controls into Settings > Services > Caching. These are
+    global Kodi settings, so Appi changes only the three values it manages and
+    only when MP4 buffer management is enabled by the user.
+    """
     desired = {
-        CACHE_SETTINGS['buffer_mode']: 2,
+        CACHE_SETTINGS['buffer_mode']: 2,  # Cache true internet (HTTP/HTTPS) streams.
         CACHE_SETTINGS['memory_mb']: max(0, int(memory_mb)),
         CACHE_SETTINGS['read_factor']: max(100, int(read_factor) * 100),
     }

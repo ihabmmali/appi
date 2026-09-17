@@ -184,3 +184,39 @@ msgstr "Automatically select saved subtitle"
 msgctxt "#32413"
 msgid "When a previously saved subtitle exists for the same movie or episode, Appi attaches and selects the most recently saved file."
 msgstr "When a previously saved subtitle exists for the same movie or episode, Appi attaches and selects the most recently saved file."
+
+msgctxt "#32214"
+msgid "Items per page"
+msgstr "Items per page"
+
+msgctxt "#32215"
+msgid "Maximum number of movies or TV shows Appi sends to Kodi at once. Smaller pages open faster on low-powered devices."
+msgstr "Maximum number of movies or TV shows Appi sends to Kodi at once. Smaller pages open faster on low-powered devices."
+
+msgctxt "#32224"
+msgid "Recently added (M3U order)"
+msgstr "Recently added (M3U order)"
+
+msgctxt "#32225"
+msgid "Oldest added (reverse M3U order)"
+msgstr "Oldest added (reverse M3U order)"
+
+msgctxt "#32230"
+msgid "50 items"
+msgstr "50 items"
+
+msgctxt "#32231"
+msgid "100 items"
+msgstr "100 items"
+
+msgctxt "#32232"
+msgid "150 items"
+msgstr "150 items"
+
+msgctxt "#32233"
+msgid "200 items"
+msgstr "200 items"
+
+msgctxt "#32234"
+msgid "300 items"
+msgstr "300 items"

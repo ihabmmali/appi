@@ -9,8 +9,10 @@ import xbmcplugin
 
 from . import cache
 from . import kodi_cache
+from . import playback_history
+from . import playback_prefs
 from . import subtitle_store
-from .catalog import build_tv_groups, item_ref, show_cache_name, show_key, sort_movies, sort_shows
+from .catalog import build_tv_groups, item_ref, paginate, show_cache_name, sort_movies, sort_shows
 from .http import fetch_text, probe_stream
 from .m3u import dedupe, parse_m3u
 
@@ -18,6 +20,7 @@ ADDON = xbmcaddon.Addon()
 HANDLE = int(sys.argv[1])
 BASE_URL = sys.argv[0]
 DIRECTORY_CHUNK = 200
+DEFAULT_PAGE_SIZE = 100
 
 
 def _url(action, **params):
@@ -50,6 +53,10 @@ def _bool_setting(name, default=False):
     if value == '':
         return default
     return value.lower() == 'true'
+
+
+def _page_size():
+    return min(500, max(25, _int_setting('page_size', DEFAULT_PAGE_SIZE)))
 
 
 def _require_setting(name, label):
@@ -135,7 +142,12 @@ def refresh_movies(show_notification=True):
         return items
     except Exception as exc:
         xbmc.log('Appi movie refresh failed: {}'.format(exc), xbmc.LOGERROR)
-        xbmcgui.Dialog().ok('Appi', 'Movie refresh failed. The previous cached movie list was kept.\n\n{}: {}'.format(type(exc).__name__, exc))
+        xbmcgui.Dialog().ok(
+            'Appi',
+            'Movie refresh failed. The previous cached movie list was kept.\n\n{}: {}'.format(
+                type(exc).__name__, exc
+            ),
+        )
         return None
 
 
@@ -153,9 +165,13 @@ def refresh_tv(show_notification=True):
             if progress.iscanceled():
                 _notify('TV refresh cancelled')
                 return None
-            progress.update(int(((page - 1) / page_count) * 100), 'Downloading TV page {} of {}'.format(page, page_count))
+            progress.update(
+                int(((page - 1) / page_count) * 100),
+                'Downloading TV page {} of {}'.format(page, page_count),
+            )
             text = fetch_text(_build_tv_page_url(base, page), timeout=timeout)
             all_items.extend(item for item in parse_m3u(text) if item.get('kind') == 'episode')
+
         episodes = dedupe(all_items)
         progress.update(96, 'Building fast TV index...')
         summaries = _write_tv_index(episodes)
@@ -166,7 +182,12 @@ def refresh_tv(show_notification=True):
         return summaries
     except Exception as exc:
         xbmc.log('Appi TV refresh failed: {}'.format(exc), xbmc.LOGERROR)
-        xbmcgui.Dialog().ok('Appi', 'TV refresh failed. The previous indexed catalogue was kept where possible.\n\n{}: {}'.format(type(exc).__name__, exc))
+        xbmcgui.Dialog().ok(
+            'Appi',
+            'TV refresh failed. The previous indexed catalogue was kept where possible.\n\n{}: {}'.format(
+                type(exc).__name__, exc
+            ),
+        )
         return None
     finally:
         progress.close()
@@ -276,18 +297,67 @@ def _set_playback_metadata(list_item, item):
             pass
 
 
-def _playable_tuple(item, catalog_name, key=None):
+def _apply_resume_metadata(list_item, catalog_name, ref, force_start=False):
+    point = playback_history.resume_point(catalog_name, ref)
+    if not point:
+        return
+    position, total = point
+    try:
+        list_item.getVideoInfoTag().setResumePoint(float(position), float(total or 0))
+    except Exception:
+        # Kodi 20+ supports InfoTagVideo.setResumePoint(); keep the legacy
+        # properties as a harmless fallback for older skins/builds.
+        try:
+            list_item.setProperty('ResumeTime', str(float(position)))
+            if total:
+                list_item.setProperty('TotalTime', str(float(total)))
+        except Exception:
+            pass
+    if force_start:
+        try:
+            list_item.setProperty('StartOffset', str(float(position)))
+        except Exception:
+            pass
+
+
+def _context_action(action, **params):
+    return 'RunPlugin({})'.format(_url(action, **params))
+
+
+def _add_context(list_item, items):
+    if not items:
+        return
+    try:
+        list_item.addContextMenuItems(items)
+    except Exception as exc:
+        xbmc.log('Appi could not add context menu: {}'.format(exc), xbmc.LOGWARNING)
+
+
+def _playable_tuple(item, catalog_name, key=None, resume=False):
     label = item.get('display_title') or item.get('title') or ''
     list_item = xbmcgui.ListItem(label=label, offscreen=True)
     list_item.setInfo('video', _directory_video_info(item))
     list_item.setProperty('IsPlayable', 'true')
-    return (_url('play_ref', catalog=catalog_name, ref=item_ref(item), show_key=key), list_item, False)
+    ref = item_ref(item)
+    _apply_resume_metadata(list_item, catalog_name, ref, force_start=False)
+    target = 'movie' if catalog_name == 'movies' else 'episode'
+    _add_context(list_item, [
+        ('Playback options...', _context_action(
+            'configure_playback', target=target, catalog=catalog_name, ref=ref, show_key=key
+        )),
+    ])
+    return (
+        _url('play_ref', catalog=catalog_name, ref=ref, show_key=key, resume='1' if resume else None),
+        list_item,
+        False,
+    )
 
 
-def _folder_tuple(label, url, info=None):
+def _folder_tuple(label, url, info=None, context_items=None):
     item = xbmcgui.ListItem(label=label, offscreen=True)
     if info:
         item.setInfo('video', info)
+    _add_context(item, context_items or [])
     return (url, item, True)
 
 
@@ -301,27 +371,27 @@ def _finish(cache_to_disc=True):
     xbmcplugin.endOfDirectory(HANDLE, cacheToDisc=cache_to_disc)
 
 
-def _add_movie_sort_methods():
-    methods = []
-    for name in ('SORT_METHOD_TITLE_IGNORE_THE', 'SORT_METHOD_TITLE'):
-        if hasattr(xbmcplugin, name):
-            methods.append(getattr(xbmcplugin, name))
-            break
-    for name in ('SORT_METHOD_VIDEO_YEAR', 'SORT_METHOD_YEAR'):
-        if hasattr(xbmcplugin, name):
-            methods.append(getattr(xbmcplugin, name))
-            break
-    for method in methods:
-        try:
-            xbmcplugin.addSortMethod(HANDLE, method)
-        except Exception:
-            pass
+def _navigation_tuples(action, page, pages, **params):
+    result = []
+    if page > 1:
+        result.append(_folder_tuple(
+            'Previous page ({}/{})'.format(page - 1, pages),
+            _url(action, page=page - 1, **params),
+        ))
+    if page < pages:
+        result.append(_folder_tuple(
+            'Next page ({}/{})'.format(page + 1, pages),
+            _url(action, page=page + 1, **params),
+        ))
+    return result
 
 
 def show_root():
     entries = [
-        _folder_tuple('Movies', _url('movies')),
-        _folder_tuple('TV Shows', _url('tvshows')),
+        _folder_tuple('Movies', _url('movies', page=1)),
+        _folder_tuple('TV Shows', _url('tvshows', page=1)),
+        _folder_tuple('Recently Played Movies', _url('recent_movies', page=1)),
+        _folder_tuple('Recently Played TV Shows', _url('recent_tvshows', page=1)),
         _folder_tuple('Search Movies', _url('search', scope='movies')),
         _folder_tuple('Search TV Shows', _url('search', scope='tv')),
         _folder_tuple('Refresh Movie List', _url('refresh_movies')),
@@ -333,31 +403,145 @@ def show_root():
     _finish()
 
 
-def show_movies():
+def show_movies(page=1):
     items = sort_movies(_load_movies(), _int_setting('movie_sort', 0))
+    current, page, pages, total = paginate(items, page, _page_size())
     xbmcplugin.setContent(HANDLE, 'movies')
-    _add_movie_sort_methods()
-    total = len(items)
-    for start in range(0, total, DIRECTORY_CHUNK):
-        tuples = [_playable_tuple(item, 'movies') for item in items[start:start + DIRECTORY_CHUNK]]
-        xbmcplugin.addDirectoryItems(HANDLE, tuples, totalItems=total)
+    tuples = [_playable_tuple(item, 'movies') for item in current]
+    tuples.extend(_navigation_tuples('movies', page, pages))
+    _send_items(tuples)
     _finish()
 
 
-def show_tvshows():
+def _show_tuple(show):
+    title = show.get('show_title') or show.get('group_title') or 'TV Show'
+    label = show.get('group_title') or title
+    info = {'mediatype': 'tvshow', 'title': title}
+    if show.get('year'):
+        info['year'] = int(show['year'])
+    if show.get('tvg_id'):
+        info['imdbnumber'] = show['tvg_id']
+    context = [(
+        'Playback options for this show...',
+        _context_action('configure_playback', target='show', catalog='tv', show_key=show['show_key']),
+    )]
+    return _folder_tuple(label, _url('seasons', show_key=show['show_key']), info, context)
+
+
+def show_tvshows(page=1):
     shows = sort_shows(_load_tv_shows(), _int_setting('tv_sort', 0))
+    current, page, pages, total = paginate(shows, page, _page_size())
     xbmcplugin.setContent(HANDLE, 'tvshows')
-    directory_items = []
-    for show in shows:
-        title = show.get('show_title') or show.get('group_title') or 'TV Show'
-        label = show.get('group_title') or title
+    tuples = [_show_tuple(show) for show in current]
+    tuples.extend(_navigation_tuples('tvshows', page, pages))
+    _send_items(tuples)
+    _finish()
+
+
+def show_recent_movies(page=1):
+    entries = playback_history.recent_movies(limit=100)
+    current, page, pages, total = paginate(entries, page, _page_size())
+    xbmcplugin.setContent(HANDLE, 'movies')
+    tuples = [_playable_tuple(item, 'movies', resume=True) for item in current]
+    tuples.extend(_navigation_tuples('recent_movies', page, pages))
+    _send_items(tuples)
+    _finish()
+
+
+def _recent_show_entry(key):
+    for entry in playback_history.recent_shows(limit=100):
+        if entry.get('show_key') == key:
+            return entry
+    return None
+
+
+def show_recent_tvshows(page=1):
+    recent = playback_history.recent_shows(limit=100)
+    summary_map = {show.get('show_key'): show for show in _load_tv_shows()}
+    visible = []
+    for entry in recent:
+        summary = summary_map.get(entry.get('show_key', ''))
+        if summary:
+            visible.append((entry, summary))
+    current, page, pages, total = paginate(visible, page, _page_size())
+    xbmcplugin.setContent(HANDLE, 'tvshows')
+    tuples = []
+    for entry, summary in current:
+        title = summary.get('show_title') or entry.get('show_title') or 'TV Show'
+        label = summary.get('group_title') or title
         info = {'mediatype': 'tvshow', 'title': title}
-        if show.get('year'):
-            info['year'] = int(show['year'])
-        if show.get('tvg_id'):
-            info['imdbnumber'] = show['tvg_id']
-        directory_items.append(_folder_tuple(label, _url('seasons', show_key=show['show_key']), info))
-    _send_items(directory_items)
+        if summary.get('year'):
+            info['year'] = int(summary['year'])
+        if summary.get('tvg_id'):
+            info['imdbnumber'] = summary['tvg_id']
+        context = [(
+            'Playback options for this show...',
+            _context_action('configure_playback', target='show', catalog='tv', show_key=summary['show_key']),
+        )]
+        tuples.append(_folder_tuple(
+            label, _url('recent_show', show_key=summary['show_key']), info, context
+        ))
+    tuples.extend(_navigation_tuples('recent_tvshows', page, pages))
+    _send_items(tuples)
+    _finish()
+
+
+def _episode_sort_key(item):
+    return (
+        item.get('season') if item.get('season') is not None else 999999,
+        item.get('episode') if item.get('episode') is not None else 999999,
+        (item.get('display_title') or '').casefold(),
+    )
+
+
+def show_recent_show(key):
+    summary = _summary_by_key(key)
+    recent = _recent_show_entry(key)
+    if not summary or not recent:
+        xbmcgui.Dialog().ok('Appi', 'This recently played show is no longer in the cached TV catalogue.')
+        _finish(cache_to_disc=False)
+        return
+
+    episodes = sorted(_load_show_episodes(key), key=_episode_sort_key)
+    recent_ref = recent.get('ref')
+    current_index = next((i for i, item in enumerate(episodes) if item_ref(item) == recent_ref), None)
+    continuation = None
+    force_resume = False
+    if current_index is not None:
+        if recent.get('completed') and current_index + 1 < len(episodes):
+            continuation = episodes[current_index + 1]
+        else:
+            continuation = episodes[current_index]
+            force_resume = playback_history.resume_point('tv', item_ref(continuation)) is not None
+
+    xbmcplugin.setContent(HANDLE, 'seasons')
+    tuples = []
+    if continuation:
+        season = continuation.get('season')
+        episode = continuation.get('episode')
+        prefix = 'Resume' if force_resume else 'Continue'
+        label = '{}: S{:02d}E{:02d} - {}'.format(
+            prefix, int(season or 0), int(episode or 0),
+            continuation.get('display_title') or continuation.get('show_title') or 'Episode',
+        )
+        playable = _playable_tuple(continuation, 'tv', key, resume=force_resume)
+        try:
+            playable[1].setLabel(label)
+        except Exception:
+            pass
+        tuples.append(playable)
+
+    tvg_id = summary.get('tvg_id') or ''
+    for season in summary.get('seasons') or []:
+        info = {'mediatype': 'season', 'title': 'Season {}'.format(season), 'season': int(season)}
+        if tvg_id:
+            info['imdbnumber'] = tvg_id
+        tuples.append(_folder_tuple(
+            'Season {}'.format(season),
+            _url('episodes', show_key=key, season=season),
+            info,
+        ))
+    _send_items(tuples)
     _finish()
 
 
@@ -371,7 +555,11 @@ def show_seasons(key):
         info = {'mediatype': 'season', 'title': 'Season {}'.format(season), 'season': int(season)}
         if tvg_id:
             info['imdbnumber'] = tvg_id
-        directory_items.append(_folder_tuple('Season {}'.format(season), _url('episodes', show_key=key, season=season), info))
+        directory_items.append(_folder_tuple(
+            'Season {}'.format(season),
+            _url('episodes', show_key=key, season=season),
+            info,
+        ))
     _send_items(directory_items)
     _finish()
 
@@ -382,47 +570,52 @@ def show_episodes(key, season):
     except (TypeError, ValueError):
         season_number = None
     episodes = [item for item in _load_show_episodes(key) if item.get('season') == season_number]
-    episodes.sort(key=lambda item: (item.get('episode') if item.get('episode') is not None else 999999, (item.get('display_title') or '').casefold()))
+    episodes.sort(key=lambda item: (
+        item.get('episode') if item.get('episode') is not None else 999999,
+        (item.get('display_title') or '').casefold(),
+    ))
     xbmcplugin.setContent(HANDLE, 'episodes')
-    if hasattr(xbmcplugin, 'SORT_METHOD_EPISODE'):
-        try:
-            xbmcplugin.addSortMethod(HANDLE, xbmcplugin.SORT_METHOD_EPISODE)
-        except Exception:
-            pass
     _send_items([_playable_tuple(item, 'tv', key) for item in episodes])
     _finish()
 
 
-def search(scope):
+def search(scope, query=None, page=1):
     scope = scope if scope in {'movies', 'tv'} else 'movies'
-    label = 'Search Movies' if scope == 'movies' else 'Search TV Shows'
-    query = xbmcgui.Dialog().input(label, type=xbmcgui.INPUT_ALPHANUM).strip()
+    if query is None:
+        label = 'Search Movies' if scope == 'movies' else 'Search TV Shows'
+        query = xbmcgui.Dialog().input(label, type=xbmcgui.INPUT_ALPHANUM).strip()
+    else:
+        query = query.strip()
     if not query:
         xbmcplugin.endOfDirectory(HANDLE, succeeded=False)
         return
     needle = query.casefold()
+
     if scope == 'movies':
-        matches = [item for item in _load_movies() if needle in (item.get('display_title') or '').casefold() or needle in (item.get('title') or '').casefold()]
+        matches = [
+            item for item in _load_movies()
+            if needle in (item.get('display_title') or '').casefold()
+            or needle in (item.get('title') or '').casefold()
+        ]
         matches = sort_movies(matches, _int_setting('movie_sort', 0))
+        current, page, pages, total = paginate(matches, page, _page_size())
         xbmcplugin.setContent(HANDLE, 'movies')
-        _add_movie_sort_methods()
-        _send_items([_playable_tuple(item, 'movies') for item in matches])
+        tuples = [_playable_tuple(item, 'movies') for item in current]
+        tuples.extend(_navigation_tuples('search', page, pages, scope='movies', query=query))
+        _send_items(tuples)
         _finish()
         return
-    matches = [show for show in _load_tv_shows() if needle in '{} {}'.format(show.get('show_title') or '', show.get('group_title') or '').casefold()]
+
+    matches = [
+        show for show in _load_tv_shows()
+        if needle in '{} {}'.format(show.get('show_title') or '', show.get('group_title') or '').casefold()
+    ]
     matches = sort_shows(matches, _int_setting('tv_sort', 0))
+    current, page, pages, total = paginate(matches, page, _page_size())
     xbmcplugin.setContent(HANDLE, 'tvshows')
-    directory_items = []
-    for show in matches:
-        title = show.get('show_title') or show.get('group_title') or 'TV Show'
-        label = show.get('group_title') or title
-        info = {'mediatype': 'tvshow', 'title': title}
-        if show.get('year'):
-            info['year'] = int(show['year'])
-        if show.get('tvg_id'):
-            info['imdbnumber'] = show['tvg_id']
-        directory_items.append(_folder_tuple(label, _url('seasons', show_key=show['show_key']), info))
-    _send_items(directory_items)
+    tuples = [_show_tuple(show) for show in current]
+    tuples.extend(_navigation_tuples('search', page, pages, scope='tv', query=query))
+    _send_items(tuples)
     _finish()
 
 
@@ -437,25 +630,43 @@ def _probe_kind(catalog_name, ref, media_url):
     except Exception as exc:
         xbmc.log('Appi stream probe failed: {}'.format(exc), xbmc.LOGWARNING)
         result = {'kind': 'unknown', 'final_url': media_url, 'content_type': ''}
-    data[key] = {'kind': result.get('kind', 'unknown'), 'content_type': result.get('content_type', '')}
+    data[key] = {
+        'kind': result.get('kind', 'unknown'),
+        'content_type': result.get('content_type', ''),
+    }
     _save_stream_cache(data)
     return data[key]
 
 
-def _configure_hls(list_item):
+def _configure_hls(list_item, preferences=None):
+    preferences = preferences or {}
     list_item.setMimeType('application/vnd.apple.mpegurl')
     list_item.setContentLookup(False)
-    mode = _int_setting('hls_quality_mode', 1)
+    mode = preferences.get('hls_mode')
+    if mode is None:
+        mode = _int_setting('hls_quality_mode', 1)
+    try:
+        mode = int(mode)
+    except (TypeError, ValueError):
+        mode = 1
     if mode == 0:
         return
+
     if not xbmc.getCondVisibility('System.HasAddon(inputstream.adaptive)'):
         _notify('InputStream Adaptive is not installed; using Kodi HLS playback', error=True)
         return
+
     list_item.setProperty('inputstream', 'inputstream.adaptive')
     if mode == 1:
         list_item.setProperty('inputstream.adaptive.stream_selection_type', 'ask-quality')
     elif mode == 2:
-        max_kbps = max(250, _int_setting('hls_max_bitrate_kbps', 8000))
+        max_kbps = preferences.get('hls_max_kbps')
+        if max_kbps is None:
+            max_kbps = _int_setting('hls_max_bitrate_kbps', 8000)
+        try:
+            max_kbps = max(250, int(max_kbps))
+        except (TypeError, ValueError):
+            max_kbps = 8000
         list_item.setProperty('inputstream.adaptive.stream_selection_type', 'adaptive')
         list_item.setProperty('inputstream.adaptive.chooser_bandwidth_max', str(max_kbps * 1000))
 
@@ -464,7 +675,15 @@ def _configure_mp4(list_item):
     list_item.setMimeType('video/mp4')
     list_item.setContentLookup(False)
     if _bool_setting('manage_mp4_buffer', True):
-        kodi_cache.apply_mp4_cache(memory_mb=_int_setting('mp4_buffer_mb', 64), read_factor=_int_setting('mp4_read_factor', 4))
+        kodi_cache.apply_mp4_cache(
+            memory_mb=_int_setting('mp4_buffer_mb', 64),
+            read_factor=_int_setting('mp4_read_factor', 4),
+        )
+
+
+def _subtitle_mode(preferences):
+    mode = (preferences or {}).get('subtitle_mode')
+    return mode if mode in {'saved', 'off', 'search'} else 'global'
 
 
 def play_ref(params):
@@ -474,31 +693,135 @@ def play_ref(params):
     if catalog_name not in {'movies', 'tv'} or not ref:
         xbmcplugin.setResolvedUrl(HANDLE, False, xbmcgui.ListItem())
         return
+
     item = _find_by_ref(catalog_name, ref, key)
     if not item:
         xbmcgui.Dialog().ok('Appi', 'This cached item could not be found. Refresh the catalogue and try again.')
         xbmcplugin.setResolvedUrl(HANDLE, False, xbmcgui.ListItem())
         return
+
     media_url = item.get('media_url') or ''
     if not media_url:
         xbmcplugin.setResolvedUrl(HANDLE, False, xbmcgui.ListItem())
         return
-    list_item = xbmcgui.ListItem(label=item.get('display_title') or item.get('title') or '', path=media_url, offscreen=True)
+
+    preferences = playback_prefs.effective(catalog_name, ref, key or '')
+    list_item = xbmcgui.ListItem(
+        label=item.get('display_title') or item.get('title') or '',
+        path=media_url,
+        offscreen=True,
+    )
     _set_playback_metadata(list_item, item)
     list_item.setProperty('IsPlayable', 'true')
+    _apply_resume_metadata(
+        list_item, catalog_name, ref,
+        force_start=(params.get('resume') == '1'),
+    )
+
     stream = _probe_kind(catalog_name, ref, media_url)
     if stream.get('kind') == 'hls':
-        _configure_hls(list_item)
+        _configure_hls(list_item, preferences)
     elif stream.get('kind') == 'mp4':
         _configure_mp4(list_item)
-    if _bool_setting('persist_subtitles', True):
-        saved = subtitle_store.prepare_session(catalog_name, ref)
-        if saved:
+
+    subtitle_mode = _subtitle_mode(preferences)
+    persist = _bool_setting('persist_subtitles', True)
+    auto_saved = _bool_setting('auto_saved_subtitles', True)
+    need_session = (
+        persist
+        or subtitle_mode in {'saved', 'search'}
+        or (subtitle_mode == 'global' and auto_saved)
+    )
+    if need_session:
+        saved = subtitle_store.prepare_session(catalog_name, ref, subtitle_mode=subtitle_mode)
+        use_saved = (
+            subtitle_mode == 'saved'
+            or (subtitle_mode == 'global' and auto_saved)
+        )
+        if saved and use_saved:
             try:
                 list_item.setSubtitles(saved)
             except Exception as exc:
                 xbmc.log('Appi could not attach saved subtitles: {}'.format(exc), xbmc.LOGWARNING)
+
+    playback_history.start_session(catalog_name, ref, item, key or '')
     xbmcplugin.setResolvedUrl(HANDLE, True, list_item)
+
+
+def _dialog_select(heading, choices, preselect=0):
+    try:
+        return xbmcgui.Dialog().select(heading, choices, preselect=preselect)
+    except TypeError:
+        return xbmcgui.Dialog().select(heading, choices)
+
+
+def configure_playback(params):
+    target = params.get('target', 'movie')
+    catalog_name = params.get('catalog', 'movies')
+    ref = params.get('ref', '')
+    key = params.get('show_key', '')
+    if target not in {'movie', 'episode', 'show'}:
+        raise ValueError('Invalid playback preference target')
+    if target == 'show' and not key:
+        raise ValueError('Missing TV show key')
+    if target != 'show' and not ref:
+        raise ValueError('Missing media reference')
+
+    current = playback_prefs.get_target(target, ref=ref, show_key=key)
+    current_hls = current.get('hls_mode')
+    hls_choices = [
+        'Use global HLS setting',
+        'Automatic - Kodi default',
+        'Ask quality before playback',
+        'Limit maximum bitrate',
+    ]
+    hls_preselect = 0 if current_hls is None else min(3, max(1, int(current_hls) + 1))
+    hls_choice = _dialog_select('HLS quality for this {}'.format('show' if target == 'show' else 'title'), hls_choices, hls_preselect)
+    if hls_choice < 0:
+        return
+
+    updated = {}
+    if hls_choice > 0:
+        updated['hls_mode'] = hls_choice - 1
+        if updated['hls_mode'] == 2:
+            default_cap = str(current.get('hls_max_kbps') or _int_setting('hls_max_bitrate_kbps', 8000))
+            entered = xbmcgui.Dialog().input(
+                'Maximum HLS bitrate (Kbit/s)',
+                defaultt=default_cap,
+                type=getattr(xbmcgui, 'INPUT_NUMERIC', 1),
+            ).strip()
+            if not entered:
+                return
+            try:
+                updated['hls_max_kbps'] = max(250, int(entered))
+            except ValueError:
+                xbmcgui.Dialog().ok('Appi', 'Maximum bitrate must be a number in Kbit/s.')
+                return
+
+    current_sub = current.get('subtitle_mode')
+    subtitle_choices = [
+        'Use global subtitle setting',
+        'Auto-load saved subtitle',
+        'Do not auto-load saved subtitle',
+        'Open subtitle search after playback starts',
+    ]
+    subtitle_map = {1: 'saved', 2: 'off', 3: 'search'}
+    reverse_sub = {'saved': 1, 'off': 2, 'search': 3}
+    subtitle_choice = _dialog_select(
+        'Subtitles for this {}'.format('show' if target == 'show' else 'title'),
+        subtitle_choices,
+        reverse_sub.get(current_sub, 0),
+    )
+    if subtitle_choice < 0:
+        return
+    if subtitle_choice in subtitle_map:
+        updated['subtitle_mode'] = subtitle_map[subtitle_choice]
+
+    playback_prefs.set_target(target, updated, ref=ref, show_key=key)
+    if updated:
+        _notify('Playback options saved')
+    else:
+        _notify('Playback options reset to global defaults')
 
 
 def _run_action(params):
@@ -506,17 +829,25 @@ def _run_action(params):
     if action == 'root':
         show_root()
     elif action == 'movies':
-        show_movies()
+        show_movies(params.get('page', 1))
     elif action == 'tvshows':
-        show_tvshows()
+        show_tvshows(params.get('page', 1))
+    elif action == 'recent_movies':
+        show_recent_movies(params.get('page', 1))
+    elif action == 'recent_tvshows':
+        show_recent_tvshows(params.get('page', 1))
+    elif action == 'recent_show':
+        show_recent_show(params.get('show_key', ''))
     elif action == 'seasons':
         show_seasons(params.get('show_key', ''))
     elif action == 'episodes':
         show_episodes(params.get('show_key', ''), params.get('season'))
     elif action == 'search':
-        search(params.get('scope', 'movies'))
+        search(params.get('scope', 'movies'), params.get('query'), params.get('page', 1))
     elif action == 'play_ref':
         play_ref(params)
+    elif action == 'configure_playback':
+        configure_playback(params)
     elif action == 'refresh_movies':
         refresh_movies()
         xbmc.executebuiltin('Container.Update({})'.format(BASE_URL))
@@ -541,13 +872,16 @@ def run():
     except Exception as exc:
         detail = '{}: {}'.format(type(exc).__name__, exc)
         xbmc.log('Appi action {} failed: {}\n{}'.format(action, detail, traceback.format_exc()), xbmc.LOGERROR)
-        xbmcgui.Dialog().ok('Appi error', 'Could not open/run "{}".\n\n{}\n\nPlease report this exact message.'.format(action, detail))
-        if action != 'play_ref':
+        xbmcgui.Dialog().ok(
+            'Appi error',
+            'Could not open/run "{}".\n\n{}\n\nPlease report this exact message.'.format(action, detail),
+        )
+        if action not in {'play_ref', 'configure_playback'}:
             try:
                 xbmcplugin.endOfDirectory(HANDLE, succeeded=False, cacheToDisc=False)
             except Exception:
                 pass
-        else:
+        elif action == 'play_ref':
             try:
                 xbmcplugin.setResolvedUrl(HANDLE, False, xbmcgui.ListItem())
             except Exception:

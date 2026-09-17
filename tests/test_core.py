@@ -9,7 +9,7 @@ ROOT = Path(__file__).resolve().parents[1]
 PLUGIN = ROOT / 'plugin.video.appi'
 sys.path.insert(0, str(PLUGIN))
 
-from resources.lib.catalog import build_tv_groups, sort_movies, sort_shows  # noqa: E402
+from resources.lib.catalog import build_tv_groups, paginate, sort_movies, sort_shows  # noqa: E402
 from resources.lib.http import classify_stream  # noqa: E402
 from resources.lib.m3u import parse_m3u  # noqa: E402
 
@@ -41,8 +41,23 @@ class CoreTests(unittest.TestCase):
         self.assertEqual([x['title'] for x in sort_movies(movies, 1)], ['Gamma', 'Beta', 'Alpha'])
         self.assertEqual([x['title'] for x in sort_movies(movies, 2)], ['Alpha', 'Gamma', 'Beta'])
         self.assertEqual([x['title'] for x in sort_movies(movies, 3)], ['Beta', 'Gamma', 'Alpha'])
+        self.assertEqual([x['title'] for x in sort_movies(movies, 4)], ['Beta', 'Alpha', 'Gamma'])
+        self.assertEqual([x['title'] for x in sort_movies(movies, 5)], ['Gamma', 'Alpha', 'Beta'])
         shows = [{'show_title': x['title'], 'year': x['year']} for x in movies]
         self.assertEqual([x['show_title'] for x in sort_shows(shows, 2)], ['Alpha', 'Gamma', 'Beta'])
+        self.assertEqual([x['show_title'] for x in sort_shows(shows, 4)], ['Beta', 'Alpha', 'Gamma'])
+        self.assertEqual([x['show_title'] for x in sort_shows(shows, 5)], ['Gamma', 'Alpha', 'Beta'])
+
+    def test_fixed_size_pagination(self):
+        items = list(range(225))
+        page, number, pages, total = paginate(items, 2, 100)
+        self.assertEqual(number, 2)
+        self.assertEqual(pages, 3)
+        self.assertEqual(total, 225)
+        self.assertEqual(page, list(range(100, 200)))
+        page, number, pages, total = paginate(items, 99, 100)
+        self.assertEqual(number, 3)
+        self.assertEqual(page, list(range(200, 225)))
 
     def test_stream_classifier(self):
         self.assertEqual(classify_stream('https://x/master', 'application/vnd.apple.mpegurl', b'#EXTM3U\n'), 'hls')
@@ -52,6 +67,7 @@ class CoreTests(unittest.TestCase):
 
 class SubtitleStoreTests(unittest.TestCase):
     def test_new_temp_subtitle_is_copied_on_second_stable_poll(self):
+        # Import subtitle_store with temporary Kodi paths.
         temp_root = tempfile.TemporaryDirectory()
         profile = os.path.join(temp_root.name, 'profile')
         kodi_temp = os.path.join(temp_root.name, 'temp')

@@ -7,6 +7,7 @@ import time
 import xbmcaddon
 import xbmcvfs
 
+
 ADDON = xbmcaddon.Addon()
 PROFILE = xbmcvfs.translatePath(ADDON.getAddonInfo('profile'))
 TEMP = xbmcvfs.translatePath('special://temp/')
@@ -31,7 +32,8 @@ def _atomic_json(path, payload):
 def _read_json(path, default):
     try:
         with open(path, 'r', encoding='utf-8') as handle:
-            return json.load(handle)
+            value = json.load(handle)
+        return value
     except (OSError, ValueError, TypeError):
         return default
 
@@ -45,12 +47,15 @@ def _snapshot_temp():
     if not TEMP or not os.path.isdir(TEMP):
         return result
     for root, dirs, files in os.walk(TEMP):
+        # Kodi's temp tree can contain many unrelated caches. Subtitle add-ons
+        # normally write near the root; cap recursion to keep the service light.
         relative = os.path.relpath(root, TEMP)
         depth = 0 if relative == '.' else relative.count(os.sep) + 1
         if depth >= 2:
             dirs[:] = []
         for name in files:
-            if os.path.splitext(name)[1].lower() not in SUB_EXTENSIONS:
+            ext = os.path.splitext(name)[1].lower()
+            if ext not in SUB_EXTENSIONS:
                 continue
             path = os.path.join(root, name)
             try:
@@ -78,16 +83,18 @@ def last_saved_subtitle(catalog, ref):
     return path if path and os.path.isfile(path) else None
 
 
-def prepare_session(catalog, ref):
+def prepare_session(catalog, ref, subtitle_mode='global'):
     _ensure_dirs()
-    _atomic_json(SESSION_PATH, {
+    payload = {
         'catalog': catalog,
         'ref': ref,
         'key': media_key(catalog, ref),
         'started_at': time.time(),
         'baseline': _snapshot_temp(),
         'pending': {},
-    })
+        'subtitle_mode': subtitle_mode if subtitle_mode in {'global', 'saved', 'off', 'search'} else 'global',
+    }
+    _atomic_json(SESSION_PATH, payload)
     return saved_subtitles(catalog, ref)
 
 
@@ -125,18 +132,24 @@ def capture_temp_changes():
     session = load_session()
     if not session:
         return []
+
     baseline = session.get('baseline') or {}
     pending = session.get('pending') or {}
     current = _snapshot_temp()
     copied = []
+
     for path, fingerprint in current.items():
         if baseline.get(path) == fingerprint:
             pending.pop(path, None)
             continue
+
+        # Wait for one unchanged polling interval before copying so subtitle
+        # add-ons have time to finish writing/extracting the file.
         previous = pending.get(path)
         if previous != fingerprint:
             pending[path] = fingerprint
             continue
+
         if fingerprint[1] <= 0:
             continue
         key = session.get('key') or media_key(session.get('catalog', ''), session.get('ref', ''))
@@ -151,12 +164,17 @@ def capture_temp_changes():
         copied.append(destination)
         baseline[path] = fingerprint
         pending.pop(path, None)
+
+    # Keep the original baseline for changed/new files until they have been
+    # copied. Advancing baseline to every current fingerprint here would make a
+    # newly noticed file look unchanged on the next poll before it is saved.
     for path in list(pending):
         if path not in current:
             pending.pop(path, None)
     session['baseline'] = baseline
     session['pending'] = pending
     _atomic_json(SESSION_PATH, session)
+
     if copied:
         index = _index()
         key = session['key']
