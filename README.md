@@ -6,13 +6,13 @@ Appi is a Kodi video add-on for user-configured movie and TV-show M3U catalogues
 
 Add `https://ihabmmali.github.io/appi/` in Kodi File Manager, then install the current `plugin.video.appi-<version>.zip`.
 
-## 0.6.1
+## 0.6.2
 
-- Search Movies and Search TV Shows are prominent at the root and inside their catalogues.
-- Search scope and query are retained while paging through results.
-- Page size is configurable from 25 to 500 items under Settings -> Browsing.
-- Next/Previous replaces the current listing instead of nesting another folder.
-- Fixed-size paging remains available for Movies, TV Shows and search results.
+- Fast indexed browsing by A-Z and year, with labelled ranges for oversized buckets.
+- Optional complete and recently-added catalogue views without numbered Next/Previous pages.
+- Restored native Kodi sorting and filtering on media lists.
+- One Search action for movies, TV shows or both cached catalogues.
+- TV refresh discovers sequential provider pages until the endpoint signals completion.
 - Recently added and oldest-added sorting based on provider M3U order.
 - Long-hold playback options for per-title/per-show HLS quality and subtitle behavior.
 - Recently Played Movies with resume positions.

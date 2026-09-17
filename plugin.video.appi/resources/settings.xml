@@ -59,13 +59,11 @@
           <default>100</default>
           <constraints>
             <options>
-              <option label="32229">25</option>
               <option label="32230">50</option>
               <option label="32231">100</option>
               <option label="32232">150</option>
               <option label="32233">200</option>
               <option label="32234">300</option>
-              <option label="32235">500</option>
             </options>
           </constraints>
           <control type="list" format="string"><heading>32214</heading></control>
