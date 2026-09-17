@@ -1,0 +1,36 @@
+<?xml version='1.0' encoding='utf-8'?>
+<addons>
+  <addon id="plugin.video.appi" name="Appi" version="0.3.0" provider-name="Eyecon">
+    <requires>
+      <import addon="xbmc.python" version="3.0.1" />
+    </requires>
+    <extension point="xbmc.python.pluginsource" library="default.py">
+      <provides>video</provides>
+    </extension>
+    <extension point="xbmc.addon.metadata">
+      <summary lang="en_GB">Movies and TV shows from user-configured M3U feeds</summary>
+      <description lang="en_GB">Appi reads a movie M3U feed and paged TV-show M3U feeds, stores a persistent local catalogue, supports text search, and passes the original media URL to Kodi for playback.</description>
+      <platform>all</platform>
+      <license>GPL-3.0-or-later</license>
+      <source>https://github.com/ihabmmali/appi</source>
+      <news>0.3.0 - Clean rebuild with persistent catalogue caching, manual refresh controls, search, Kodi video metadata, and current repository packaging.</news>
+    </extension>
+  </addon>
+  <addon id="repository.appi" name="Appi Repository" version="1.1.0" provider-name="Eyecon">
+    <extension point="xbmc.addon.repository">
+      <dir>
+        <info compressed="false">https://raw.githubusercontent.com/ihabmmali/appi/main/addons.xml</info>
+        <checksum verify="sha256">https://raw.githubusercontent.com/ihabmmali/appi/main/addons.xml.sha256</checksum>
+        <datadir zip="true">https://raw.githubusercontent.com/ihabmmali/appi/main/</datadir>
+        <hashes>sha256</hashes>
+      </dir>
+    </extension>
+    <extension point="xbmc.addon.metadata">
+      <summary lang="en_GB">Repository for the Appi Kodi add-on</summary>
+      <description lang="en_GB">Installs and updates Appi from the ihabmmali/appi GitHub repository.</description>
+      <platform>all</platform>
+      <license>GPL-3.0-or-later</license>
+      <source>https://github.com/ihabmmali/appi</source>
+    </extension>
+  </addon>
+</addons>

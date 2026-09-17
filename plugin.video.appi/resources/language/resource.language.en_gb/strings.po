@@ -1,0 +1,58 @@
+# Kodi Media Center language file
+# Addon Name: Appi
+# Addon id: plugin.video.appi
+msgid ""
+msgstr ""
+"Project-Id-Version: Appi\n"
+"Language: en_GB\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgctxt "#32000"
+msgid "Sources"
+msgstr "Sources"
+
+msgctxt "#32001"
+msgid "M3U catalogue sources"
+msgstr "M3U catalogue sources"
+
+msgctxt "#32010"
+msgid "Movie M3U URL"
+msgstr "Movie M3U URL"
+
+msgctxt "#32011"
+msgid "Full URL for the movie M3U catalogue. Credentials, if required by the provider, remain in Kodi settings and are not built into Appi."
+msgstr "Full URL for the movie M3U catalogue. Credentials, if required by the provider, remain in Kodi settings and are not built into Appi."
+
+msgctxt "#32020"
+msgid "TV Show M3U base URL"
+msgstr "TV Show M3U base URL"
+
+msgctxt "#32021"
+msgid "Base URL before the page number, for example https://example.invalid/m3u8/tvshows. You may alternatively include {page} where the page number belongs."
+msgstr "Base URL before the page number, for example https://example.invalid/m3u8/tvshows. You may alternatively include {page} where the page number belongs."
+
+msgctxt "#32030"
+msgid "TV Show page count"
+msgstr "TV Show page count"
+
+msgctxt "#32031"
+msgid "Number of sequential TV catalogue pages to download, beginning with page 1."
+msgstr "Number of sequential TV catalogue pages to download, beginning with page 1."
+
+msgctxt "#32100"
+msgid "Network"
+msgstr "Network"
+
+msgctxt "#32101"
+msgid "HTTP"
+msgstr "HTTP"
+
+msgctxt "#32110"
+msgid "Request timeout (seconds)"
+msgstr "Request timeout (seconds)"
+
+msgctxt "#32111"
+msgid "Maximum time allowed for each catalogue HTTP request."
+msgstr "Maximum time allowed for each catalogue HTTP request."
