@@ -1,20 +1,22 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <addon id="plugin.video.appi"
        name="Appi"
-       version="0.4.1"
+       version="0.5.0"
        provider-name="Eyecon">
   <requires>
     <import addon="xbmc.python" version="3.0.1"/>
+    <import addon="inputstream.adaptive" version="21.0.0" optional="true"/>
   </requires>
   <extension point="xbmc.python.pluginsource" library="default.py">
     <provides>video</provides>
   </extension>
+  <extension point="xbmc.service" library="service.py"/>
   <extension point="xbmc.addon.metadata">
     <summary lang="en_GB">Movies and TV shows from user-configured M3U feeds</summary>
-    <description lang="en_GB">Appi reads a movie M3U feed and paged TV-show M3U feeds, stores a persistent local catalogue, supports text search, and passes the original media URL to Kodi for playback.</description>
+    <description lang="en_GB">Appi caches configurable movie and TV M3U catalogues, provides fast indexed browsing and scoped search, controls HLS quality and MP4 buffering, and can persist downloaded subtitles for replay.</description>
     <platform>all</platform>
     <license>GPL-3.0-or-later</license>
     <source>https://github.com/ihabmmali/appi</source>
-    <news>0.4.1 - Fix direct ZIP package structure for Kodi install-from-ZIP, keep batched catalogue loading, scoped search, compact playback references, sorting, and TV Show &gt; Season &gt; Episode navigation.</news>
+    <news>0.5.0 - Fix movie-folder failures with visible Fire TV errors, index TV shows for faster navigation, add explicit title/year sorting, HLS pre-play quality selection or bitrate limiting, native Kodi MP4 cache controls, and persistent downloaded subtitle reuse.</news>
   </extension>
 </addon>

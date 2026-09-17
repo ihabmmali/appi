@@ -4,51 +4,64 @@
     <category id="sources" label="32000" help="">
       <group id="1" label="32001">
         <setting id="movie_m3u_url" type="string" label="32010" help="32011">
-          <level>0</level>
-          <default/>
-          <constraints>
-            <allowempty>true</allowempty>
-          </constraints>
-          <control type="edit" format="string">
-            <heading>32010</heading>
-          </control>
+          <level>0</level><default/>
+          <constraints><allowempty>true</allowempty></constraints>
+          <control type="edit" format="string"><heading>32010</heading></control>
         </setting>
         <setting id="tv_m3u_base_url" type="string" label="32020" help="32021">
-          <level>0</level>
-          <default/>
-          <constraints>
-            <allowempty>true</allowempty>
-          </constraints>
-          <control type="edit" format="string">
-            <heading>32020</heading>
-          </control>
+          <level>0</level><default/>
+          <constraints><allowempty>true</allowempty></constraints>
+          <control type="edit" format="string"><heading>32020</heading></control>
         </setting>
         <setting id="tv_page_count" type="integer" label="32030" help="32031">
-          <level>0</level>
-          <default>30</default>
-          <constraints>
-            <minimum>1</minimum>
-            <maximum>500</maximum>
-          </constraints>
-          <control type="edit" format="integer">
-            <heading>32030</heading>
-          </control>
+          <level>0</level><default>30</default>
+          <constraints><minimum>1</minimum><maximum>500</maximum></constraints>
+          <control type="edit" format="integer"><heading>32030</heading></control>
         </setting>
+      </group>
+    </category>
+    <category id="browsing" label="32200" help="">
+      <group id="1" label="32201">
+        <setting id="movie_sort" type="integer" label="32210" help="32211">
+          <level>0</level><default>0</default>
+          <constraints><options><option label="32220">0</option><option label="32221">1</option><option label="32222">2</option><option label="32223">3</option></options></constraints>
+          <control type="list" format="string"><heading>32210</heading></control>
+        </setting>
+        <setting id="tv_sort" type="integer" label="32212" help="32213">
+          <level>0</level><default>0</default>
+          <constraints><options><option label="32220">0</option><option label="32221">1</option><option label="32222">2</option><option label="32223">3</option></options></constraints>
+          <control type="list" format="string"><heading>32212</heading></control>
+        </setting>
+      </group>
+    </category>
+    <category id="playback" label="32300" help="">
+      <group id="1" label="32301">
+        <setting id="hls_quality_mode" type="integer" label="32310" help="32311">
+          <level>0</level><default>1</default>
+          <constraints><options><option label="32320">0</option><option label="32321">1</option><option label="32322">2</option></options></constraints>
+          <control type="list" format="string"><heading>32310</heading></control>
+        </setting>
+        <setting id="hls_max_bitrate_kbps" type="integer" label="32312" help="32313">
+          <level>0</level><default>8000</default>
+          <constraints><minimum>250</minimum><maximum>100000</maximum></constraints>
+          <control type="edit" format="integer"><heading>32312</heading></control>
+        </setting>
+      </group>
+      <group id="2" label="32330">
+        <setting id="manage_mp4_buffer" type="boolean" label="32331" help="32332"><level>0</level><default>true</default><control type="toggle"/></setting>
+        <setting id="mp4_buffer_mb" type="integer" label="32333" help="32334"><level>0</level><default>64</default><constraints><minimum>0</minimum><maximum>1024</maximum></constraints><control type="edit" format="integer"><heading>32333</heading></control></setting>
+        <setting id="mp4_read_factor" type="integer" label="32335" help="32336"><level>0</level><default>4</default><constraints><minimum>1</minimum><maximum>50</maximum></constraints><control type="edit" format="integer"><heading>32335</heading></control></setting>
+      </group>
+    </category>
+    <category id="subtitles" label="32400" help="">
+      <group id="1" label="32401">
+        <setting id="persist_subtitles" type="boolean" label="32410" help="32411"><level>0</level><default>true</default><control type="toggle"/></setting>
+        <setting id="auto_saved_subtitles" type="boolean" label="32412" help="32413"><level>0</level><default>true</default><control type="toggle"/></setting>
       </group>
     </category>
     <category id="network" label="32100" help="">
       <group id="1" label="32101">
-        <setting id="request_timeout" type="integer" label="32110" help="32111">
-          <level>1</level>
-          <default>20</default>
-          <constraints>
-            <minimum>5</minimum>
-            <maximum>120</maximum>
-          </constraints>
-          <control type="edit" format="integer">
-            <heading>32110</heading>
-          </control>
-        </setting>
+        <setting id="request_timeout" type="integer" label="32110" help="32111"><level>1</level><default>20</default><constraints><minimum>5</minimum><maximum>120</maximum></constraints><control type="edit" format="integer"><heading>32110</heading></control></setting>
       </group>
     </category>
   </section>

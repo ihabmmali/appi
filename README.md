@@ -2,35 +2,22 @@
 
 Appi is a Kodi video add-on for user-configured movie and TV-show M3U catalogues.
 
-## Install directly from the Kodi file source
+## Direct install
 
 Add this source in Kodi File Manager:
 
 `https://ihabmmali.github.io/appi/`
 
-Then use **Add-ons -> Install from zip file -> Appi** and select the current
-`plugin.video.appi-<version>.zip` file. The file-source page intentionally lists only the Appi add-on ZIP.
+Then use **Add-ons -> Install from zip file -> Appi** and install the current `plugin.video.appi-<version>.zip`. The Pages source intentionally exposes only the video add-on ZIP; a repository ZIP is not required for this workflow.
 
-## Catalogue behaviour
+## 0.5.0 highlights
 
-- Movie catalogue is cached locally until manually refreshed.
-- TV catalogue is cached locally until manually refreshed.
-- TV navigation is **TV Show -> Season -> Episode**.
-- Movie and TV searches are scoped separately so a movie search does not load or
-  scan the TV catalogue.
-- Playback uses the original provider media URL only at playback time; catalogue
-  directory URLs use compact cached references.
-- Kodi receives title/year/season/episode/IMDb-style IDs for playback and subtitle
-  matching. The M3U feeds do not contain plots, posters, cast or ratings, so Appi
-  does not invent those fields.
+- Indexed TV cache: the TV Shows screen loads a compact show index instead of reparsing every episode.
+- TV navigation remains **Show -> Season -> Episode**.
+- Explicit default sorting in **Appi Settings -> Browsing** by title or year.
+- HLS playback can ask for quality before playback or cap maximum bitrate using InputStream Adaptive.
+- Plain MP4 playback can apply Kodi's native HTTP file-cache memory/read-factor settings.
+- Downloaded external subtitles detected in Kodi's temporary area are copied into Appi profile storage and reused on replay.
+- Errors are shown on-screen with the exception type/message, useful on Fire TV where logs are inconvenient.
 
-## Build
-
-```bash
-python3 tools/build_repository.py
-python3 -m unittest discover -s tests -v
-```
-
-The build script creates the plugin package, optional repository package,
-SHA-256 files, `addons.xml`, and the GitHub Pages `index.html` used by Kodi's
-file-source browser.
+The M3U feeds remain the catalogue source. Rich metadata such as plots, posters and ratings is intentionally deferred to a later metadata-cache layer.
