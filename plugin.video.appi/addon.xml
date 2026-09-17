@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <addon id="plugin.video.appi"
        name="Appi"
-       version="0.5.0"
+       version="0.5.1"
        provider-name="Eyecon">
   <requires>
     <import addon="xbmc.python" version="3.0.1"/>
@@ -17,6 +17,6 @@
     <platform>all</platform>
     <license>GPL-3.0-or-later</license>
     <source>https://github.com/ihabmmali/appi</source>
-    <news>0.5.0 - Fix movie-folder failures with visible Fire TV errors, index TV shows for faster navigation, add explicit title/year sorting, HLS pre-play quality selection or bitrate limiting, native Kodi MP4 cache controls, and persistent downloaded subtitle reuse.</news>
+    <news>0.5.1 - Fix settings-label localization regression while retaining indexed browsing, sorting, HLS quality control, MP4 buffering controls, visible Fire TV errors, and persistent subtitle reuse.</news>
   </extension>
 </addon>

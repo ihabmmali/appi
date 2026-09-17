@@ -8,9 +8,11 @@ Add this source in Kodi File Manager:
 
 `https://ihabmmali.github.io/appi/`
 
-Then use **Add-ons -> Install from zip file -> Appi** and install the current `plugin.video.appi-<version>.zip`. The Pages source intentionally exposes only the video add-on ZIP; a repository ZIP is not required for this workflow.
+Then use **Add-ons -> Install from zip file -> Appi** and install the current
+`plugin.video.appi-<version>.zip`. The Pages source intentionally exposes only
+the video add-on ZIP; a repository ZIP is not required for this workflow.
 
-## 0.5.0 highlights
+## 0.5.1 highlights
 
 - Indexed TV cache: the TV Shows screen loads a compact show index instead of reparsing every episode.
 - TV navigation remains **Show -> Season -> Episode**.
@@ -19,5 +21,6 @@ Then use **Add-ons -> Install from zip file -> Appi** and install the current `p
 - Plain MP4 playback can apply Kodi's native HTTP file-cache memory/read-factor settings.
 - Downloaded external subtitles detected in Kodi's temporary area are copied into Appi profile storage and reused on replay.
 - Errors are shown on-screen with the exception type/message, useful on Fire TV where logs are inconvenient.
+- Settings localization regression from 0.5.0 is fixed and covered by release tests.
 
 The M3U feeds remain the catalogue source. Rich metadata such as plots, posters and ratings is intentionally deferred to a later metadata-cache layer.
