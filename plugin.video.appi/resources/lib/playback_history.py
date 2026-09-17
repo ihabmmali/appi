@@ -82,6 +82,11 @@ def clear_session():
     cache.remove(SESSION_CACHE)
 
 
+def clear_all():
+    cache.remove(HISTORY_CACHE)
+    cache.remove(SESSION_CACHE)
+
+
 def update_progress(position, total=0):
     session = load_session()
     if not session:

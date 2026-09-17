@@ -100,6 +100,53 @@
       </group>
     </category>
 
+    <category id="maintenance" label="32500" help="">
+      <group id="1" label="32501">
+        <setting id="refresh_movie_list" type="action" label="32510" help="32511">
+          <level>0</level>
+          <data>RunPlugin(plugin://$ID/?action=refresh_movies)</data>
+          <control type="button" format="action"><close>true</close></control>
+        </setting>
+        <setting id="refresh_tv_list" type="action" label="32512" help="32513">
+          <level>0</level>
+          <data>RunPlugin(plugin://$ID/?action=refresh_tv)</data>
+          <control type="button" format="action"><close>true</close></control>
+        </setting>
+        <setting id="refresh_all_lists" type="action" label="32514" help="32515">
+          <level>0</level>
+          <data>RunPlugin(plugin://$ID/?action=refresh_all)</data>
+          <control type="button" format="action"><close>true</close></control>
+        </setting>
+      </group>
+      <group id="2" label="32502">
+        <setting id="clear_movie_cache" type="action" label="32520" help="32521">
+          <level>0</level>
+          <data>RunPlugin(plugin://$ID/?action=clear_data&amp;scope=movies)</data>
+          <control type="button" format="action"><close>true</close></control>
+        </setting>
+        <setting id="clear_tv_cache" type="action" label="32522" help="32523">
+          <level>0</level>
+          <data>RunPlugin(plugin://$ID/?action=clear_data&amp;scope=tv)</data>
+          <control type="button" format="action"><close>true</close></control>
+        </setting>
+        <setting id="clear_catalog_caches" type="action" label="32524" help="32525">
+          <level>0</level>
+          <data>RunPlugin(plugin://$ID/?action=clear_data&amp;scope=catalogs)</data>
+          <control type="button" format="action"><close>true</close></control>
+        </setting>
+        <setting id="clear_saved_subtitles" type="action" label="32526" help="32527">
+          <level>0</level>
+          <data>RunPlugin(plugin://$ID/?action=clear_data&amp;scope=subtitles)</data>
+          <control type="button" format="action"><close>true</close></control>
+        </setting>
+        <setting id="clear_recent_media" type="action" label="32528" help="32529">
+          <level>0</level>
+          <data>RunPlugin(plugin://$ID/?action=clear_data&amp;scope=recent)</data>
+          <control type="button" format="action"><close>true</close></control>
+        </setting>
+      </group>
+    </category>
+
     <category id="network" label="32100" help="">
       <group id="1" label="32101">
         <setting id="request_timeout" type="integer" label="32110" help="32111">

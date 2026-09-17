@@ -110,6 +110,10 @@ def clear_session():
         pass
 
 
+def clear_all():
+    shutil.rmtree(SUB_ROOT, ignore_errors=True)
+
+
 def _unique_destination(folder, source):
     base = os.path.basename(source)
     stem, ext = os.path.splitext(base)

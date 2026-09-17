@@ -52,6 +52,9 @@ subtitle_store.clear_session()
 subtitle_store.prepare_session('movies','m:tt1', subtitle_mode='search')
 player.onAVStarted(); assert state['builtins']==['ActivateWindow(subtitlesearch)'], state
 player.onAVStarted(); assert len(state['builtins'])==1, state
+subtitle_store.clear_all()
+assert subtitle_store.saved_subtitles('movies','m:tt1') == []
+assert subtitle_store.load_session() is None
 '''
         result = subprocess.run(
             [sys.executable, '-c', textwrap.dedent(code), str(PLUGIN)],

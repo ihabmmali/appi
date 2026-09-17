@@ -44,6 +44,24 @@ class SettingsLocalizationTests(unittest.TestCase):
         for setting in root.iter('setting'):
             self.assertTrue(setting.attrib.get('label', '').isdigit(), setting.attrib.get('id'))
 
+    def test_maintenance_actions_cover_refresh_and_clear_scopes(self):
+        root = ET.parse(SETTINGS).getroot()
+        actions = {
+            setting.attrib['id']: (setting.findtext('data') or '')
+            for setting in root.iter('setting')
+            if setting.attrib.get('type') == 'action'
+        }
+        self.assertEqual(
+            set(actions),
+            {
+                'refresh_movie_list', 'refresh_tv_list', 'refresh_all_lists',
+                'clear_movie_cache', 'clear_tv_cache', 'clear_catalog_caches',
+                'clear_saved_subtitles', 'clear_recent_media',
+            },
+        )
+        for scope in ('movies', 'tv', 'catalogs', 'subtitles', 'recent'):
+            self.assertTrue(any('scope={}'.format(scope) in value for value in actions.values()))
+
 
 if __name__ == '__main__':
     unittest.main()

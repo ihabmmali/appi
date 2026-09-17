@@ -17,7 +17,7 @@ from urllib.error import HTTPError
 PLUGIN = Path(sys.argv[1])
 sys.path.insert(0, str(PLUGIN))
 sys.argv = ['plugin://plugin.video.appi', '1', '']
-state = {'items': [], 'content': [], 'sort': [], 'ended': [], 'notifications': []}
+state = {'items': [], 'content': [], 'sort': [], 'ended': [], 'notifications': [], 'selects': []}
 settings = {
     'movie_sort':'0','tv_sort':'0',
     'persist_subtitles':'false','auto_saved_subtitles':'true',
@@ -57,7 +57,10 @@ class Dialog:
     def notification(self,*a,**k): state['notifications'].append(a)
     def ok(self,*a,**k): raise AssertionError('unexpected dialog: %r' % (a,))
     def input(self,*a,**k): return self.input_answers.pop(0) if self.input_answers else ''
-    def select(self,*a,**k): return self.select_answers.pop(0) if self.select_answers else -1
+    def select(self,*a,**k):
+        state['selects'].append((a,k))
+        return self.select_answers.pop(0) if self.select_answers else -1
+    def yesno(self,*a,**k): return True
 class DialogProgress:
     def create(self,*a,**k): pass
     def update(self,*a,**k): pass
@@ -65,10 +68,11 @@ class DialogProgress:
     def close(self): pass
 xg.ListItem=ListItem; xg.Dialog=Dialog; xg.DialogProgress=DialogProgress; sys.modules['xbmcgui']=xg
 xp=types.ModuleType('xbmcplugin')
-xp.SORT_METHOD_NONE=0; xp.SORT_METHOD_TITLE_IGNORE_THE=1; xp.SORT_METHOD_YEAR=2; xp.SORT_METHOD_EPISODE=3
+xp.SORT_METHOD_NONE=0; xp.SORT_METHOD_UNSORTED=0; xp.SORT_METHOD_DATEADDED=4
+xp.SORT_METHOD_TITLE_IGNORE_THE=1; xp.SORT_METHOD_YEAR=2; xp.SORT_METHOD_EPISODE=3
 xp.addDirectoryItems=lambda h,items,totalItems=0: state['items'].extend(items) or True
 xp.setContent=lambda h,c: state['content'].append(c)
-xp.addSortMethod=lambda h,m: state['sort'].append(m)
+xp.addSortMethod=lambda h,m,*args: state['sort'].append(m)
 xp.endOfDirectory=lambda *a,**k: state['ended'].append(True) or True
 xp.setResolvedUrl=lambda *a,**k: True
 sys.modules['xbmcplugin']=xp
@@ -84,6 +88,8 @@ root_labels=[row[1].label for row in state['items']]
 assert root_labels[:5] == [
     'Movies', 'TV Shows', 'Search', 'Recently Played Movies', 'Recently Played TV Shows'
 ], root_labels
+assert root_labels == root_labels[:5] + ['Settings'], root_labels
+assert not any(label.startswith('Refresh ') for label in root_labels), root_labels
 assert not any(label.startswith('Search Movies') for label in [row[1].label for row in state['items']])
 state['items'].clear()
 
@@ -94,6 +100,13 @@ assert [row[1].label for row in state['items']] == [
     'All Movies (may load slowly)'
 ]
 state['items'].clear()
+app.show_browse_all('movies')
+assert [row[1].label for row in state['items'][:3]] == [
+    'Movie 000 (2025)', 'Movie 001 (2025)', 'Movie 002 (2025)'
+]
+assert state['items'][0][1].info['title'] == 'Movie 000 (2025)'
+assert state['items'][0][1].info['dateadded'] > state['items'][1][1].info['dateadded']
+state['items'].clear(); state['sort'].clear()
 app.show_browse_index('movies','alpha')
 assert [row[1].label for row in state['items']] == ['M (30)']
 state['items'].clear()
@@ -107,7 +120,7 @@ state['items'].clear(); state['sort'].clear()
 app.show_browse_items('movies','alpha','M','10')
 assert len(state['items']) == 10
 assert all(not row[2] for row in state['items'])
-assert state['sort'] == [0,1,2], state['sort']
+assert state['sort'] == [0,4,1,2], state['sort']
 assert state['items'][0][1].context and 'configure_playback' in state['items'][0][1].context[0][1]
 state['items'].clear()
 
@@ -115,8 +128,9 @@ app.show_tvshows()
 assert len(state['items']) == 4
 assert state['items'][0][1].label == 'Browse A-Z'
 state['items'].clear()
-Dialog.select_answers=[2]; Dialog.input_answers=['000']
+Dialog.select_answers=[0]; Dialog.input_answers=['000']
 app.search()
+assert state['selects'][-1][0][1] == ['Movies and TV Shows', 'Movies', 'TV Shows']
 assert len(state['items']) == 2, [row[1].label for row in state['items']]
 assert {row[1].label for row in state['items']} == {'Movie 000 (2025) [Movie]', 'Show 000 (2025) [TV Show]'}
 assert not any('Next page' in row[1].label for row in state['items'])

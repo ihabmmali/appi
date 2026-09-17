@@ -1,6 +1,7 @@
 import hashlib
 import sys
 import traceback
+from datetime import datetime, timedelta
 from urllib.error import HTTPError
 from urllib.parse import parse_qsl, urlencode
 
@@ -26,6 +27,7 @@ BROWSE_BUCKET_LIMIT = 750
 RECENT_CATALOG_LIMIT = 500
 MAX_TV_CATALOG_PAGES = 10000
 TV_END_HTTP_CODES = {400, 404, 405, 410, 416}
+PROVIDER_DATE_ANCHOR = datetime(2099, 12, 31, 23, 59, 59)
 
 
 def _url(action, **params):
@@ -136,6 +138,8 @@ def refresh_movies(show_notification=True):
     try:
         text = fetch_text(movie_url, timeout=_int_setting('request_timeout', 20))
         items = dedupe([item for item in parse_m3u(text) if item.get('kind') == 'movie'])
+        for source_index, item in enumerate(items):
+            item['source_index'] = source_index
         cache.save('movies', items)
         _clear_stream_cache('movies')
         if show_notification:
@@ -243,6 +247,51 @@ def refresh_all():
         _notify('Refresh completed with an error', error=True)
 
 
+def clear_data(scope):
+    choices = {
+        'movies': (
+            'Clear Movie List Cache?',
+            'The cached movie catalogue and movie stream checks will be deleted. Your source URL is kept.',
+        ),
+        'tv': (
+            'Clear TV Show List Cache?',
+            'The cached TV index, episode data and TV stream checks will be deleted. Your source URL is kept.',
+        ),
+        'catalogs': (
+            'Clear Both List Caches?',
+            'The cached movie and TV catalogues and stream checks will be deleted. Your source URLs are kept.',
+        ),
+        'subtitles': (
+            'Clear Saved Subtitles?',
+            'All external subtitle files saved by Appi will be deleted.',
+        ),
+        'recent': (
+            'Clear Recent Media?',
+            'Recently Played items and their resume positions will be deleted.',
+        ),
+    }
+    if scope not in choices:
+        raise ValueError('Unknown clear-data scope: {}'.format(scope))
+    heading, message = choices[scope]
+    if not xbmcgui.Dialog().yesno(heading, message):
+        return False
+
+    if scope in {'movies', 'catalogs'}:
+        cache.remove('movies')
+        _clear_stream_cache('movies')
+    if scope in {'tv', 'catalogs'}:
+        cache.remove('tv_shows')
+        cache.remove('tv')
+        cache.remove_prefix('tv_show_')
+        _clear_stream_cache('tv')
+    if scope == 'subtitles':
+        subtitle_store.clear_all()
+    if scope == 'recent':
+        playback_history.clear_all()
+    _notify('Data cleared')
+    return True
+
+
 def _load_movies():
     payload = cache.load('movies')
     if payload is not None:
@@ -291,11 +340,40 @@ def _find_by_ref(catalog_name, ref, key=None):
     return None
 
 
+def _year_label(value, year):
+    value = value or ''
+    if not year:
+        return value
+    suffix = ' ({})'.format(year)
+    return value if suffix in value else value + suffix
+
+
+def _provider_date(source_index):
+    try:
+        offset = max(0, int(source_index))
+    except (TypeError, ValueError):
+        offset = 0
+    return (PROVIDER_DATE_ANCHOR - timedelta(seconds=offset)).strftime('%Y-%m-%d %H:%M:%S')
+
+
+def _decorate_provider_order(items):
+    result = []
+    for index, source in enumerate(items):
+        item = dict(source)
+        source_index = item.get('source_index', index)
+        item['source_index'] = source_index
+        item['dateadded'] = _provider_date(source_index)
+        result.append(item)
+    return result
+
+
 def _directory_video_info(item, media_type=None):
     kind = item.get('kind')
     info = {'mediatype': media_type or ('movie' if kind == 'movie' else 'episode')}
     if kind == 'movie':
-        info['title'] = item.get('title') or item.get('display_title') or ''
+        plain_title = item.get('title') or item.get('display_title') or ''
+        info['title'] = _year_label(plain_title, item.get('year'))
+        info['sorttitle'] = plain_title
     else:
         info['title'] = item.get('display_title') or item.get('show_title') or ''
         if item.get('show_title'):
@@ -308,6 +386,8 @@ def _directory_video_info(item, media_type=None):
         info['year'] = int(item['year'])
     if item.get('tvg_id'):
         info['imdbnumber'] = item['tvg_id']
+    if item.get('dateadded'):
+        info['dateadded'] = item['dateadded']
     return info
 
 
@@ -383,9 +463,14 @@ def _add_context(list_item, items):
 def _playable_tuple(
     item, catalog_name, key=None, resume=False, resume_points=None, label_suffix=''
 ):
-    label = item.get('display_title') or item.get('title') or ''
-    list_item = xbmcgui.ListItem(label=label + label_suffix, offscreen=True)
-    list_item.setInfo('video', _directory_video_info(item))
+    label = _year_label(
+        item.get('display_title') or item.get('title') or '', item.get('year')
+    )
+    display_label = label + label_suffix
+    list_item = xbmcgui.ListItem(label=display_label, offscreen=True)
+    info = _directory_video_info(item)
+    info['title'] = display_label
+    list_item.setInfo('video', info)
     list_item.setProperty('IsPlayable', 'true')
     ref = item_ref(item)
     _apply_resume_metadata(
@@ -424,7 +509,8 @@ def _finish(cache_to_disc=True):
 
 def _add_video_sort_methods():
     candidates = [
-        ('SORT_METHOD_NONE',),
+        ('SORT_METHOD_UNSORTED', 'SORT_METHOD_NONE'),
+        ('SORT_METHOD_DATEADDED',),
         ('SORT_METHOD_TITLE_IGNORE_THE', 'SORT_METHOD_TITLE'),
         ('SORT_METHOD_VIDEO_YEAR', 'SORT_METHOD_YEAR'),
     ]
@@ -433,6 +519,8 @@ def _add_video_sort_methods():
         if method is None:
             continue
         try:
+            xbmcplugin.addSortMethod(HANDLE, method, '%T', '')
+        except TypeError:
             xbmcplugin.addSortMethod(HANDLE, method)
         except Exception:
             pass
@@ -440,10 +528,10 @@ def _add_video_sort_methods():
 
 def _scope_items(scope, provider_order=False):
     if scope == 'movies':
-        items = _load_movies()
-        return list(items) if provider_order else sort_movies(items, _int_setting('movie_sort', 0))
-    items = _load_tv_shows()
-    return list(items) if provider_order else sort_shows(items, _int_setting('tv_sort', 0))
+        items = _decorate_provider_order(_load_movies())
+        return items if provider_order else sort_movies(items, _int_setting('movie_sort', 0))
+    items = _decorate_provider_order(_load_tv_shows())
+    return items if provider_order else sort_shows(items, _int_setting('tv_sort', 0))
 
 
 def _item_title(scope, item):
@@ -513,9 +601,6 @@ def show_root():
         _folder_tuple('Search', _url('search')),
         _folder_tuple('Recently Played Movies', _url('recent_movies', page=1)),
         _folder_tuple('Recently Played TV Shows', _url('recent_tvshows', page=1)),
-        _folder_tuple('Refresh Movie List', _url('refresh_movies')),
-        _folder_tuple('Refresh TV Show List', _url('refresh_tv')),
-        _folder_tuple('Refresh All Lists', _url('refresh_all')),
         _folder_tuple('Settings', _url('settings')),
     ]
     _send_items(entries)
@@ -531,7 +616,10 @@ def _show_browse_root(scope):
             'Recently Added (first {} in provider order)'.format(RECENT_CATALOG_LIMIT),
             _url('browse_recent', scope=scope),
         ),
-        _folder_tuple('All {} (may load slowly)'.format(noun), _url('browse_all', scope=scope)),
+        _folder_tuple(
+            'All {} (may load slowly)'.format(noun),
+            _url('browse_all', scope=scope, order='provider'),
+        ),
     ]
     _send_items(entries)
     _finish()
@@ -547,18 +635,21 @@ def show_tvshows():
 
 def _show_tuple(show, label_suffix=''):
     title = show.get('show_title') or show.get('group_title') or 'TV Show'
-    label = show.get('group_title') or title
-    info = {'mediatype': 'tvshow', 'title': title}
+    label = _year_label(show.get('group_title') or title, show.get('year'))
+    display_label = label + label_suffix
+    info = {'mediatype': 'tvshow', 'title': display_label, 'sorttitle': title}
     if show.get('year'):
         info['year'] = int(show['year'])
     if show.get('tvg_id'):
         info['imdbnumber'] = show['tvg_id']
+    if show.get('dateadded'):
+        info['dateadded'] = show['dateadded']
     context = [(
         'Playback options for this show...',
         _context_action('configure_playback', target='show', catalog='tv', show_key=show['show_key']),
     )]
     return _folder_tuple(
-        label + label_suffix, _url('seasons', show_key=show['show_key']), info, context
+        display_label, _url('seasons', show_key=show['show_key']), info, context
     )
 
 
@@ -634,11 +725,11 @@ def show_browse_recent(scope):
 
 def show_browse_all(scope):
     scope = 'movies' if scope == 'movies' else 'tv'
-    _show_media(scope, _scope_items(scope))
+    _show_media(scope, _scope_items(scope, provider_order=True))
 
 
 def show_recent_movies():
-    entries = playback_history.recent_movies(limit=100)
+    entries = _decorate_provider_order(playback_history.recent_movies(limit=100))
     xbmcplugin.setContent(HANDLE, 'movies')
     _add_video_sort_methods()
     resume_points = playback_history.resume_points('movies')
@@ -670,8 +761,8 @@ def show_recent_tvshows():
     tuples = []
     for entry, summary in visible:
         title = summary.get('show_title') or entry.get('show_title') or 'TV Show'
-        label = summary.get('group_title') or title
-        info = {'mediatype': 'tvshow', 'title': title}
+        label = _year_label(summary.get('group_title') or title, summary.get('year'))
+        info = {'mediatype': 'tvshow', 'title': label, 'sorttitle': title}
         if summary.get('year'):
             info['year'] = int(summary['year'])
         if summary.get('tvg_id'):
@@ -792,12 +883,12 @@ def show_episodes(key, season):
 def search(scope=None, query=None):
     if scope not in {'movies', 'tv', 'both'}:
         choice = xbmcgui.Dialog().select(
-            'Search category', ['Movies', 'TV Shows', 'Movies and TV Shows']
+            'Search category', ['Movies and TV Shows', 'Movies', 'TV Shows']
         )
         if choice < 0:
             xbmcplugin.endOfDirectory(HANDLE, succeeded=False)
             return
-        scope = ('movies', 'tv', 'both')[choice]
+        scope = ('both', 'movies', 'tv')[choice]
     if query is None:
         query = xbmcgui.Dialog().input('Search', type=xbmcgui.INPUT_ALPHANUM).strip()
     else:
@@ -809,7 +900,7 @@ def search(scope=None, query=None):
 
     if scope == 'movies':
         matches = [
-            item for item in _load_movies()
+            item for item in _scope_items('movies', provider_order=True)
             if needle in (item.get('display_title') or '').casefold()
             or needle in (item.get('title') or '').casefold()
         ]
@@ -818,7 +909,7 @@ def search(scope=None, query=None):
         return
 
     show_matches = [
-        show for show in _load_tv_shows()
+        show for show in _scope_items('tv', provider_order=True)
         if needle in '{} {}'.format(show.get('show_title') or '', show.get('group_title') or '').casefold()
     ]
     show_matches = sort_shows(show_matches, _int_setting('tv_sort', 0))
@@ -827,7 +918,7 @@ def search(scope=None, query=None):
         return
 
     movie_matches = [
-        item for item in _load_movies()
+        item for item in _scope_items('movies', provider_order=True)
         if needle in (item.get('display_title') or '').casefold()
         or needle in (item.get('title') or '').casefold()
     ]
@@ -1088,6 +1179,8 @@ def _run_action(params):
     elif action == 'refresh_all':
         refresh_all()
         xbmc.executebuiltin('Container.Update({})'.format(BASE_URL))
+    elif action == 'clear_data':
+        clear_data(params.get('scope', ''))
     elif action == 'settings':
         ADDON.openSettings()
         xbmc.executebuiltin('Container.Update({})'.format(BASE_URL))

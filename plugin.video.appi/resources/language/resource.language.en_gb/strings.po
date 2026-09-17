@@ -220,3 +220,79 @@ msgstr "200 items"
 msgctxt "#32234"
 msgid "300 items"
 msgstr "300 items"
+
+msgctxt "#32500"
+msgid "Maintenance"
+msgstr "Maintenance"
+
+msgctxt "#32501"
+msgid "Refresh catalogues"
+msgstr "Refresh catalogues"
+
+msgctxt "#32502"
+msgid "Clear cached and saved data"
+msgstr "Clear cached and saved data"
+
+msgctxt "#32510"
+msgid "Refresh Movie List"
+msgstr "Refresh Movie List"
+
+msgctxt "#32511"
+msgid "Downloads the movie catalogue again and replaces its cache only when the refresh succeeds."
+msgstr "Downloads the movie catalogue again and replaces its cache only when the refresh succeeds."
+
+msgctxt "#32512"
+msgid "Refresh TV Show List"
+msgstr "Refresh TV Show List"
+
+msgctxt "#32513"
+msgid "Downloads all available TV catalogue pages again and rebuilds the indexed cache only when successful."
+msgstr "Downloads all available TV catalogue pages again and rebuilds the indexed cache only when successful."
+
+msgctxt "#32514"
+msgid "Refresh All Lists"
+msgstr "Refresh All Lists"
+
+msgctxt "#32515"
+msgid "Refreshes the movie list and then the TV show list."
+msgstr "Refreshes the movie list and then the TV show list."
+
+msgctxt "#32520"
+msgid "Clear Movie List Cache"
+msgstr "Clear Movie List Cache"
+
+msgctxt "#32521"
+msgid "Deletes the cached movie catalogue and movie stream checks. The configured source URL is kept."
+msgstr "Deletes the cached movie catalogue and movie stream checks. The configured source URL is kept."
+
+msgctxt "#32522"
+msgid "Clear TV Show List Cache"
+msgstr "Clear TV Show List Cache"
+
+msgctxt "#32523"
+msgid "Deletes the TV index, per-show episode caches and TV stream checks. The configured source URL is kept."
+msgstr "Deletes the TV index, per-show episode caches and TV stream checks. The configured source URL is kept."
+
+msgctxt "#32524"
+msgid "Clear Both List Caches"
+msgstr "Clear Both List Caches"
+
+msgctxt "#32525"
+msgid "Deletes both cached catalogues and their stream checks. Configured source URLs are kept."
+msgstr "Deletes both cached catalogues and their stream checks. Configured source URLs are kept."
+
+msgctxt "#32526"
+msgid "Clear Saved Subtitles"
+msgstr "Clear Saved Subtitles"
+
+msgctxt "#32527"
+msgid "Deletes all external subtitle files saved by Appi."
+msgstr "Deletes all external subtitle files saved by Appi."
+
+msgctxt "#32528"
+msgid "Clear Recent Media"
+msgstr "Clear Recent Media"
+
+msgctxt "#32529"
+msgid "Deletes Recently Played entries and their resume positions."
+msgstr "Deletes Recently Played entries and their resume positions."

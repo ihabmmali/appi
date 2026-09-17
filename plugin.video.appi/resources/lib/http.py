@@ -2,7 +2,7 @@ from urllib.parse import urlparse
 from urllib.request import Request, urlopen
 
 
-DEFAULT_USER_AGENT = 'Kodi Appi/0.6.2'
+DEFAULT_USER_AGENT = 'Kodi Appi/0.6.3'
 
 
 def _headers(extra=None):
