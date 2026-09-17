@@ -30,8 +30,8 @@ msgid "TV Show M3U base URL"
 msgstr "TV Show M3U base URL"
 
 msgctxt "#32021"
-msgid "Base URL before the page number. Appi appends /1, /2 and so on, or replaces {page} if present."
-msgstr "Base URL before the page number. Appi appends /1, /2 and so on, or replaces {page} if present."
+msgid "Base URL before the page number. Appi requests /1, /2 and so on until the provider signals the end, or replaces {page} if present."
+msgstr "Base URL before the page number. Appi requests /1, /2 and so on until the provider signals the end, or replaces {page} if present."
 
 msgctxt "#32030"
 msgid "TV Show page count"

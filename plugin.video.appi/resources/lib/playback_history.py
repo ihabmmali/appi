@@ -140,6 +140,10 @@ def get_entry(catalog, ref):
 
 def resume_point(catalog, ref):
     entry = get_entry(catalog, ref)
+    return _resume_point_from_entry(entry)
+
+
+def _resume_point_from_entry(entry):
     if not entry or entry.get('completed'):
         return None
     try:
@@ -154,6 +158,16 @@ def resume_point(catalog, ref):
     if total > 0 and (position >= total - 30 or position / total >= 0.97):
         return None
     return position, total
+
+
+def resume_points(catalog):
+    entries = _history().get(_bucket(catalog), {})
+    result = {}
+    for ref, entry in entries.items():
+        point = _resume_point_from_entry(entry)
+        if point:
+            result[ref] = point
+    return result
 
 
 def recent_movies(limit=50):

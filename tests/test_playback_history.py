@@ -28,6 +28,7 @@ ep2={'kind':'episode','display_title':'Show S01 E02','show_title':'Show','year':
 playback_history.start_session('movies','m:tt1',movie)
 playback_history.update_progress(321,1200)
 assert playback_history.resume_point('movies','m:tt1')==(321.0,1200.0)
+assert playback_history.resume_points('movies')=={'m:tt1':(321.0,1200.0)}
 assert playback_history.recent_movies()[0]['title']=='Movie'
 playback_history.finish_session(False)
 show_key='tt2\\x1fShow\\x1f2025'
@@ -41,6 +42,7 @@ assert len(recent)==1 and recent[0]['ref']=='e:tt2:1:2'
 playback_history.finish_session(True)
 assert playback_history.get_entry('tv','e:tt2:1:2')['completed'] is True
 assert playback_history.resume_point('tv','e:tt2:1:2') is None
+assert playback_history.resume_points('tv')=={'e:tt2:1:1':(600.0,1800.0)}
 '''
         result = subprocess.run(
             [sys.executable, '-c', textwrap.dedent(code), str(PLUGIN)],
