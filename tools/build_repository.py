@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
-"""Build Kodi packages and repository metadata from the source tree."""
+"""Build Kodi packages, repository metadata, and GitHub Pages bootstrap files."""
 
 import hashlib
-import os
 from pathlib import Path
 import shutil
 import xml.etree.ElementTree as ET
@@ -13,8 +12,7 @@ ADDON_DIRS = [ROOT / 'plugin.video.appi', ROOT / 'repository.appi']
 
 
 def addon_identity(directory):
-    tree = ET.parse(directory / 'addon.xml')
-    root = tree.getroot()
+    root = ET.parse(directory / 'addon.xml').getroot()
     addon_id = root.attrib['id']
     version = root.attrib['version']
     if directory.name != addon_id:
@@ -23,9 +21,8 @@ def addon_identity(directory):
 
 
 def excluded(path):
-    parts = path.parts
     return (
-        '__pycache__' in parts
+        '__pycache__' in path.parts
         or path.name == '.DS_Store'
         or path.suffix in {'.pyc', '.pyo', '.zip'}
     )
@@ -40,68 +37,77 @@ def clean_old_package_files(directory, addon_id, current_zip_name):
 def build_zip(directory, addon_id, version):
     output = directory / '{}-{}.zip'.format(addon_id, version)
     clean_old_package_files(directory, addon_id, output.name)
-    if output.exists():
-        output.unlink()
+    output.unlink(missing_ok=True)
     sidecar = output.with_name(output.name + '.sha256')
-    if sidecar.exists():
-        sidecar.unlink()
+    sidecar.unlink(missing_ok=True)
 
     with zipfile.ZipFile(output, 'w', compression=zipfile.ZIP_DEFLATED, compresslevel=9) as archive:
         for path in sorted(directory.rglob('*')):
             if path.is_dir() or excluded(path):
                 continue
-            arcname = Path(addon_id) / path.relative_to(directory)
-            archive.write(path, arcname.as_posix())
+            arcname = (Path(addon_id) / path.relative_to(directory)).as_posix()
+            info = zipfile.ZipInfo(arcname, date_time=(1980, 1, 1, 0, 0, 0))
+            info.compress_type = zipfile.ZIP_DEFLATED
+            info.external_attr = (0o100644 & 0xFFFF) << 16
+            archive.writestr(info, path.read_bytes(), compress_type=zipfile.ZIP_DEFLATED, compresslevel=9)
 
     digest = hashlib.sha256(output.read_bytes()).hexdigest()
-    output.with_name(output.name + '.sha256').write_text(digest + '\n', encoding='ascii')
+    sidecar.write_text(digest + '\n', encoding='ascii')
 
     with zipfile.ZipFile(output, 'r') as archive:
         top_levels = {name.split('/', 1)[0] for name in archive.namelist() if name}
         if top_levels != {addon_id}:
             raise RuntimeError('Invalid package layout for {}: {}'.format(addon_id, sorted(top_levels)))
+        bad = archive.testzip()
+        if bad:
+            raise RuntimeError('Corrupt ZIP member in {}: {}'.format(output.name, bad))
     return output
 
 
 def build_addons_xml():
     addons_root = ET.Element('addons')
     for directory in ADDON_DIRS:
-        addon_root = ET.parse(directory / 'addon.xml').getroot()
-        addons_root.append(addon_root)
+        addons_root.append(ET.parse(directory / 'addon.xml').getroot())
 
     ET.indent(addons_root, space='  ')
     body = ET.tostring(addons_root, encoding='utf-8', xml_declaration=True)
     if not body.endswith(b'\n'):
         body += b'\n'
     (ROOT / 'addons.xml').write_bytes(body)
+    (ROOT / 'addons.xml.sha256').write_text(
+        hashlib.sha256(body).hexdigest() + '\n', encoding='ascii'
+    )
 
-    digest = hashlib.sha256(body).hexdigest()
-    (ROOT / 'addons.xml.sha256').write_text(digest + '\n', encoding='ascii')
+
+def clean_old_root_packages(current_names):
+    for pattern in ('plugin.video.appi-*.zip', 'repository.appi-*.zip'):
+        for path in ROOT.glob(pattern):
+            if path.name not in current_names:
+                path.unlink()
 
 
-def build_pages_entry(repository_zip):
-    bootstrap = ROOT / repository_zip.name
-    shutil.copy2(repository_zip, bootstrap)
+def build_pages_entry(plugin_zip, repository_zip):
+    root_plugin = ROOT / plugin_zip.name
+    root_repo = ROOT / repository_zip.name
+    shutil.copy2(plugin_zip, root_plugin)
+    shutil.copy2(repository_zip, root_repo)
+    clean_old_root_packages({root_plugin.name, root_repo.name})
+
     html = '''<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Appi Kodi Repository</title>
+  <title>Appi Kodi Add-on</title>
 </head>
 <body>
-  <h1>Appi Kodi Repository</h1>
-  <p><a href="{name}">{name}</a></p>
+  <h1>Appi Kodi Add-on</h1>
+  <p><a href="{plugin}">{plugin}</a></p>
+  <p><a href="{repository}">{repository}</a> (optional update repository)</p>
 </body>
 </html>
-'''.format(name=repository_zip.name)
+'''.format(plugin=root_plugin.name, repository=root_repo.name)
     (ROOT / 'index.html').write_text(html, encoding='utf-8')
-
-
-def clean_old_bootstrap_zips(current_name):
-    for path in ROOT.glob('repository.appi-*.zip'):
-        if path.name != current_name:
-            path.unlink()
 
 
 def main():
@@ -111,15 +117,14 @@ def main():
         built[addon_id] = build_zip(directory, addon_id, version)
 
     build_addons_xml()
-    repo_zip = built['repository.appi']
-    clean_old_bootstrap_zips(repo_zip.name)
-    build_pages_entry(repo_zip)
+    build_pages_entry(built['plugin.video.appi'], built['repository.appi'])
 
     print('Built:')
     for addon_id, path in built.items():
         print('  {} -> {}'.format(addon_id, path.relative_to(ROOT)))
-    print('  repository bootstrap -> {}'.format((ROOT / repo_zip.name).relative_to(ROOT)))
-    print('  index -> addons.xml')
+    print('  direct plugin bootstrap -> {}'.format(built['plugin.video.appi'].name))
+    print('  optional repository bootstrap -> {}'.format(built['repository.appi'].name))
+    print('  repository index -> addons.xml')
     print('  checksum -> addons.xml.sha256')
     print('  GitHub Pages -> index.html')
 

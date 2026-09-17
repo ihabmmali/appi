@@ -1,3 +1,4 @@
+import hashlib
 import sys
 from urllib.parse import parse_qsl, urlencode
 
@@ -11,7 +12,6 @@ from .http import fetch_text
 from .m3u import dedupe, parse_m3u
 
 ADDON = xbmcaddon.Addon()
-ADDON_ID = ADDON.getAddonInfo('id')
 HANDLE = int(sys.argv[1])
 BASE_URL = sys.argv[0]
 
@@ -67,7 +67,7 @@ def refresh_movies(show_notification=True):
         if show_notification:
             _notify('Movie list refreshed: {} titles'.format(len(items)))
         return items
-    except Exception as exc:  # Kodi UI must report network/parser failures without destroying old cache.
+    except Exception as exc:
         xbmc.log('Appi movie refresh failed: {}'.format(exc), xbmc.LOGERROR)
         xbmcgui.Dialog().ok('Appi', 'Movie refresh failed. The previous cached movie list was kept.\n\n{}'.format(exc))
         return None
@@ -113,20 +113,41 @@ def refresh_all():
         _notify('Refresh completed with an error', error=True)
 
 
-def _load_movies():
-    payload = cache.load('movies')
+def _load_catalog(name):
+    payload = cache.load(name)
     if payload is not None:
         return payload['items']
-    items = refresh_movies(show_notification=False)
+    if name == 'movies':
+        items = refresh_movies(show_notification=False)
+    else:
+        items = refresh_tv(show_notification=False)
     return items or []
+
+
+def _load_movies():
+    return _load_catalog('movies')
 
 
 def _load_tv():
-    payload = cache.load('tv')
-    if payload is not None:
-        return payload['items']
-    items = refresh_tv(show_notification=False)
-    return items or []
+    return _load_catalog('tv')
+
+
+def _item_ref(item):
+    kind = item.get('kind') or ''
+    tvg_id = item.get('tvg_id') or ''
+    if kind == 'movie' and tvg_id:
+        return 'm:{}'.format(tvg_id)
+    if kind == 'episode' and tvg_id:
+        return 'e:{}:{}:{}'.format(tvg_id, item.get('season'), item.get('episode'))
+    digest = hashlib.sha1((item.get('media_url') or '').encode('utf-8')).hexdigest()
+    return 'u:{}'.format(digest)
+
+
+def _find_by_ref(catalog, ref):
+    for item in _load_catalog(catalog):
+        if _item_ref(item) == ref:
+            return item
+    return None
 
 
 def _set_common_video_metadata(list_item, item):
@@ -136,8 +157,9 @@ def _set_common_video_metadata(list_item, item):
     tvg_id = item.get('tvg_id') or ''
 
     if kind == 'movie':
+        title = item.get('title') or item.get('display_title') or ''
         tag.setMediaType('movie')
-        tag.setTitle(item.get('title') or item.get('display_title') or '')
+        tag.setTitle(title)
     else:
         tag.setMediaType('episode')
         tag.setTitle(item.get('display_title') or '')
@@ -151,54 +173,65 @@ def _set_common_video_metadata(list_item, item):
         tag.setYear(int(year))
     if tvg_id:
         tag.setUniqueID(tvg_id, 'imdb', True)
+        tag.setIMDBNumber(tvg_id)
 
 
-def _play_url(item):
-    return _url(
-        'play',
-        kind=item.get('kind'),
-        media_url=item.get('media_url'),
-        display_title=item.get('display_title'),
-        title=item.get('title'),
-        show_title=item.get('show_title'),
-        year=item.get('year'),
-        tvg_id=item.get('tvg_id'),
-        season=item.get('season'),
-        episode=item.get('episode'),
-    )
-
-
-def _add_playable(item, prefix=''):
+def _playable_tuple(item, catalog, prefix=''):
     label = '{}{}'.format(prefix, item.get('display_title') or item.get('title') or '')
     list_item = xbmcgui.ListItem(label=label, offscreen=True)
     _set_common_video_metadata(list_item, item)
     list_item.setProperty('IsPlayable', 'true')
-    xbmcplugin.addDirectoryItem(HANDLE, _play_url(item), list_item, isFolder=False)
+    url = _url('play_ref', catalog=catalog, ref=_item_ref(item))
+    return (url, list_item, False)
+
+
+def _folder_tuple(label, url, media_type=None, title=None, year=None, tvg_id=None, season=None):
+    item = xbmcgui.ListItem(label=label, offscreen=True)
+    if media_type:
+        tag = item.getVideoInfoTag()
+        tag.setMediaType(media_type)
+        tag.setTitle(title or label)
+        if year:
+            tag.setYear(int(year))
+        if tvg_id:
+            tag.setUniqueID(tvg_id, 'imdb', True)
+            tag.setIMDBNumber(tvg_id)
+        if season is not None:
+            tag.setSeason(int(season))
+    return (url, item, True)
+
+
+def _send_items(items):
+    if items:
+        xbmcplugin.addDirectoryItems(HANDLE, items, totalItems=len(items))
+
+
+def _finish():
+    xbmcplugin.endOfDirectory(HANDLE, cacheToDisc=True)
 
 
 def show_root():
     entries = [
-        ('Movies', _url('movies')),
-        ('TV Shows', _url('tvshows')),
-        ('Search', _url('search')),
-        ('Refresh Movie List', _url('refresh_movies')),
-        ('Refresh TV Show List', _url('refresh_tv')),
-        ('Refresh All Lists', _url('refresh_all')),
-        ('Settings', _url('settings')),
+        _folder_tuple('Movies', _url('movies')),
+        _folder_tuple('TV Shows', _url('tvshows')),
+        _folder_tuple('Search Movies', _url('search', scope='movies')),
+        _folder_tuple('Search TV Shows', _url('search', scope='tv')),
+        _folder_tuple('Refresh Movie List', _url('refresh_movies')),
+        _folder_tuple('Refresh TV Show List', _url('refresh_tv')),
+        _folder_tuple('Refresh All Lists', _url('refresh_all')),
+        _folder_tuple('Settings', _url('settings')),
     ]
-    for label, url in entries:
-        item = xbmcgui.ListItem(label=label, offscreen=True)
-        xbmcplugin.addDirectoryItem(HANDLE, url, item, isFolder=True)
-    xbmcplugin.endOfDirectory(HANDLE)
+    _send_items(entries)
+    _finish()
 
 
 def show_movies():
-    items = sorted(_load_movies(), key=lambda x: (x.get('title') or '').casefold())
+    items = _load_movies()
     xbmcplugin.setContent(HANDLE, 'movies')
-    for item in items:
-        _add_playable(item)
-    xbmcplugin.addSortMethod(HANDLE, xbmcplugin.SORT_METHOD_LABEL_IGNORE_THE)
-    xbmcplugin.endOfDirectory(HANDLE)
+    xbmcplugin.addSortMethod(HANDLE, xbmcplugin.SORT_METHOD_TITLE_IGNORE_THE)
+    xbmcplugin.addSortMethod(HANDLE, xbmcplugin.SORT_METHOD_YEAR)
+    _send_items([_playable_tuple(item, 'movies') for item in items])
+    _finish()
 
 
 def _show_key(item):
@@ -212,68 +245,131 @@ def show_tvshows():
         groups.setdefault(_show_key(episode), episode)
 
     xbmcplugin.setContent(HANDLE, 'tvshows')
-    for key, episode in sorted(groups.items(), key=lambda pair: (pair[1].get('show_title') or '').casefold()):
+    xbmcplugin.addSortMethod(HANDLE, xbmcplugin.SORT_METHOD_TITLE_IGNORE_THE)
+    directory_items = []
+    for key, episode in groups.items():
         label = episode.get('group_title') or episode.get('show_title') or 'TV Show'
-        item = xbmcgui.ListItem(label=label, offscreen=True)
-        tag = item.getVideoInfoTag()
-        tag.setMediaType('tvshow')
-        tag.setTitle(episode.get('show_title') or label)
-        if episode.get('year'):
-            tag.setYear(int(episode['year']))
-        if episode.get('tvg_id'):
-            tag.setUniqueID(episode['tvg_id'], 'imdb', True)
-        xbmcplugin.addDirectoryItem(HANDLE, _url('episodes', show_key=key), item, isFolder=True)
-    xbmcplugin.addSortMethod(HANDLE, xbmcplugin.SORT_METHOD_LABEL_IGNORE_THE)
-    xbmcplugin.endOfDirectory(HANDLE)
+        directory_items.append(_folder_tuple(
+            label,
+            _url('seasons', show_key=key),
+            media_type='tvshow',
+            title=episode.get('show_title') or label,
+            year=episode.get('year'),
+            tvg_id=episode.get('tvg_id'),
+        ))
+    _send_items(directory_items)
+    _finish()
 
 
-def show_episodes(show_key):
+def show_seasons(show_key):
     episodes = [item for item in _load_tv() if _show_key(item) == show_key]
-    episodes.sort(key=lambda x: (x.get('season') if x.get('season') is not None else 9999,
-                                 x.get('episode') if x.get('episode') is not None else 9999,
-                                 (x.get('display_title') or '').casefold()))
+    seasons = sorted({item.get('season') for item in episodes if item.get('season') is not None})
+    show_title = episodes[0].get('show_title') if episodes else ''
+    tvg_id = episodes[0].get('tvg_id') if episodes else ''
+
+    xbmcplugin.setContent(HANDLE, 'seasons')
+    directory_items = []
+    for season in seasons:
+        directory_items.append(_folder_tuple(
+            'Season {}'.format(season),
+            _url('episodes', show_key=show_key, season=season),
+            media_type='season',
+            title='Season {}'.format(season),
+            tvg_id=tvg_id,
+            season=season,
+        ))
+    _send_items(directory_items)
+    _finish()
+
+
+def show_episodes(show_key, season):
+    try:
+        season_number = int(season)
+    except (TypeError, ValueError):
+        season_number = None
+    episodes = [
+        item for item in _load_tv()
+        if _show_key(item) == show_key and item.get('season') == season_number
+    ]
+    episodes.sort(key=lambda item: (
+        item.get('episode') if item.get('episode') is not None else 999999,
+        (item.get('display_title') or '').casefold(),
+    ))
     xbmcplugin.setContent(HANDLE, 'episodes')
-    for episode in episodes:
-        _add_playable(episode)
-    xbmcplugin.endOfDirectory(HANDLE)
+    xbmcplugin.addSortMethod(HANDLE, xbmcplugin.SORT_METHOD_EPISODE)
+    _send_items([_playable_tuple(item, 'tv') for item in episodes])
+    _finish()
 
 
-def search():
-    query = xbmcgui.Dialog().input('Search Appi', type=xbmcgui.INPUT_ALPHANUM).strip()
+def search(scope):
+    scope = scope if scope in {'movies', 'tv'} else 'movies'
+    label = 'Search Movies' if scope == 'movies' else 'Search TV Shows'
+    query = xbmcgui.Dialog().input(label, type=xbmcgui.INPUT_ALPHANUM).strip()
     if not query:
         xbmcplugin.endOfDirectory(HANDLE, succeeded=False)
         return
+
     needle = query.casefold()
-    movies = [item for item in _load_movies() if needle in (item.get('display_title') or '').casefold()]
-    tv = [item for item in _load_tv() if needle in (item.get('display_title') or '').casefold() or needle in (item.get('show_title') or '').casefold()]
-    results = [('Movie: ', item) for item in movies] + [('TV: ', item) for item in tv]
-    results.sort(key=lambda pair: (pair[1].get('display_title') or '').casefold())
-    xbmcplugin.setContent(HANDLE, 'videos')
-    for prefix, item in results:
-        _add_playable(item, prefix=prefix)
-    xbmcplugin.endOfDirectory(HANDLE)
+    if scope == 'movies':
+        matches = [
+            item for item in _load_movies()
+            if needle in (item.get('display_title') or '').casefold()
+            or needle in (item.get('title') or '').casefold()
+        ]
+        xbmcplugin.setContent(HANDLE, 'movies')
+        xbmcplugin.addSortMethod(HANDLE, xbmcplugin.SORT_METHOD_TITLE_IGNORE_THE)
+        xbmcplugin.addSortMethod(HANDLE, xbmcplugin.SORT_METHOD_YEAR)
+        _send_items([_playable_tuple(item, 'movies') for item in matches])
+        _finish()
+        return
+
+    # Search TV by show title, then present matching shows rather than every
+    # matching episode. Selecting a result continues through Seasons -> Episodes.
+    groups = {}
+    for episode in _load_tv():
+        haystack = '{} {}'.format(
+            episode.get('show_title') or '',
+            episode.get('group_title') or '',
+        ).casefold()
+        if needle in haystack:
+            groups.setdefault(_show_key(episode), episode)
+
+    xbmcplugin.setContent(HANDLE, 'tvshows')
+    xbmcplugin.addSortMethod(HANDLE, xbmcplugin.SORT_METHOD_TITLE_IGNORE_THE)
+    directory_items = []
+    for key, episode in groups.items():
+        title = episode.get('show_title') or episode.get('group_title') or 'TV Show'
+        label = episode.get('group_title') or title
+        directory_items.append(_folder_tuple(
+            label,
+            _url('seasons', show_key=key),
+            media_type='tvshow',
+            title=title,
+            year=episode.get('year'),
+            tvg_id=episode.get('tvg_id'),
+        ))
+    _send_items(directory_items)
+    _finish()
 
 
-def play(params):
-    item = {
-        'kind': params.get('kind', 'movie'),
-        'media_url': params.get('media_url', ''),
-        'display_title': params.get('display_title', ''),
-        'title': params.get('title', ''),
-        'show_title': params.get('show_title', ''),
-        'tvg_id': params.get('tvg_id', ''),
-        'year': int(params['year']) if params.get('year', '').isdigit() else None,
-        'season': int(params['season']) if params.get('season', '').isdigit() else None,
-        'episode': int(params['episode']) if params.get('episode', '').isdigit() else None,
-    }
-    media_url = item['media_url']
+def play_ref(params):
+    catalog = params.get('catalog', '')
+    ref = params.get('ref', '')
+    if catalog not in {'movies', 'tv'} or not ref:
+        xbmcplugin.setResolvedUrl(HANDLE, False, xbmcgui.ListItem())
+        return
+    item = _find_by_ref(catalog, ref)
+    if not item:
+        xbmcgui.Dialog().ok('Appi', 'This cached item could not be found. Refresh the catalogue and try again.')
+        xbmcplugin.setResolvedUrl(HANDLE, False, xbmcgui.ListItem())
+        return
+    media_url = item.get('media_url') or ''
     if not media_url:
         xbmcplugin.setResolvedUrl(HANDLE, False, xbmcgui.ListItem())
         return
     list_item = xbmcgui.ListItem(label=item.get('display_title') or item.get('title') or '', path=media_url, offscreen=True)
     _set_common_video_metadata(list_item, item)
     list_item.setProperty('IsPlayable', 'true')
-    # Deliberately pass the provider's original URL to Kodi. Kodi follows redirects and handles HLS/MP4 playback.
     xbmcplugin.setResolvedUrl(HANDLE, True, list_item)
 
 
@@ -287,12 +383,14 @@ def run():
         show_movies()
     elif action == 'tvshows':
         show_tvshows()
+    elif action == 'seasons':
+        show_seasons(params.get('show_key', ''))
     elif action == 'episodes':
-        show_episodes(params.get('show_key', ''))
+        show_episodes(params.get('show_key', ''), params.get('season'))
     elif action == 'search':
-        search()
-    elif action == 'play':
-        play(params)
+        search(params.get('scope', 'movies'))
+    elif action == 'play_ref':
+        play_ref(params)
     elif action == 'refresh_movies':
         refresh_movies()
         xbmc.executebuiltin('Container.Update({})'.format(BASE_URL))

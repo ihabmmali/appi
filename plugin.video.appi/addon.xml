@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <addon id="plugin.video.appi"
        name="Appi"
-       version="0.3.0"
+       version="0.4.0"
        provider-name="Eyecon">
   <requires>
     <import addon="xbmc.python" version="3.0.1"/>
@@ -15,6 +15,6 @@
     <platform>all</platform>
     <license>GPL-3.0-or-later</license>
     <source>https://github.com/ihabmmali/appi</source>
-    <news>0.3.0 - Clean rebuild with persistent catalogue caching, manual refresh controls, search, Kodi video metadata, and current repository packaging.</news>
+    <news>0.4.0 - Faster batched directory loading, compact playback references, Kodi sort methods, direct ZIP installation from the Pages source, and TV Show &gt; Season &gt; Episode navigation.</news>
   </extension>
 </addon>
