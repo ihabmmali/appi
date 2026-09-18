@@ -1,4 +1,3 @@
-import hashlib
 import json
 import os
 import re
@@ -17,6 +16,7 @@ import xbmcgui
 import xbmcvfs
 
 from . import metadata
+from . import tsmux
 from .catalog import item_ref
 from .http import _headers, fetch_text, probe_stream
 
@@ -28,6 +28,14 @@ CHUNK_SIZE = 256 * 1024
 
 class PlaybackStarted(Exception):
     """Yield an active download so playback keeps priority on low-end devices."""
+
+
+class DownloadPaused(Exception):
+    pass
+
+
+class DownloadCancelled(Exception):
+    pass
 
 
 def _ensure_directory(path):
@@ -58,6 +66,9 @@ def _connect():
         'payload TEXT NOT NULL, target_path TEXT NOT NULL DEFAULT "", '
         'progress REAL NOT NULL DEFAULT 0, error TEXT NOT NULL DEFAULT "")'
     )
+    columns = {row[1] for row in connection.execute('PRAGMA table_info(downloads)')}
+    if 'command' not in columns:
+        connection.execute('ALTER TABLE downloads ADD COLUMN command TEXT NOT NULL DEFAULT ""')
     return connection
 
 
@@ -84,15 +95,22 @@ def queue_item(catalog, item, show_key=''):
             if existing and existing[0] in {'queued', 'downloading'}:
                 return False
             if existing and existing[0] == 'complete' and existing[1] and os.path.exists(existing[1]):
-                return False
+                # 0.7.4 briefly represented separate-rendition HLS as a STRM
+                # plus loose segments. It is not the promised single-file
+                # download, so allow it to be replaced by the stream-copy muxer.
+                if existing[1].endswith('.strm') and os.path.isdir(existing[1][:-5] + '.hls'):
+                    os.remove(existing[1])
+                    shutil.rmtree(existing[1][:-5] + '.hls', ignore_errors=True)
+                else:
+                    return False
             connection.execute(
                 'INSERT OR REPLACE INTO downloads('
                 'download_id,status,queued_at,updated_at,catalog,show_key,payload,'
-                'target_path,progress,error) VALUES(?,?,?,?,?,?,?,?,?,?)',
+                'target_path,progress,error,command) VALUES(?,?,?,?,?,?,?,?,?,?,?)',
                 (
                     identifier, 'queued', now, now, catalog, show_key or '',
                     json.dumps(item, ensure_ascii=False, separators=(',', ':')),
-                    '', 0.0, '',
+                    '', 0.0, '', '',
                 ),
             )
         return True
@@ -112,7 +130,7 @@ def _claim_next():
             if not row:
                 return None
             connection.execute(
-                'UPDATE downloads SET status="downloading",updated_at=?,error="" '
+                'UPDATE downloads SET status="downloading",updated_at=?,error="",command="" '
                 'WHERE download_id=?',
                 (int(time.time() * 1000), row[0]),
             )
@@ -131,34 +149,50 @@ def _claim_next():
         return None
 
 
-def _progress(identifier, value, target_path=''):
+def _progress(identifier, value, target_path=None):
     try:
         with _connect() as connection:
-            connection.execute(
-                'UPDATE downloads SET progress=?,target_path=?,updated_at=? WHERE download_id=?',
-                (max(0.0, min(1.0, float(value))), target_path, int(time.time() * 1000), identifier),
-            )
+            progress = max(0.0, min(1.0, float(value)))
+            now = int(time.time() * 1000)
+            if target_path is None:
+                connection.execute(
+                    'UPDATE downloads SET progress=?,updated_at=? WHERE download_id=?',
+                    (progress, now, identifier),
+                )
+            else:
+                connection.execute(
+                    'UPDATE downloads SET progress=?,target_path=?,updated_at=? WHERE download_id=?',
+                    (progress, target_path, now, identifier),
+                )
     except sqlite3.Error:
         pass
 
 
-def _finish(identifier, status, target_path='', error=''):
+def _finish(identifier, status, target_path=None, error=''):
     try:
         with _connect() as connection:
-            connection.execute(
-                'UPDATE downloads SET status=?,target_path=?,progress=?,error=?,updated_at=? '
-                'WHERE download_id=?',
-                (
-                    status, target_path, 1.0 if status == 'complete' else 0.0,
-                    str(error or ''), int(time.time() * 1000), identifier,
-                ),
-            )
+            now = int(time.time() * 1000)
+            if target_path is None:
+                connection.execute(
+                    'UPDATE downloads SET status=?,error=?,command="",updated_at=? '
+                    'WHERE download_id=?',
+                    (status, str(error or ''), now, identifier),
+                )
+            else:
+                connection.execute(
+                    'UPDATE downloads SET status=?,target_path=?,progress=?,error=?,command="",updated_at=? '
+                    'WHERE download_id=?',
+                    (
+                        status, target_path, 1.0 if status == 'complete' else 0.0,
+                        str(error or ''), now, identifier,
+                    ),
+                )
     except sqlite3.Error:
         pass
 
 
 def status():
-    result = {'queued': 0, 'downloading': 0, 'complete': 0, 'error': 0}
+    result = {'queued': 0, 'downloading': 0, 'paused': 0, 'complete': 0, 'error': 0}
     try:
         with _connect() as connection:
             for name, count in connection.execute(
@@ -167,6 +201,114 @@ def status():
     except sqlite3.Error:
         pass
     return result
+
+
+def entries():
+    result = []
+    try:
+        with _connect() as connection:
+            rows = connection.execute(
+                'SELECT download_id,status,catalog,payload,target_path,progress,error '
+                'FROM downloads ORDER BY updated_at DESC'
+            ).fetchall()
+        for row in rows:
+            try:
+                item = json.loads(row[3])
+            except (TypeError, ValueError):
+                item = {}
+            result.append({
+                'download_id': row[0], 'status': row[1], 'catalog': row[2],
+                'item': item if isinstance(item, dict) else {}, 'target_path': row[4],
+                'progress': float(row[5] or 0), 'error': row[6] or '',
+            })
+    except sqlite3.Error:
+        pass
+    return result
+
+
+def _base_from_target(path):
+    for suffix in ('.strm', '.mp4', '.ts', '.mkv', '.part'):
+        if path.endswith(suffix):
+            return path[:-len(suffix)]
+    return path
+
+
+def _remove_job_files(target_path):
+    if not target_path:
+        return
+    base = _base_from_target(target_path)
+    for suffix in (
+        '.strm', '.mp4', '.ts', '.mkv', '.nfo', '.part',
+        '.mp4.part', '.ts.part', '.part.json',
+    ):
+        try:
+            os.remove(base + suffix)
+        except FileNotFoundError:
+            pass
+    for suffix in ('.hls', '.hls.part', '.mux.part'):
+        shutil.rmtree(base + suffix, ignore_errors=True)
+
+
+def control(identifier, action):
+    if action not in {'pause', 'resume', 'cancel', 'delete'}:
+        return False
+    try:
+        with _connect() as connection:
+            row = connection.execute(
+                'SELECT status,target_path FROM downloads WHERE download_id=?', (identifier,)
+            ).fetchone()
+            if not row:
+                return False
+            status_name, target_path = row
+            now = int(time.time() * 1000)
+            if action == 'pause':
+                if status_name == 'queued':
+                    connection.execute(
+                        'UPDATE downloads SET status="paused",command="",updated_at=? '
+                        'WHERE download_id=?', (now, identifier),
+                    )
+                elif status_name == 'downloading':
+                    connection.execute(
+                        'UPDATE downloads SET command="pause",updated_at=? WHERE download_id=?',
+                        (now, identifier),
+                    )
+                else:
+                    return False
+            elif action == 'resume':
+                if status_name not in {'paused', 'error'}:
+                    return False
+                connection.execute(
+                    'UPDATE downloads SET status="queued",command="",error="",queued_at=?,updated_at=? '
+                    'WHERE download_id=?', (now, now, identifier),
+                )
+            elif status_name == 'downloading':
+                connection.execute(
+                    'UPDATE downloads SET command="cancel",updated_at=? WHERE download_id=?',
+                    (now, identifier),
+                )
+            else:
+                _remove_job_files(target_path or '')
+                connection.execute('DELETE FROM downloads WHERE download_id=?', (identifier,))
+        return True
+    except (sqlite3.Error, OSError):
+        return False
+
+
+def _check_control(identifier):
+    if not identifier:
+        return
+    try:
+        with _connect() as connection:
+            row = connection.execute(
+                'SELECT command FROM downloads WHERE download_id=?', (identifier,)
+            ).fetchone()
+    except sqlite3.Error:
+        return
+    command = row[0] if row else 'cancel'
+    if command == 'pause':
+        raise DownloadPaused()
+    if command == 'cancel':
+        raise DownloadCancelled()
 
 
 def retry_errors():
@@ -234,6 +376,7 @@ def _download_direct(url, target, identifier, stop_event, playing_callback=lambd
         last_update = 0.0
         with open(part, mode) as handle:
             while not stop_event.is_set():
+                _check_control(identifier)
                 if playing_callback():
                     raise PlaybackStarted('Video playback started')
                 chunk = response.read(CHUNK_SIZE)
@@ -288,12 +431,9 @@ def _hls_selection(url, text):
         return {
             'video_url': url, 'video_text': text, 'variant': {}, 'audio': None,
         }
-    try:
-        maximum = max(250, int(ADDON.getSetting('hls_max_bitrate_kbps') or 8000)) * 1000
-    except (TypeError, ValueError):
-        maximum = 8000000
-    within = [entry for entry in variants if entry[0] and entry[0] <= maximum]
-    selected = max(within or variants, key=lambda entry: entry[0])
+    # Offline downloads are archival copies, so choose the highest advertised
+    # rendition. Playback-only bitrate caps remain playback-only.
+    selected = max(variants, key=lambda entry: entry[0])
     selected_text = fetch_text(selected[1], timeout=30)
     audio = None
     group_id = selected[2].get('AUDIO') or ''
@@ -330,18 +470,6 @@ def _local_extension(url, fallback):
     if not extension or len(extension) > 8 or not re.match(r'^\.[a-z0-9]+$', extension):
         return fallback
     return extension
-
-
-def _format_hls_attributes(attributes):
-    bare = {'BANDWIDTH', 'AVERAGE-BANDWIDTH', 'RESOLUTION', 'FRAME-RATE'}
-    values = []
-    for key, value in attributes.items():
-        value = str(value)
-        if key in bare or value.upper() in {'YES', 'NO'}:
-            values.append('{}={}'.format(key, value))
-        else:
-            values.append('{}="{}"'.format(key, value.replace('"', '')))
-    return ','.join(values)
 
 
 def _offline_playlist_plan(url, text, track_name):
@@ -409,7 +537,8 @@ def _download_offline_track(
             part = target + '.part'
             try:
                 _download_resource(
-                    resource_url, byte_range, part, stop_event, playing_callback
+                    resource_url, byte_range, part, stop_event, playing_callback,
+                    identifier
                 )
                 os.replace(part, target)
             except Exception:
@@ -425,36 +554,24 @@ def _download_offline_track(
     return completed
 
 
-def _download_hls_bundle(
+def _download_separate_ts(
         selected, target_base, identifier, stop_event,
         playing_callback=lambda: False):
     audio = selected.get('audio')
     if not audio:
-        raise RuntimeError('Offline HLS bundle requires a separate audio rendition')
+        raise RuntimeError('Separate HLS audio rendition is missing')
     video_lines, video_resources = _offline_playlist_plan(
         selected['video_url'], selected['video_text'], 'video'
     )
     audio_lines, audio_resources = _offline_playlist_plan(
         audio['url'], audio['text'], 'audio'
     )
-    identity = hashlib.sha256((
-        selected['video_url'] + '\n' + selected['video_text'] + '\n' +
-        audio['url'] + '\n' + audio['text']
-    ).encode('utf-8')).hexdigest()
-    part_dir = target_base + '.hls.part'
-    final_dir = target_base + '.hls'
-    identity_path = os.path.join(part_dir, '.identity')
-    existing_identity = ''
-    try:
-        with open(identity_path, 'r', encoding='ascii') as handle:
-            existing_identity = handle.read().strip()
-    except OSError:
-        pass
-    if existing_identity != identity:
-        shutil.rmtree(part_dir, ignore_errors=True)
+    if any(not name.lower().endswith('.ts') for _url, _range, name in video_resources + audio_resources):
+        raise RuntimeError(
+            'Separate-rendition fragmented MP4 requires a native remuxer; this build can stream-copy MPEG-TS HLS'
+        )
+    part_dir = target_base + '.mux.part'
     _ensure_directory(part_dir)
-    with open(identity_path, 'w', encoding='ascii') as handle:
-        handle.write(identity + '\n')
     total = len(video_resources) + len(audio_resources)
     completed = _download_offline_track(
         os.path.join(part_dir, 'video'), video_lines, video_resources,
@@ -464,24 +581,22 @@ def _download_hls_bundle(
         os.path.join(part_dir, 'audio'), audio_lines, audio_resources,
         identifier, completed, total, stop_event, playing_callback,
     )
-    audio_attrs = dict(audio.get('attrs') or {})
-    audio_attrs.update({'TYPE': 'AUDIO', 'GROUP-ID': 'offline-audio', 'URI': 'audio/playlist.m3u8'})
-    variant_attrs = dict(selected.get('variant') or {})
-    variant_attrs['AUDIO'] = 'offline-audio'
-    master = [
-        '#EXTM3U',
-        '#EXT-X-MEDIA:' + _format_hls_attributes(audio_attrs),
-        '#EXT-X-STREAM-INF:' + _format_hls_attributes(variant_attrs),
-        'video/playlist.m3u8',
-    ]
-    with open(os.path.join(part_dir, 'master.m3u8'), 'w', encoding='utf-8') as handle:
-        handle.write('\n'.join(master) + '\n')
-    shutil.rmtree(final_dir, ignore_errors=True)
-    os.replace(part_dir, final_dir)
-    target = target_base + '.strm'
-    with open(target + '.part', 'w', encoding='utf-8') as handle:
-        handle.write(os.path.join(final_dir, 'master.m3u8') + '\n')
-    os.replace(target + '.part', target)
+    video_paths = [os.path.join(part_dir, 'video', name) for _url, _range, name in video_resources]
+    audio_paths = [os.path.join(part_dir, 'audio', name) for _url, _range, name in audio_resources]
+    target = target_base + '.ts'
+    mux_part = target + '.part'
+    try:
+        _check_control(identifier)
+        tsmux.mux_segments(video_paths, audio_paths, mux_part)
+        _check_control(identifier)
+        os.replace(mux_part, target)
+        shutil.rmtree(part_dir, ignore_errors=True)
+    except Exception:
+        try:
+            os.remove(mux_part)
+        except FileNotFoundError:
+            pass
+        raise
     return target
 
 
@@ -540,12 +655,14 @@ def _parse_hls(url, text):
 
 
 def _download_resource(
-        url, byte_range, path, stop_event, playing_callback=lambda: False):
+        url, byte_range, path, stop_event, playing_callback=lambda: False,
+        identifier=''):
     headers = _headers()
     if byte_range:
         headers['Range'] = 'bytes={}-{}'.format(byte_range[0], byte_range[1])
     with urlopen(Request(url, headers=headers), timeout=30) as response, open(path, 'wb') as handle:
         while not stop_event.is_set():
+            _check_control(identifier)
             if playing_callback():
                 raise PlaybackStarted('Video playback started')
             chunk = response.read(CHUNK_SIZE)
@@ -561,7 +678,7 @@ def _download_hls(
         playing_callback=lambda: False):
     selected = _hls_selection(url, text)
     if selected.get('audio'):
-        return _download_hls_bundle(
+        return _download_separate_ts(
             selected, target_base, identifier, stop_event, playing_callback
         )
     media_url, media_text = selected['video_url'], selected['video_text']
@@ -585,7 +702,8 @@ def _download_hls(
     if init_segment and not state.get('init_done'):
         segment_temp = part + '.segment'
         _download_resource(
-            init_segment[0], init_segment[1], segment_temp, stop_event, playing_callback
+            init_segment[0], init_segment[1], segment_temp, stop_event,
+            playing_callback, identifier
         )
         with open(part, 'ab') as output, open(segment_temp, 'rb') as source:
             shutil.copyfileobj(source, output, CHUNK_SIZE)
@@ -595,7 +713,7 @@ def _download_hls(
         segment_temp = part + '.segment'
         _download_resource(
             segments[index][0], segments[index][1], segment_temp,
-            stop_event, playing_callback,
+            stop_event, playing_callback, identifier,
         )
         with open(part, 'ab') as output, open(segment_temp, 'rb') as source:
             shutil.copyfileobj(source, output, CHUNK_SIZE)
@@ -680,29 +798,12 @@ def _scan(path):
         pass
 
 
-def _cleanup_orphaned_hls():
-    root = download_root()
-    for current, directories, _files in os.walk(root):
-        for name in list(directories):
-            if not name.endswith('.hls'):
-                continue
-            package = os.path.join(current, name)
-            base = package[:-4]
-            if not os.path.exists(base + '.strm'):
-                shutil.rmtree(package, ignore_errors=True)
-                for suffix in ('.nfo', '-poster.jpg', '-fanart.jpg'):
-                    try:
-                        os.remove(base + suffix)
-                    except FileNotFoundError:
-                        pass
-            directories.remove(name)
-
-
 def _download(job, stop_event, playing_callback=lambda: False):
     item = job['item']
     payload = metadata.lookup_payload(item)
     enriched = metadata.get(payload) or {}
     base = _base_destination(job, enriched)
+    _progress(job['download_id'], 0.0, base)
     stream = probe_stream(item['media_url'], timeout=20)
     kind = stream.get('kind')
     final_url = stream.get('final_url') or item['media_url']
@@ -725,14 +826,7 @@ def _download(job, stop_event, playing_callback=lambda: False):
 
 
 def worker(stop_event, playing_callback):
-    next_cleanup = 0.0
     while not stop_event.wait(1.0):
-        if time.monotonic() >= next_cleanup:
-            try:
-                _cleanup_orphaned_hls()
-            except (OSError, RuntimeError) as exc:
-                xbmc.log('Appi offline HLS cleanup failed: {}'.format(exc), xbmc.LOGWARNING)
-            next_cleanup = time.monotonic() + 300.0
         if playing_callback():
             continue
         job = _claim_next()
@@ -740,6 +834,24 @@ def worker(stop_event, playing_callback):
             continue
         try:
             _download(job, stop_event, playing_callback)
+        except DownloadPaused:
+            _finish(job['download_id'], 'paused')
+            continue
+        except DownloadCancelled:
+            try:
+                with _connect() as connection:
+                    row = connection.execute(
+                        'SELECT target_path FROM downloads WHERE download_id=?',
+                        (job['download_id'],),
+                    ).fetchone()
+                    _remove_job_files(row[0] if row else '')
+                    connection.execute(
+                        'DELETE FROM downloads WHERE download_id=?',
+                        (job['download_id'],),
+                    )
+            except (sqlite3.Error, OSError):
+                pass
+            continue
         except PlaybackStarted:
             _finish(job['download_id'], 'queued')
             continue

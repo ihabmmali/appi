@@ -80,7 +80,7 @@ xp.SORT_METHOD_TITLE_IGNORE_THE=1; xp.SORT_METHOD_YEAR=2; xp.SORT_METHOD_EPISODE
 xp.addDirectoryItems=lambda h,items,totalItems=0: state['items'].extend(items) or True
 xp.setContent=lambda h,c: state['content'].append(c)
 xp.addSortMethod=lambda h,m,*args: state['sort'].append(m)
-xp.endOfDirectory=lambda *a,**k: state['ended'].append(True) or True
+xp.endOfDirectory=lambda *a,**k: state['ended'].append((a,k)) or True
 xp.setResolvedUrl=lambda *a,**k: True
 sys.modules['xbmcplugin']=xp
 from resources.lib import app, metadata, playback_prefs
@@ -103,6 +103,13 @@ assert root_labels[:5] == [
 assert root_labels == root_labels[:5] + ['Settings'], root_labels
 assert not any(label.startswith('Refresh ') for label in root_labels), root_labels
 assert not any(label.startswith('Search Movies') for label in [row[1].label for row in state['items']])
+root_context={row[1].label:[entry[0] for entry in row[1].context] for row in state['items']}
+assert 'Fetch metadata for everything in this folder' in root_context['Movies']
+assert 'Fetch metadata for everything in this folder' in root_context['TV Shows']
+assert 'Fetch metadata for all Recently Played Movies' in root_context['Recently Played Movies']
+assert 'Fetch metadata for all Recently Played TV Shows' in root_context['Recently Played TV Shows']
+assert state['ended'], 'root directory did not finish'
+assert state['ended'][-1][1].get('cacheToDisc') is False, state['ended'][-1]
 state['items'].clear()
 
 app.show_movies()

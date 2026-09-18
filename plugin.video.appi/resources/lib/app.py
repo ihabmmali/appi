@@ -763,7 +763,10 @@ def show_root():
         _folder_tuple('Settings', _url('settings')),
     ]
     _send_items(entries)
-    _finish()
+    # Root context menus are release functionality, not static catalogue data.
+    # Do not let Kodi reuse an older cached ListItem that lacks a newly added
+    # folder action after an add-on upgrade.
+    _finish(cache_to_disc=False)
 
 
 def _show_browse_root(scope):
@@ -1405,14 +1408,71 @@ def queue_download(params):
 def show_download_status():
     from . import downloads
     value = downloads.status()
-    xbmcgui.Dialog().ok(
-        'Appi downloads',
-        'Download folder:\n{}\n\nQueued: {}\nDownloading: {}\nCompleted: {}\nFailed: {}'.format(
-            downloads.download_root(), value.get('queued', 0),
-            value.get('downloading', 0), value.get('complete', 0),
-            value.get('error', 0),
-        ),
+    entries = downloads.entries()
+    if not entries:
+        xbmcgui.Dialog().ok(
+            'Appi downloads',
+            'No downloads.\n\nDownload folder:\n{}'.format(downloads.download_root()),
+        )
+        return
+    status_names = {
+        'queued': 'Queued', 'downloading': 'Downloading', 'paused': 'Stopped',
+        'complete': 'Complete', 'error': 'Failed',
+    }
+    labels = []
+    for entry in entries:
+        item = entry.get('item') or {}
+        title = (
+            item.get('title') or item.get('show_title') or
+            item.get('display_title') or 'Download'
+        )
+        if item.get('season') is not None and item.get('episode') is not None:
+            title = '{} S{:02d}E{:02d}'.format(
+                item.get('show_title') or title,
+                int(item.get('season') or 0), int(item.get('episode') or 0),
+            )
+        state = status_names.get(entry.get('status'), entry.get('status', 'Unknown'))
+        progress = int(round(float(entry.get('progress') or 0) * 100))
+        suffix = ' - {}%'.format(progress) if entry.get('status') in {'downloading', 'paused'} else ''
+        labels.append('[{}{}] {}'.format(state, suffix, title))
+    heading = 'Appi downloads — {} active, {} stopped, {} complete'.format(
+        value.get('downloading', 0) + value.get('queued', 0),
+        value.get('paused', 0), value.get('complete', 0),
     )
+    selected = xbmcgui.Dialog().select(heading, labels)
+    if selected < 0:
+        return
+    entry = entries[selected]
+    status_name = entry.get('status')
+    if status_name in {'queued', 'downloading'}:
+        actions = [('Stop and keep partial download', 'pause'),
+                   ('Cancel and delete partial download', 'cancel')]
+    elif status_name == 'paused':
+        actions = [('Resume download', 'resume'),
+                   ('Cancel and delete partial download', 'cancel')]
+    elif status_name == 'error':
+        actions = [('Retry download', 'resume'),
+                   ('Delete record and partial download', 'delete')]
+    else:
+        actions = [('Delete downloaded file', 'delete')]
+    if entry.get('error'):
+        actions.append(('Show failure details', 'details'))
+    chosen = xbmcgui.Dialog().select('Download action', [label for label, _action in actions])
+    if chosen < 0:
+        return
+    label, action = actions[chosen]
+    if action == 'details':
+        xbmcgui.Dialog().ok('Download failure', entry.get('error') or 'No details available')
+        return
+    if action in {'cancel', 'delete'} and not xbmcgui.Dialog().yesno('Appi downloads', label + '?'):
+        return
+    if downloads.control(entry['download_id'], action):
+        _notify({
+            'pause': 'Download stopped', 'resume': 'Download queued to resume',
+            'cancel': 'Download cancelled', 'delete': 'Download deleted',
+        }[action])
+    else:
+        _notify('Download state changed; reopen Manage Downloads', error=True)
 
 
 def retry_downloads():

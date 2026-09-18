@@ -49,7 +49,7 @@ two.ts
 """
 init, segments=downloads._parse_hls('https://x/path/list.m3u8',playlist)
 assert init is None and [value[0] for value in segments]==['https://x/path/one.ts','https://x/path/two.ts']
-def fake_resource(url, byte_range, path, stop_event, playing_callback=lambda:False):
+def fake_resource(url, byte_range, path, stop_event, playing_callback=lambda:False, identifier=''):
     with open(path,'wb') as handle: handle.write(b'one' if url.endswith('one.ts') else b'two')
 downloads._download_resource=fake_resource
 target=downloads._download_hls('https://x/path/list.m3u8',playlist,base,'movies|m:tt1',threading.Event())
@@ -73,7 +73,9 @@ class Response:
 downloads.urlopen=lambda *a,**k:Response()
 paused=os.path.join(profile,'paused.mp4')
 try:
-    downloads._download_direct('https://x/direct',paused,'pause',threading.Event(),lambda:True)
+    downloads._download_direct(
+        'https://x/direct', paused, 'movies|m:tt1', threading.Event(), lambda:True
+    )
     raise AssertionError('active download should yield to playback')
 except downloads.PlaybackStarted:
     pass
@@ -91,13 +93,13 @@ video.m3u8
 video="""#EXTM3U
 #EXT-X-TARGETDURATION:4
 #EXTINF:4,
-video-1.m4s
+video-1.ts
 #EXT-X-ENDLIST
 """
 audio="""#EXTM3U
 #EXT-X-TARGETDURATION:4
 #EXTINF:4,
-audio-1.m4s
+audio-1.ts
 #EXT-X-ENDLIST
 """
 downloads.fetch_text=lambda url,timeout=30: {
@@ -105,20 +107,25 @@ downloads.fetch_text=lambda url,timeout=30: {
     'https://x/audio.m3u8':audio,
 }[url]
 bundle_base=os.path.join(settings['download_folder'],'separate-audio')
+def fake_mux(video_paths,audio_paths,target):
+    assert len(video_paths)==len(audio_paths)==1
+    with open(target,'wb') as handle: handle.write(b'muxed-ts')
+    return target
+downloads.tsmux.mux_segments=fake_mux
 bundle=downloads._download_hls(
-    'https://x/master.m3u8',master,bundle_base,'separate',threading.Event()
+    'https://x/master.m3u8',master,bundle_base,'movies|m:tt1',threading.Event()
 )
-assert bundle.endswith('.strm') and os.path.exists(bundle)
-local_master=open(bundle,encoding='utf-8').read().strip()
-assert os.path.exists(local_master)
-master_text=open(local_master,encoding='utf-8').read()
-assert 'AUDIO="offline-audio"' in master_text
-assert 'audio/playlist.m3u8' in master_text and 'video/playlist.m3u8' in master_text
-assert os.path.exists(os.path.join(bundle_base+'.hls','video','video-00000.m4s'))
-assert os.path.exists(os.path.join(bundle_base+'.hls','audio','audio-00000.m4s'))
-os.remove(bundle)
-downloads._cleanup_orphaned_hls()
-assert not os.path.exists(bundle_base+'.hls')
+assert bundle.endswith('.ts') and open(bundle,'rb').read()==b'muxed-ts'
+assert not os.path.exists(bundle_base+'.mux.part')
+control_movie={'kind':'movie','title':'Control Movie','year':2024,'tvg_id':'tt-control','media_url':'https://x/control'}
+assert downloads.queue_item('movies',control_movie)
+control_id='movies|m:tt-control'
+assert downloads.control(control_id,'pause')
+assert next(value for value in downloads.entries() if value['download_id']==control_id)['status']=='paused'
+assert downloads.control(control_id,'resume')
+assert next(value for value in downloads.entries() if value['download_id']==control_id)['status']=='queued'
+assert downloads.control(control_id,'cancel')
+assert not any(value['download_id']==control_id for value in downloads.entries())
 '''
         result = subprocess.run(
             [sys.executable, '-c', textwrap.dedent(code), str(PLUGIN)],

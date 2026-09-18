@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <addon id="plugin.video.appi"
        name="Appi"
-       version="0.7.4"
+       version="0.7.5"
        provider-name="Eyecon">
   <requires>
     <import addon="xbmc.python" version="3.0.1"/>
@@ -18,6 +18,6 @@
     <platform>all</platform>
     <license>GPL-3.0-or-later</license>
     <source>https://github.com/ihabmmali/appi</source>
-    <news>0.7.4 - Expose recent-list metadata batches inside both folders and support offline HLS downloads with separate audio renditions.</news>
+    <news>0.7.5 - Restore both Recently Played batch-metadata actions, stream-copy separate MPEG-TS HLS video/audio into one playable file, and add individual stop, resume, cancel and delete controls.</news>
   </extension>
 </addon>

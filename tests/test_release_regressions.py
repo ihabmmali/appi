@@ -12,7 +12,7 @@ STRINGS = PLUGIN / 'resources' / 'language' / 'resource.language.en_gb' / 'strin
 class SettingsLocalizationTests(unittest.TestCase):
     def test_stable_browser_and_download_batch_features_are_packaged(self):
         addon = ET.parse(PLUGIN / 'addon.xml').getroot()
-        self.assertEqual(addon.attrib.get('version'), '0.7.4')
+        self.assertEqual(addon.attrib.get('version'), '0.7.5')
         helper = addon.find("./requires/import[@addon='plugin.video.themoviedb.helper']")
         self.assertIsNotNone(helper)
         self.assertNotEqual(helper.attrib.get('optional'), 'true')
@@ -31,7 +31,11 @@ class SettingsLocalizationTests(unittest.TestCase):
         self.assertIn('def show_payload', metadata)
         self.assertIn("'episode_title', 'plot', 'imdb_rating', 'imdb_votes'", metadata)
         downloads = (PLUGIN / 'resources' / 'lib' / 'downloads.py').read_text(encoding='utf-8')
-        self.assertIn('def _download_hls_bundle', downloads)
+        self.assertIn('def _download_separate_ts', downloads)
+        self.assertIn('tsmux.mux_segments', downloads)
+        self.assertNotIn('def _download_hls_bundle', downloads)
+        self.assertIn('def control(identifier, action)', downloads)
+        self.assertTrue((PLUGIN / 'resources' / 'lib' / 'tsmux.py').is_file())
 
     def test_po_has_one_entry_per_blank_line_block(self):
         text = STRINGS.read_text(encoding='utf-8')

@@ -6,6 +6,13 @@ Appi is a Kodi video add-on for user-configured movie and TV-show M3U catalogues
 
 Add `https://ihabmmali.github.io/appi/` in Kodi File Manager, then install the current `plugin.video.appi-<version>.zip`.
 
+## 0.7.5
+
+- Keep both **Fetch metadata for all Recently Played...** actions on their home-screen folders and prevent Kodi from reusing stale cached root-menu items after an upgrade.
+- Select the highest advertised HLS video rendition for downloads and stream-copy separate MPEG-TS video/audio renditions into one playable `.ts` file without re-encoding.
+- Add **Manage Downloads** with individual stop-and-keep-partial, resume, cancel-and-delete-partial, retry, and delete-completed-file controls.
+- Keep 0.7.4 and the earlier stable packages available as fallbacks.
+
 ## 0.7.4
 
 - Expose **Fetch metadata for all Recently Played...** from within both recent-media lists as well as on their home-screen folders.
