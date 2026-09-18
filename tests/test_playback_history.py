@@ -41,6 +41,10 @@ assert len(recent)==1 and recent[0]['ref']=='e:tt2:1:2'
 playback_history.finish_session(True)
 assert playback_history.get_entry('tv','e:tt2:1:2')['completed'] is True
 assert playback_history.resume_point('tv','e:tt2:1:2') is None
+assert playback_history.remove('movies','m:tt1') is True
+assert playback_history.recent_movies()==[]
+assert playback_history.remove_show(show_key) is True
+assert playback_history.recent_shows()==[]
 '''
         result = subprocess.run(
             [sys.executable, '-c', textwrap.dedent(code), str(PLUGIN)],

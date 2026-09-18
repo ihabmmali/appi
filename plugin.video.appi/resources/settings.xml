@@ -124,6 +124,11 @@
           <data>RunPlugin(plugin://$ID/?action=metadata_status)</data>
           <control type="button" format="action"><close>false</close></control>
         </setting>
+        <setting id="clear_metadata_queue" type="action" label="32618" help="32619">
+          <level>0</level>
+          <data>RunPlugin(plugin://$ID/?action=clear_metadata_queue)</data>
+          <control type="button" format="action"><close>false</close></control>
+        </setting>
         <setting id="clear_metadata_cache" type="action" label="32616" help="32617">
           <level>0</level>
           <data>RunPlugin(plugin://$ID/?action=clear_data&amp;scope=metadata)</data>

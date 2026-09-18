@@ -11,7 +11,8 @@ import zipfile
 ROOT = Path(__file__).resolve().parents[1]
 ADDON_DIRS = [ROOT / 'plugin.video.appi', ROOT / 'repository.appi']
 FALLBACK_PLUGIN_VERSIONS = {
-    '0.7.0': 'previous release',
+    '0.7.2': 'previous release',
+    '0.7.0': 'stable fallback',
     '0.6.3': 'known-good fallback',
 }
 ARCHIVED_PLUGIN_VERSIONS = {'0.8.0', '0.7.1'}

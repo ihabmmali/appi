@@ -403,6 +403,27 @@ def clear_all():
             pass
 
 
+def clear_queue():
+    try:
+        with _connect() as connection:
+            queued = connection.execute('SELECT COUNT(*) FROM queue').fetchone()[0]
+            connection.execute('DELETE FROM queue')
+        return int(queued or 0)
+    except sqlite3.Error as exc:
+        xbmc.log('Appi metadata queue clear failed: {}'.format(exc), xbmc.LOGWARNING)
+        return 0
+
+
+def _disk_usage():
+    total = 0
+    for suffix in ('', '-wal', '-shm'):
+        try:
+            total += os.path.getsize(_db_path() + suffix)
+        except OSError:
+            pass
+    return total
+
+
 def status():
     try:
         with _connect() as connection:
@@ -410,6 +431,6 @@ def status():
             queued = connection.execute('SELECT COUNT(*) FROM queue').fetchone()[0]
     except sqlite3.Error:
         cached, queued = 0, 0
-    return {'cached': cached, 'queued': queued, 'helper': bool(
+    return {'cached': cached, 'queued': queued, 'bytes': _disk_usage(), 'helper': bool(
         xbmc.getCondVisibility('System.HasAddon({})'.format(HELPER_ID))
     )}

@@ -426,6 +426,16 @@ def _download_context(item, catalog_name, key=None):
     )
 
 
+def _remove_recent_context(catalog_name, item=None, show_key=None):
+    return (
+        'Remove from Recently Played',
+        _context_action(
+            'remove_recent', catalog=catalog_name,
+            ref=item_ref(item) if item else None, show_key=show_key,
+        ),
+    )
+
+
 def _metadata_batch_context(**params):
     return (
         'Fetch metadata for everything in this folder',
@@ -570,7 +580,7 @@ def _add_context(list_item, items):
 
 def _playable_tuple(
     item, catalog_name, key=None, resume=False, resume_points=None, label_suffix='',
-    metadata_cache=None,
+    metadata_cache=None, recent=False,
 ):
     payload = _metadata_payload(item)
     enriched = metadata.get(payload, metadata_cache)
@@ -591,13 +601,16 @@ def _playable_tuple(
         list_item, catalog_name, ref, force_start=False, resume_points=resume_points
     )
     target = 'movie' if catalog_name == 'movies' else 'episode'
-    _add_context(list_item, [
+    context = [
         ('Playback options...', _context_action(
             'configure_playback', target=target, catalog=catalog_name, ref=ref, show_key=key
         )),
         _download_context(item, catalog_name, key),
         _metadata_context(payload),
-    ])
+    ]
+    if recent:
+        context.append(_remove_recent_context(catalog_name, item=item))
+    _add_context(list_item, context)
     return (
         _url('play_ref', catalog=catalog_name, ref=ref, show_key=key, resume='1' if resume else None),
         list_item,
@@ -733,8 +746,14 @@ def show_root():
             ],
         ),
         _folder_tuple('Search', _url('search')),
-        _folder_tuple('Recently Played Movies', _url('recent_movies', page=1)),
-        _folder_tuple('Recently Played TV Shows', _url('recent_tvshows', page=1)),
+        _folder_tuple(
+            'Recently Played Movies', _url('recent_movies', page=1),
+            context_items=[_metadata_batch_context(scope='movies', mode='recent_played')],
+        ),
+        _folder_tuple(
+            'Recently Played TV Shows', _url('recent_tvshows', page=1),
+            context_items=[_metadata_batch_context(scope='tv', mode='recent_played')],
+        ),
         _folder_tuple('Settings', _url('settings')),
     ]
     _send_items(entries)
@@ -882,7 +901,7 @@ def show_recent_movies():
     tuples = [
         _playable_tuple(
             item, 'movies', resume=True, resume_points=resume_points,
-            metadata_cache=metadata_cache,
+            metadata_cache=metadata_cache, recent=True,
         )
         for item in entries
     ]
@@ -921,7 +940,8 @@ def show_recent_tvshows():
         context = [(
             'Playback options for this show...',
             _context_action('configure_playback', target='show', catalog='tv', show_key=summary['show_key']),
-        ), _metadata_context(payload), _metadata_batch_context(show_key=summary['show_key'])]
+        ), _metadata_context(payload), _metadata_batch_context(show_key=summary['show_key']),
+            _remove_recent_context('tv', show_key=summary['show_key'])]
         result = _folder_tuple(
             label, _url('recent_show', show_key=summary['show_key']), info, context
         )
@@ -972,7 +992,7 @@ def show_recent_show(key):
         )
         playable = _playable_tuple(
             continuation, 'tv', key, resume=force_resume,
-            metadata_cache=metadata_cache,
+            metadata_cache=metadata_cache, recent=True,
         )
         try:
             playable[1].setLabel(label)
@@ -1292,7 +1312,17 @@ def _metadata_batch_selection(params):
 
     scope = 'movies' if params.get('scope') == 'movies' else 'tv'
     mode = params.get('mode') or 'all'
-    if mode == 'recent':
+    if mode == 'recent_played':
+        if scope == 'movies':
+            items = _decorate_provider_order(playback_history.recent_movies(limit=100))
+        else:
+            summary_map = {show.get('show_key'): show for show in _load_tv_shows()}
+            items = [
+                summary_map[entry.get('show_key')]
+                for entry in playback_history.recent_shows(limit=100)
+                if entry.get('show_key') in summary_map
+            ]
+    elif mode == 'recent':
         items = _scope_items(scope, provider_order=True)[:RECENT_CATALOG_LIMIT]
     elif mode in {'alpha', 'year'} and params.get('value') is not None:
         items = _subset_for_index(scope, mode, params.get('value', '#'))
@@ -1379,13 +1409,41 @@ def retry_downloads():
 def show_metadata_status():
     status = metadata.status()
     helper = 'installed' if status['helper'] else 'not installed'
+    size = _format_bytes(status.get('bytes', 0))
     xbmcgui.Dialog().ok(
         'Appi metadata',
-        'TMDb Helper: {}\nCached titles: {}\nQueued lookups: {}\n\n'
+        'TMDb Helper: {}\nCached titles: {}\nQueued lookups: {}\nDisk usage: {}\n\n'
         'IMDb ratings require the OMDb ratings source to be configured in TMDb Helper.'.format(
-            helper, status['cached'], status['queued']
+            helper, status['cached'], status['queued'], size
         ),
     )
+
+
+def _format_bytes(value):
+    size = float(value or 0)
+    for unit in ('bytes', 'KB', 'MB', 'GB'):
+        if size < 1024 or unit == 'GB':
+            return '{} {}'.format(int(size) if unit == 'bytes' else '{:.1f}'.format(size), unit)
+        size /= 1024
+
+
+def clear_metadata_queue():
+    count = metadata.clear_queue()
+    _notify('Stopped and cleared {:,} queued metadata lookups'.format(count))
+
+
+def remove_recent(params):
+    catalog_name = params.get('catalog', '')
+    if catalog_name == 'movies':
+        removed = playback_history.remove('movies', params.get('ref', ''))
+    elif catalog_name == 'tv' and params.get('show_key') and not params.get('ref'):
+        removed = playback_history.remove_show(params['show_key'])
+    elif catalog_name == 'tv':
+        removed = playback_history.remove('tv', params.get('ref', ''))
+    else:
+        raise ValueError('Invalid recently played target')
+    _notify('Removed from Recently Played' if removed else 'Item was not in Recently Played')
+    xbmc.executebuiltin('Container.Refresh')
 
 
 def configure_playback(params):
@@ -1506,6 +1564,10 @@ def _run_action(params):
         retry_downloads()
     elif action == 'metadata_status':
         show_metadata_status()
+    elif action == 'clear_metadata_queue':
+        clear_metadata_queue()
+    elif action == 'remove_recent':
+        remove_recent(params)
     elif action == 'refresh_movies':
         refresh_movies()
         xbmc.executebuiltin('Container.Update({})'.format(BASE_URL))

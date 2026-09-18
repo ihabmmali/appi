@@ -114,7 +114,9 @@ batch=[
 assert metadata.queue_many(batch,pinned=True)==2
 with metadata._connect() as connection:
     assert connection.execute('SELECT COUNT(*) FROM queue WHERE pinned=1').fetchone()[0]==2
-    connection.execute('DELETE FROM queue')
+assert metadata.status()['bytes'] > 0
+assert metadata.clear_queue()==2
+assert metadata.status()['queued']==0
 with metadata._connect() as connection:
     for index in range(105):
         connection.execute(

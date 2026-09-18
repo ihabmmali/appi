@@ -12,7 +12,7 @@ STRINGS = PLUGIN / 'resources' / 'language' / 'resource.language.en_gb' / 'strin
 class SettingsLocalizationTests(unittest.TestCase):
     def test_stable_browser_and_download_batch_features_are_packaged(self):
         addon = ET.parse(PLUGIN / 'addon.xml').getroot()
-        self.assertEqual(addon.attrib.get('version'), '0.7.2')
+        self.assertEqual(addon.attrib.get('version'), '0.7.3')
         helper = addon.find("./requires/import[@addon='plugin.video.themoviedb.helper']")
         self.assertIsNotNone(helper)
         self.assertNotEqual(helper.attrib.get('optional'), 'true')
@@ -23,6 +23,8 @@ class SettingsLocalizationTests(unittest.TestCase):
         app = (PLUGIN / 'resources' / 'lib' / 'app.py').read_text(encoding='utf-8')
         self.assertIn("'download_ref'", app)
         self.assertIn("'fetch_metadata_batch'", app)
+        self.assertIn("'clear_metadata_queue'", app)
+        self.assertIn("'remove_recent'", app)
         metadata = (PLUGIN / 'resources' / 'lib' / 'metadata.py').read_text(encoding='utf-8')
         self.assertIn('def show_payload', metadata)
         self.assertIn("'episode_title', 'plot', 'imdb_rating', 'imdb_votes'", metadata)
@@ -74,7 +76,7 @@ class SettingsLocalizationTests(unittest.TestCase):
                 'refresh_movie_list', 'refresh_tv_list', 'refresh_all_lists',
                 'clear_movie_cache', 'clear_tv_cache', 'clear_catalog_caches',
                 'clear_saved_subtitles', 'clear_recent_media',
-                'metadata_status', 'clear_metadata_cache',
+                'metadata_status', 'clear_metadata_queue', 'clear_metadata_cache',
                 'download_status', 'retry_downloads',
             },
         )

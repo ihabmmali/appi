@@ -330,8 +330,8 @@ msgid "Metadata Status"
 msgstr "Metadata Status"
 
 msgctxt "#32615"
-msgid "Shows whether TMDb Helper is installed and how many metadata entries are cached or queued."
-msgstr "Shows whether TMDb Helper is installed and how many metadata entries are cached or queued."
+msgid "Shows whether TMDb Helper is installed, cached and queued entry counts, and metadata disk usage."
+msgstr "Shows whether TMDb Helper is installed, cached and queued entry counts, and metadata disk usage."
 
 msgctxt "#32616"
 msgid "Clear Metadata Cache"
@@ -340,6 +340,14 @@ msgstr "Clear Metadata Cache"
 msgctxt "#32617"
 msgid "Deletes cached plots, posters, cast, episode names and IMDb ratings."
 msgstr "Deletes cached plots, posters, cast, episode names and IMDb ratings."
+
+msgctxt "#32618"
+msgid "Stop and Clear Metadata Queue"
+msgstr "Stop and Clear Metadata Queue"
+
+msgctxt "#32619"
+msgid "Stops after any lookup already in progress and removes all pending metadata lookups. Cached metadata is kept."
+msgstr "Stops after any lookup already in progress and removes all pending metadata lookups. Cached metadata is kept."
 
 msgctxt "#32620"
 msgid "250 titles"

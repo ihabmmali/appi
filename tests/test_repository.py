@@ -52,6 +52,10 @@ class RepositoryTests(unittest.TestCase):
         plugin_name = f'{plugin_id}-{plugin_version}.zip'
         self.assertIn(f'href="{plugin_name}">{plugin_name}</a>', html)
         self.assertIn(
+            'href="plugin.video.appi-0.7.2.zip">plugin.video.appi-0.7.2.zip</a>',
+            html,
+        )
+        self.assertIn(
             'href="plugin.video.appi-0.7.0.zip">plugin.video.appi-0.7.0.zip</a>',
             html,
         )

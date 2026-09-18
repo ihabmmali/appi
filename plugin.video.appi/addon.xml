@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <addon id="plugin.video.appi"
        name="Appi"
-       version="0.7.2"
+       version="0.7.3"
        provider-name="Eyecon">
   <requires>
     <import addon="xbmc.python" version="3.0.1"/>
@@ -18,6 +18,6 @@
     <platform>all</platform>
     <license>GPL-3.0-or-later</license>
     <source>https://github.com/ihabmmali/appi</source>
-    <news>0.7.2 - Repackage the stable 0.7 browser, background downloads and deduplicated folder/show metadata batches under a fresh install URL.</news>
+    <news>0.7.3 - Add metadata queue controls and disk usage, recently played batch metadata, and per-item recent-history removal.</news>
   </extension>
 </addon>

@@ -6,6 +6,14 @@ Appi is a Kodi video add-on for user-configured movie and TV-show M3U catalogues
 
 Add `https://ihabmmali.github.io/appi/` in Kodi File Manager, then install the current `plugin.video.appi-<version>.zip`.
 
+## 0.7.3
+
+- Add **Stop and Clear Metadata Queue** without deleting metadata already fetched.
+- Show the metadata database disk usage in **Metadata Status**.
+- Add folder-level batch metadata retrieval to both Recently Played folders.
+- Add **Remove from Recently Played** to movie, TV-show and recent continuation-item context menus.
+- Keep 0.7.2 directly available as the previous working release.
+
 ## 0.7.2
 
 - Repackage the 0.7.1 feature set under a fresh URL after Kodi received an invalid cached 0.7.1 package from the web source.
