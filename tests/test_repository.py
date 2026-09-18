@@ -60,7 +60,9 @@ class RepositoryTests(unittest.TestCase):
             html,
         )
         self.assertNotIn('plugin.video.appi-0.8.0.zip</a>', html)
+        self.assertNotIn('plugin.video.appi-0.7.1.zip</a>', html)
         self.assertTrue((ROOT / 'plugin.video.appi-0.8.0.zip').is_file())
+        self.assertTrue((ROOT / 'plugin.video.appi-0.7.1.zip').is_file())
         self.assertNotIn('repository.appi-', html)
         self.assertFalse(any(ROOT.glob('repository.appi-*.zip')))
 

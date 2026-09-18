@@ -14,7 +14,7 @@ FALLBACK_PLUGIN_VERSIONS = {
     '0.7.0': 'previous release',
     '0.6.3': 'known-good fallback',
 }
-ARCHIVED_PLUGIN_VERSIONS = {'0.8.0'}
+ARCHIVED_PLUGIN_VERSIONS = {'0.8.0', '0.7.1'}
 
 
 def addon_identity(directory):

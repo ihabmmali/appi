@@ -6,6 +6,11 @@ Appi is a Kodi video add-on for user-configured movie and TV-show M3U catalogues
 
 Add `https://ihabmmali.github.io/appi/` in Kodi File Manager, then install the current `plugin.video.appi-<version>.zip`.
 
+## 0.7.2
+
+- Repackage the 0.7.1 feature set under a fresh URL after Kodi received an invalid cached 0.7.1 package from the web source.
+- Declare TMDb Helper as a required dependency with an explicit minimum version.
+
 ## 0.7.1
 
 - Restore the stable standard Kodi directory browser from 0.7.0; the experimental 0.8 WindowXML browser is not used.
