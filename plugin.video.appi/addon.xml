@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <addon id="plugin.video.appi"
        name="Appi"
-       version="0.7.0"
+       version="0.8.0"
        provider-name="Eyecon">
   <requires>
     <import addon="xbmc.python" version="3.0.1"/>
     <import addon="inputstream.adaptive" version="21.0.0" optional="true"/>
-    <import addon="plugin.video.themoviedb.helper" optional="true"/>
+    <import addon="plugin.video.themoviedb.helper"/>
   </requires>
   <extension point="xbmc.python.pluginsource" library="default.py">
     <provides>video</provides>
@@ -14,10 +14,10 @@
   <extension point="xbmc.service" library="service.py"/>
   <extension point="xbmc.addon.metadata">
     <summary lang="en_GB">Movies and TV shows from user-configured M3U feeds</summary>
-    <description lang="en_GB">Appi caches configurable movie and TV M3U catalogues, provides fast indexed browsing, unified search and recently played/resume lists, and adds lightweight on-demand metadata through TMDb Helper.</description>
+    <description lang="en_GB">Appi caches configurable movie and TV M3U catalogues, provides fast indexed browsing, unified search, live viewport metadata, background downloads and recently played/resume lists.</description>
     <platform>all</platform>
     <license>GPL-3.0-or-later</license>
     <source>https://github.com/ihabmmali/appi</source>
-    <news>0.7.0 - Add bounded background metadata for plots, posters, cast, episode names and genuine IMDb ratings through TMDb Helper, while preserving fast cached catalogue browsing.</news>
+    <news>0.8.0 - Add an incrementally loaded live browser with plots, posters, cast, directors and IMDb ratings; background MP4 and compatible unencrypted HLS downloads for Kodi's library; and per-item Recently Played removal.</news>
   </extension>
 </addon>

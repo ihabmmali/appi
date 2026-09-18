@@ -93,6 +93,7 @@ class AppiPlayer(xbmc.Player):
 
 
 def run():
+    from . import downloads
     monitor = xbmc.Monitor()
     player = AppiPlayer()
     next_progress_poll = 0.0
@@ -100,37 +101,41 @@ def run():
     focused_value = ''
     focused_since = 0.0
     queued_focus = ''
-    while not monitor.abortRequested():
-        playing = player.isPlayingVideo()
-        if playing and _enabled('persist_subtitles', True):
-            try:
-                subtitle_store.capture_temp_changes()
-            except Exception as exc:
-                xbmc.log('Appi subtitle polling failed: {}'.format(exc), xbmc.LOGWARNING)
-        now = time.monotonic()
-        if playing and now >= next_progress_poll:
-            player._capture_progress()
-            next_progress_poll = now + 5.0
-        if not playing:
-            next_progress_poll = 0.0
-            try:
-                value = xbmc.getInfoLabel('ListItem.Property(Appi.MetadataLookup)') or ''
-            except Exception:
-                value = ''
-            if value != focused_value:
-                focused_value = value
-                focused_since = now
-                queued_focus = ''
-            if value and value != queued_focus and now - focused_since >= 3.0:
-                payload = metadata.decode_focus(value)
-                if payload:
-                    metadata.queue(payload)
-                queued_focus = value
-            if now >= next_metadata_poll:
+    download_stop, _download_thread = downloads.start_worker(player.isPlayingVideo)
+    try:
+        while not monitor.abortRequested():
+            playing = player.isPlayingVideo()
+            if playing and _enabled('persist_subtitles', True):
                 try:
-                    metadata.process_one()
+                    subtitle_store.capture_temp_changes()
                 except Exception as exc:
-                    xbmc.log('Appi metadata worker failed: {}'.format(exc), xbmc.LOGWARNING)
-                next_metadata_poll = now + 5.0
-        if monitor.waitForAbort(2.0):
-            break
+                    xbmc.log('Appi subtitle polling failed: {}'.format(exc), xbmc.LOGWARNING)
+            now = time.monotonic()
+            if playing and now >= next_progress_poll:
+                player._capture_progress()
+                next_progress_poll = now + 5.0
+            if not playing:
+                next_progress_poll = 0.0
+                try:
+                    value = xbmc.getInfoLabel('ListItem.Property(Appi.MetadataLookup)') or ''
+                except Exception:
+                    value = ''
+                if value != focused_value:
+                    focused_value = value
+                    focused_since = now
+                    queued_focus = ''
+                if value and value != queued_focus and now - focused_since >= 3.0:
+                    payload = metadata.decode_focus(value)
+                    if payload:
+                        metadata.queue(payload, priority=100)
+                    queued_focus = value
+                if now >= next_metadata_poll:
+                    try:
+                        metadata.process_one()
+                    except Exception as exc:
+                        xbmc.log('Appi metadata worker failed: {}'.format(exc), xbmc.LOGWARNING)
+                    next_metadata_poll = now + 1.0
+            if monitor.waitForAbort(1.0):
+                break
+    finally:
+        download_stop.set()

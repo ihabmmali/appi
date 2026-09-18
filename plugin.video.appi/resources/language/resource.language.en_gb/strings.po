@@ -314,8 +314,8 @@ msgid "Enable background metadata"
 msgstr "Enable background metadata"
 
 msgctxt "#32611"
-msgid "Queues one title after it remains focused for three seconds and fetches it while playback is idle. Requires TMDb Helper."
-msgstr "Queues one title after it remains focused for three seconds and fetches it while playback is idle. Requires TMDb Helper."
+msgid "Queues every visible title in Appi's live browser and updates plots, posters, cast, directors, episode names and IMDb ratings as they arrive."
+msgstr "Queues every visible title in Appi's live browser and updates plots, posters, cast, directors, episode names and IMDb ratings as they arrive."
 
 msgctxt "#32612"
 msgid "Maximum cached titles"
@@ -338,8 +338,8 @@ msgid "Clear Metadata Cache"
 msgstr "Clear Metadata Cache"
 
 msgctxt "#32617"
-msgid "Deletes cached plots, posters, cast, episode names and IMDb ratings."
-msgstr "Deletes cached plots, posters, cast, episode names and IMDb ratings."
+msgid "Deletes cached plots, posters, cast, directors, episode names and IMDb ratings."
+msgstr "Deletes cached plots, posters, cast, directors, episode names and IMDb ratings."
 
 msgctxt "#32620"
 msgid "250 titles"
@@ -356,3 +356,39 @@ msgstr "1,000 titles"
 msgctxt "#32623"
 msgid "2,000 titles"
 msgstr "2,000 titles"
+
+msgctxt "#32700"
+msgid "Downloads"
+msgstr "Downloads"
+
+msgctxt "#32701"
+msgid "Offline media folder"
+msgstr "Offline media folder"
+
+msgctxt "#32702"
+msgid "Background download queue"
+msgstr "Background download queue"
+
+msgctxt "#32710"
+msgid "Download folder"
+msgstr "Download folder"
+
+msgctxt "#32711"
+msgid "Choose a writable local folder. Appi creates Movies and TV Shows subfolders here; add those subfolders as Kodi video sources for standard library playback and deletion."
+msgstr "Choose a writable local folder. Appi creates Movies and TV Shows subfolders here; add those subfolders as Kodi video sources for standard library playback and deletion."
+
+msgctxt "#32712"
+msgid "Download Status"
+msgstr "Download Status"
+
+msgctxt "#32713"
+msgid "Shows the download folder and counts for queued, active, completed and failed downloads."
+msgstr "Shows the download folder and counts for queued, active, completed and failed downloads."
+
+msgctxt "#32714"
+msgid "Retry Failed Downloads"
+msgstr "Retry Failed Downloads"
+
+msgctxt "#32715"
+msgid "Queues failed downloads again. Downloads pause automatically during video playback."
+msgstr "Queues failed downloads again. Downloads pause automatically during video playback."

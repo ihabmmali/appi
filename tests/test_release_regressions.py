@@ -10,6 +10,23 @@ STRINGS = PLUGIN / 'resources' / 'language' / 'resource.language.en_gb' / 'strin
 
 
 class SettingsLocalizationTests(unittest.TestCase):
+    def test_tmdb_helper_is_required_and_live_browser_is_packaged(self):
+        addon = ET.parse(PLUGIN / 'addon.xml').getroot()
+        helper = addon.find("./requires/import[@addon='plugin.video.themoviedb.helper']")
+        self.assertIsNotNone(helper)
+        self.assertNotEqual(helper.attrib.get('optional'), 'true')
+        browser = PLUGIN / 'resources' / 'lib' / 'browser.py'
+        layout = PLUGIN / 'resources' / 'skins' / 'Default' / '1080i' / 'AppiBrowser.xml'
+        self.assertTrue(browser.is_file())
+        ET.parse(layout)
+        text = browser.read_text(encoding='utf-8')
+        self.assertIn('metadata.queue_many', text)
+        self.assertIn('offscreen=False', text)
+        self.assertIn('INITIAL_LIST_ITEMS', text)
+        layout_text = layout.read_text(encoding='utf-8')
+        for info_label in ('Rating(imdb)', 'ListItem.Director', 'ListItem.CastAndRole'):
+            self.assertIn(info_label, layout_text)
+
     def test_po_has_one_entry_per_blank_line_block(self):
         text = STRINGS.read_text(encoding='utf-8')
         blocks = re.split(r'\n\s*\n', text.strip())
@@ -58,6 +75,7 @@ class SettingsLocalizationTests(unittest.TestCase):
                 'clear_movie_cache', 'clear_tv_cache', 'clear_catalog_caches',
                 'clear_saved_subtitles', 'clear_recent_media',
                 'metadata_status', 'clear_metadata_cache',
+                'download_status', 'retry_downloads',
             },
         )
         for scope in ('movies', 'tv', 'catalogs', 'subtitles', 'recent', 'metadata'):

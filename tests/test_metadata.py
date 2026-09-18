@@ -32,7 +32,8 @@ def rpc(raw):
     item={
       'title':'Pilot','plot':'A plot','thumbnail':'https://img/poster.jpg',
       'art':{'poster':'https://img/poster.jpg'},
-      'rating':9.9,
+      'rating':9.9,'director':['Director One'],
+      'ratings':{'imdb':{'rating':7.6,'votes':12000}},
       'customproperties':{'IMDb_Rating':'7.8','IMDb_Votes':'12,345','IMDb_ID':'tt123'},
       'cast':[{'name':'Actor One','role':'Lead','thumbnail':'https://img/a.jpg'}],
       'uniqueid':{'tmdb':'55'}
@@ -54,10 +55,28 @@ data=metadata.get(payload)
 assert data['plot']=='A plot'
 assert data['poster']=='https://img/poster.jpg'
 assert data['cast'][0]['name']=='Actor One'
+assert data['directors']==['Director One']
 assert data['episode_title']=='Pilot'
 assert data['imdb_rating']==7.8 and data['imdb_votes']==12345
 # The generic JSON-RPC rating is deliberately ignored; only IMDb_Rating is accepted.
 assert data['imdb_rating']!=9.9
+fallback=metadata._normalise_result({
+    'ratings':{'IMDb':{'rating':8.2,'votes':456}},
+    'director':'Director Two / Director Three',
+},payload)
+assert fallback['imdb_rating']==8.2 and fallback['imdb_votes']==456
+assert fallback['directors']==['Director Two','Director Three']
+movie={'media_type':'movie','title':'Another','year':2024,'imdb_id':'tt999'}
+assert metadata.queue_many([movie, movie], priority=100) == 1
+with metadata._connect() as connection:
+    row=connection.execute('SELECT priority FROM queue WHERE cache_key=?',(metadata.cache_key(movie),)).fetchone()
+    assert row == (100,)
+with metadata._connect() as connection:
+    connection.execute(
+        'INSERT OR REPLACE INTO metadata(cache_key,fetched_at,data) VALUES(?,?,?)',
+        (metadata.cache_key(movie),2,json.dumps({'plot':'Another plot'})),
+    )
+assert metadata.get_many([payload,movie])[metadata.cache_key(movie)]['plot']=='Another plot'
 with metadata._connect() as connection:
     for index in range(105):
         connection.execute(

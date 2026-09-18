@@ -417,6 +417,25 @@ def _metadata_context(payload):
     )
 
 
+def _download_context(item, catalog_name, key=None):
+    return (
+        'Download for offline viewing',
+        _context_action(
+            'download_ref', catalog=catalog_name, ref=item_ref(item), show_key=key
+        ),
+    )
+
+
+def _remove_recent_context(catalog_name, item=None, show_key=None):
+    return (
+        'Remove from Recently Played',
+        _context_action(
+            'remove_recent', catalog=catalog_name,
+            ref=item_ref(item) if item else None, show_key=show_key,
+        ),
+    )
+
+
 def _apply_metadata(list_item, payload, data):
     if not payload:
         return
@@ -466,6 +485,12 @@ def _apply_metadata(list_item, payload, data):
     if actors:
         try:
             tag.setCast(actors)
+        except Exception:
+            pass
+    directors = [name for name in (data.get('directors') or []) if name]
+    if directors:
+        try:
+            tag.setDirectors(directors)
         except Exception:
             pass
 
@@ -554,7 +579,7 @@ def _add_context(list_item, items):
 
 def _playable_tuple(
     item, catalog_name, key=None, resume=False, resume_points=None, label_suffix='',
-    metadata_cache=None,
+    metadata_cache=None, recent=False,
 ):
     payload = _metadata_payload(item)
     enriched = metadata.get(payload, metadata_cache)
@@ -575,12 +600,16 @@ def _playable_tuple(
         list_item, catalog_name, ref, force_start=False, resume_points=resume_points
     )
     target = 'movie' if catalog_name == 'movies' else 'episode'
-    _add_context(list_item, [
+    context = [
         ('Playback options...', _context_action(
             'configure_playback', target=target, catalog=catalog_name, ref=ref, show_key=key
         )),
+        _download_context(item, catalog_name, key),
         _metadata_context(payload),
-    ])
+    ]
+    if recent:
+        context.append(_remove_recent_context(catalog_name, item=item))
+    _add_context(list_item, context)
     return (
         _url('play_ref', catalog=catalog_name, ref=ref, show_key=key, resume='1' if resume else None),
         list_item,
@@ -604,6 +633,13 @@ def _send_items(items):
 
 def _finish(cache_to_disc=True):
     xbmcplugin.endOfDirectory(HANDLE, cacheToDisc=cache_to_disc)
+
+
+def _finish_browser():
+    # A modal WindowXML browser temporarily replaces the pending directory.
+    # Mark the directory request as cancelled when the window closes so Kodi
+    # returns to the parent menu instead of replacing it with an empty folder.
+    xbmcplugin.endOfDirectory(HANDLE, succeeded=False, cacheToDisc=False)
 
 
 def _add_video_sort_methods():
@@ -655,7 +691,22 @@ def _alpha_bucket(scope, item):
     return first if first and first.isalnum() else '#'
 
 
-def _show_media(scope, items, mixed=False):
+def _show_media(scope, items, mixed=False, title=None, recent=False):
+    if _bool_setting('live_browser', True):
+        from . import browser
+        if scope == 'movies':
+            entries = browser.movie_entries(
+                items, recent=recent, label_suffix=' [Movie]' if mixed else ''
+            )
+        else:
+            entries = browser.show_entries(
+                items, recent=recent, label_suffix=' [TV Show]' if mixed else ''
+            )
+        browser.open_browser(
+            entries, title or ('Movies' if scope == 'movies' else 'TV Shows'), BASE_URL
+        )
+        _finish_browser()
+        return
     if mixed:
         xbmcplugin.setContent(HANDLE, 'files')
     else:
@@ -671,7 +722,7 @@ def _show_media(scope, items, mixed=False):
                 'movies',
                 resume_points=resume_points,
                 label_suffix=' [Movie]' if mixed else '',
-                metadata_cache=metadata_cache,
+                metadata_cache=metadata_cache, recent=recent,
             ))
         else:
             tuples.append(_show_tuple(
@@ -683,7 +734,12 @@ def _show_media(scope, items, mixed=False):
     _finish()
 
 
-def _show_mixed(items):
+def _show_mixed(items, title='Search results'):
+    if _bool_setting('live_browser', True):
+        from . import browser
+        browser.open_browser(browser.mixed_entries(items), title, BASE_URL)
+        _finish_browser()
+        return
     xbmcplugin.setContent(HANDLE, 'files')
     _add_video_sort_methods()
     resume_points = playback_history.resume_points('movies')
@@ -826,22 +882,33 @@ def show_browse_items(scope, mode, value, offset=None):
         except (TypeError, ValueError):
             start = 0
         items = items[start:start + BROWSE_BUCKET_LIMIT]
-    _show_media(scope, items)
+    _show_media(scope, items, title='{} {}'.format(
+        'Movies' if scope == 'movies' else 'TV Shows', value
+    ))
 
 
 def show_browse_recent(scope):
     scope = 'movies' if scope == 'movies' else 'tv'
     items = _scope_items(scope, provider_order=True)[:RECENT_CATALOG_LIMIT]
-    _show_media(scope, items)
+    _show_media(
+        scope, items,
+        title='Recently Added {}'.format('Movies' if scope == 'movies' else 'TV Shows'),
+    )
 
 
 def show_browse_all(scope):
     scope = 'movies' if scope == 'movies' else 'tv'
-    _show_media(scope, _scope_items(scope, provider_order=True))
+    _show_media(
+        scope, _scope_items(scope, provider_order=True),
+        title='All {}'.format('Movies' if scope == 'movies' else 'TV Shows'),
+    )
 
 
 def show_recent_movies():
     entries = _decorate_provider_order(playback_history.recent_movies(limit=100))
+    if _bool_setting('live_browser', True):
+        _show_media('movies', entries, title='Recently Played Movies', recent=True)
+        return
     xbmcplugin.setContent(HANDLE, 'movies')
     _add_video_sort_methods()
     resume_points = playback_history.resume_points('movies')
@@ -849,7 +916,7 @@ def show_recent_movies():
     tuples = [
         _playable_tuple(
             item, 'movies', resume=True, resume_points=resume_points,
-            metadata_cache=metadata_cache,
+            metadata_cache=metadata_cache, recent=True,
         )
         for item in entries
     ]
@@ -872,6 +939,16 @@ def show_recent_tvshows():
         summary = summary_map.get(entry.get('show_key', ''))
         if summary:
             visible.append((entry, summary))
+    if _bool_setting('live_browser', True):
+        from . import browser
+        browser.open_browser(
+            browser.show_entries(
+                [summary for _, summary in visible], recent=True
+            ),
+            'Recently Played TV Shows', BASE_URL,
+        )
+        _finish_browser()
+        return
     xbmcplugin.setContent(HANDLE, 'tvshows')
     _add_video_sort_methods()
     tuples = []
@@ -888,7 +965,9 @@ def show_recent_tvshows():
         context = [(
             'Playback options for this show...',
             _context_action('configure_playback', target='show', catalog='tv', show_key=summary['show_key']),
-        ), _metadata_context(payload)]
+        ), _metadata_context(payload), _remove_recent_context(
+            'tv', show_key=summary['show_key']
+        )]
         result = _folder_tuple(
             label, _url('recent_show', show_key=summary['show_key']), info, context
         )
@@ -939,7 +1018,7 @@ def show_recent_show(key):
         )
         playable = _playable_tuple(
             continuation, 'tv', key, resume=force_resume,
-            metadata_cache=metadata_cache,
+            metadata_cache=metadata_cache, recent=True,
         )
         try:
             playable[1].setLabel(label)
@@ -990,6 +1069,16 @@ def show_episodes(key, season):
         item.get('episode') if item.get('episode') is not None else 999999,
         (item.get('display_title') or '').casefold(),
     ))
+    if _bool_setting('live_browser', True):
+        from . import browser
+        summary = _summary_by_key(key) or {}
+        browser.open_browser(
+            browser.episode_entries(episodes, key),
+            '{} - Season {}'.format(summary.get('show_title') or 'TV Show', season_number),
+            BASE_URL,
+        )
+        _finish_browser()
+        return
     xbmcplugin.setContent(HANDLE, 'episodes')
     if hasattr(xbmcplugin, 'SORT_METHOD_EPISODE'):
         try:
@@ -1033,7 +1122,7 @@ def search(scope=None, query=None):
             or needle in (item.get('title') or '').casefold()
         ]
         matches = sort_movies(matches, _int_setting('movie_sort', 0))
-        _show_media('movies', matches)
+        _show_media('movies', matches, title='Search Movies: {}'.format(query))
         return
 
     show_matches = [
@@ -1042,7 +1131,7 @@ def search(scope=None, query=None):
     ]
     show_matches = sort_shows(show_matches, _int_setting('tv_sort', 0))
     if scope == 'tv':
-        _show_media('tv', show_matches)
+        _show_media('tv', show_matches, title='Search TV Shows: {}'.format(query))
         return
 
     movie_matches = [
@@ -1053,7 +1142,7 @@ def search(scope=None, query=None):
     combined = [('movies', item) for item in movie_matches]
     combined.extend(('tv', show) for show in show_matches)
     combined.sort(key=lambda pair: _item_title(pair[0], pair[1]).casefold())
-    _show_mixed(combined)
+    _show_mixed(combined, title='Search: {}'.format(query))
 
 
 def _probe_kind(catalog_name, ref, media_url):
@@ -1225,6 +1314,57 @@ def fetch_metadata(params):
         _notify('Metadata could not be queued', error=True)
 
 
+def queue_download(params):
+    from . import downloads
+    catalog_name = params.get('catalog', '')
+    ref = params.get('ref', '')
+    key = params.get('show_key') or None
+    if catalog_name not in {'movies', 'tv'} or not ref:
+        raise ValueError('Invalid download target')
+    item = _find_by_ref(catalog_name, ref, key)
+    if not item:
+        xbmcgui.Dialog().ok(
+            'Appi download',
+            'This item is no longer present in the cached catalogue.',
+        )
+        return
+    if downloads.queue_item(catalog_name, item, key or ''):
+        _notify('Download queued. It will run while video playback is idle.')
+    else:
+        _notify('This item is already downloaded or queued', error=True)
+
+
+def show_download_status():
+    from . import downloads
+    value = downloads.status()
+    xbmcgui.Dialog().ok(
+        'Appi downloads',
+        'Download folder:\n{}\n\nQueued: {}\nDownloading: {}\nCompleted: {}\nFailed: {}'.format(
+            downloads.download_root(), value.get('queued', 0),
+            value.get('downloading', 0), value.get('complete', 0),
+            value.get('error', 0),
+        ),
+    )
+
+
+def retry_downloads():
+    from . import downloads
+    if downloads.retry_errors():
+        _notify('Failed downloads queued again')
+
+
+def remove_recent(params):
+    catalog_name = params.get('catalog', '')
+    show_key = params.get('show_key') or ''
+    ref = params.get('ref') or ''
+    removed = (
+        playback_history.remove_show(show_key)
+        if show_key else playback_history.remove(catalog_name, ref)
+    )
+    _notify('Removed from Recently Played' if removed else 'Recent item was already removed')
+    xbmc.executebuiltin('Container.Refresh')
+
+
 def show_metadata_status():
     status = metadata.status()
     helper = 'installed' if status['helper'] else 'not installed'
@@ -1345,6 +1485,14 @@ def _run_action(params):
         configure_playback(params)
     elif action == 'fetch_metadata':
         fetch_metadata(params)
+    elif action == 'download_ref':
+        queue_download(params)
+    elif action == 'download_status':
+        show_download_status()
+    elif action == 'retry_downloads':
+        retry_downloads()
+    elif action == 'remove_recent':
+        remove_recent(params)
     elif action == 'metadata_status':
         show_metadata_status()
     elif action == 'refresh_movies':

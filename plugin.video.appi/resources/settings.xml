@@ -132,6 +132,31 @@
       </group>
     </category>
 
+    <category id="downloads" label="32700" help="">
+      <group id="1" label="32701">
+        <setting id="download_folder" type="path" label="32710" help="32711">
+          <level>0</level><default/>
+          <constraints>
+            <sources><source>videos</source><source>local</source></sources>
+            <allowempty>true</allowempty>
+          </constraints>
+          <control type="button" format="path"><heading>32710</heading></control>
+        </setting>
+      </group>
+      <group id="2" label="32702">
+        <setting id="download_status" type="action" label="32712" help="32713">
+          <level>0</level>
+          <data>RunPlugin(plugin://$ID/?action=download_status)</data>
+          <control type="button" format="action"><close>false</close></control>
+        </setting>
+        <setting id="retry_downloads" type="action" label="32714" help="32715">
+          <level>0</level>
+          <data>RunPlugin(plugin://$ID/?action=retry_downloads)</data>
+          <control type="button" format="action"><close>false</close></control>
+        </setting>
+      </group>
+    </category>
+
     <category id="maintenance" label="32500" help="">
       <group id="1" label="32501">
         <setting id="refresh_movie_list" type="action" label="32510" help="32511">

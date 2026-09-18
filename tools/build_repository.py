@@ -10,7 +10,10 @@ import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
 ADDON_DIRS = [ROOT / 'plugin.video.appi', ROOT / 'repository.appi']
-FALLBACK_PLUGIN_VERSIONS = {'0.6.3'}
+FALLBACK_PLUGIN_VERSIONS = {
+    '0.7.0': 'previous release',
+    '0.6.3': 'known-good fallback',
+}
 
 
 def addon_identity(directory):
@@ -128,7 +131,7 @@ def build_pages_entry(plugin_zip):
             shutil.copy2(nested, fallback)
         if fallback.exists():
             keep.add(name)
-            fallback_paths.append(fallback)
+            fallback_paths.append((fallback, FALLBACK_PLUGIN_VERSIONS[version]))
     for path in ROOT.glob('plugin.video.appi-*.zip'):
         if path.name not in keep:
             path.unlink()
@@ -137,8 +140,8 @@ def build_pages_entry(plugin_zip):
 
     links = ['  <p><a href="{0}">{0}</a> (current)</p>'.format(current.name)]
     links.extend(
-        '  <p><a href="{0}">{0}</a> (known-good fallback)</p>'.format(path.name)
-        for path in fallback_paths
+        '  <p><a href="{0}">{0}</a> ({1})</p>'.format(path.name, label)
+        for path, label in fallback_paths
     )
     html = '''<!doctype html>
 <html lang="en">

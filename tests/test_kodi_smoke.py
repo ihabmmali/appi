@@ -20,6 +20,7 @@ sys.argv = ['plugin://plugin.video.appi', '1', '']
 state = {'items': [], 'content': [], 'sort': [], 'ended': [], 'notifications': [], 'selects': []}
 settings = {
     'movie_sort':'0','tv_sort':'0',
+    'live_browser':'false',
     'persist_subtitles':'false','auto_saved_subtitles':'true',
     'manage_mp4_buffer':'false','hls_quality_mode':'1',
     'tv_m3u_base_url':'https://provider.invalid/tv',
@@ -47,6 +48,7 @@ class Tag:
     def setPlot(self,value): self.owner.tagdata['plot']=value
     def setRating(self,*value): self.owner.tagdata['rating']=value
     def setCast(self,value): self.owner.tagdata['cast']=value
+    def setDirectors(self,value): self.owner.tagdata['directors']=value
     def setTitle(self,value): self.owner.tagdata['tag_title']=value
     def __getattr__(self,n): return lambda *a,**k: None
 class ListItem:
@@ -91,7 +93,7 @@ eps=[{'kind':'episode','display_title':'Show 000 (2025) S01 E01','show_title':'S
 app._load_movies=lambda: movies; app._load_tv_shows=lambda: shows; app._load_show_episodes=lambda key: eps
 
 lookup=metadata.lookup_payload(movies[0])
-enriched={'plot':'Cached plot','poster':'https://img/poster.jpg','cast':[{'name':'Actor','role':'Lead'}],'imdb_rating':7.7,'imdb_votes':99}
+enriched={'plot':'Cached plot','poster':'https://img/poster.jpg','cast':[{'name':'Actor','role':'Lead'}],'directors':['Director'],'imdb_rating':7.7,'imdb_votes':99}
 with metadata._connect() as connection:
     connection.execute('INSERT INTO metadata(cache_key,fetched_at,data) VALUES(?,?,?)',(metadata.cache_key(lookup),1,json.dumps(enriched)))
 
@@ -120,6 +122,7 @@ assert state['items'][0][1].info['title'] == 'Movie 000 (2025)'
 assert state['items'][0][1].art['poster'] == 'https://img/poster.jpg'
 assert state['items'][0][1].tagdata['plot'] == 'Cached plot'
 assert state['items'][0][1].tagdata['rating'] == (7.7, 99, 'imdb', True)
+assert state['items'][0][1].tagdata['directors'] == ['Director']
 assert state['items'][0][1].info['dateadded'] > state['items'][1][1].info['dateadded']
 state['items'].clear(); state['sort'].clear()
 app.show_browse_index('movies','alpha')
