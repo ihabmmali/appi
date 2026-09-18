@@ -426,13 +426,10 @@ def _download_context(item, catalog_name, key=None):
     )
 
 
-def _remove_recent_context(catalog_name, item=None, show_key=None):
+def _metadata_batch_context(**params):
     return (
-        'Remove from Recently Played',
-        _context_action(
-            'remove_recent', catalog=catalog_name,
-            ref=item_ref(item) if item else None, show_key=show_key,
-        ),
+        'Fetch metadata for everything in this folder',
+        _context_action('fetch_metadata_batch', **params),
     )
 
 
@@ -485,12 +482,6 @@ def _apply_metadata(list_item, payload, data):
     if actors:
         try:
             tag.setCast(actors)
-        except Exception:
-            pass
-    directors = [name for name in (data.get('directors') or []) if name]
-    if directors:
-        try:
-            tag.setDirectors(directors)
         except Exception:
             pass
 
@@ -579,7 +570,7 @@ def _add_context(list_item, items):
 
 def _playable_tuple(
     item, catalog_name, key=None, resume=False, resume_points=None, label_suffix='',
-    metadata_cache=None, recent=False,
+    metadata_cache=None,
 ):
     payload = _metadata_payload(item)
     enriched = metadata.get(payload, metadata_cache)
@@ -600,16 +591,13 @@ def _playable_tuple(
         list_item, catalog_name, ref, force_start=False, resume_points=resume_points
     )
     target = 'movie' if catalog_name == 'movies' else 'episode'
-    context = [
+    _add_context(list_item, [
         ('Playback options...', _context_action(
             'configure_playback', target=target, catalog=catalog_name, ref=ref, show_key=key
         )),
         _download_context(item, catalog_name, key),
         _metadata_context(payload),
-    ]
-    if recent:
-        context.append(_remove_recent_context(catalog_name, item=item))
-    _add_context(list_item, context)
+    ])
     return (
         _url('play_ref', catalog=catalog_name, ref=ref, show_key=key, resume='1' if resume else None),
         list_item,
@@ -633,13 +621,6 @@ def _send_items(items):
 
 def _finish(cache_to_disc=True):
     xbmcplugin.endOfDirectory(HANDLE, cacheToDisc=cache_to_disc)
-
-
-def _finish_browser():
-    # A modal WindowXML browser temporarily replaces the pending directory.
-    # Mark the directory request as cancelled when the window closes so Kodi
-    # returns to the parent menu instead of replacing it with an empty folder.
-    xbmcplugin.endOfDirectory(HANDLE, succeeded=False, cacheToDisc=False)
 
 
 def _add_video_sort_methods():
@@ -691,22 +672,7 @@ def _alpha_bucket(scope, item):
     return first if first and first.isalnum() else '#'
 
 
-def _show_media(scope, items, mixed=False, title=None, recent=False):
-    if _bool_setting('live_browser', True):
-        from . import browser
-        if scope == 'movies':
-            entries = browser.movie_entries(
-                items, recent=recent, label_suffix=' [Movie]' if mixed else ''
-            )
-        else:
-            entries = browser.show_entries(
-                items, recent=recent, label_suffix=' [TV Show]' if mixed else ''
-            )
-        browser.open_browser(
-            entries, title or ('Movies' if scope == 'movies' else 'TV Shows'), BASE_URL
-        )
-        _finish_browser()
-        return
+def _show_media(scope, items, mixed=False):
     if mixed:
         xbmcplugin.setContent(HANDLE, 'files')
     else:
@@ -722,7 +688,7 @@ def _show_media(scope, items, mixed=False, title=None, recent=False):
                 'movies',
                 resume_points=resume_points,
                 label_suffix=' [Movie]' if mixed else '',
-                metadata_cache=metadata_cache, recent=recent,
+                metadata_cache=metadata_cache,
             ))
         else:
             tuples.append(_show_tuple(
@@ -734,12 +700,7 @@ def _show_media(scope, items, mixed=False, title=None, recent=False):
     _finish()
 
 
-def _show_mixed(items, title='Search results'):
-    if _bool_setting('live_browser', True):
-        from . import browser
-        browser.open_browser(browser.mixed_entries(items), title, BASE_URL)
-        _finish_browser()
-        return
+def _show_mixed(items):
     xbmcplugin.setContent(HANDLE, 'files')
     _add_video_sort_methods()
     resume_points = playback_history.resume_points('movies')
@@ -761,8 +722,16 @@ def _show_mixed(items, title='Search results'):
 
 def show_root():
     entries = [
-        _folder_tuple('Movies', _url('movies')),
-        _folder_tuple('TV Shows', _url('tvshows')),
+        _folder_tuple(
+            'Movies', _url('movies'), context_items=[
+                _metadata_batch_context(scope='movies', mode='all')
+            ],
+        ),
+        _folder_tuple(
+            'TV Shows', _url('tvshows'), context_items=[
+                _metadata_batch_context(scope='tv', mode='all')
+            ],
+        ),
         _folder_tuple('Search', _url('search')),
         _folder_tuple('Recently Played Movies', _url('recent_movies', page=1)),
         _folder_tuple('Recently Played TV Shows', _url('recent_tvshows', page=1)),
@@ -780,10 +749,12 @@ def _show_browse_root(scope):
         _folder_tuple(
             'Recently Added (first {} in provider order)'.format(RECENT_CATALOG_LIMIT),
             _url('browse_recent', scope=scope),
+            context_items=[_metadata_batch_context(scope=scope, mode='recent')],
         ),
         _folder_tuple(
             'All {} (may load slowly)'.format(noun),
             _url('browse_all', scope=scope, order='provider'),
+            context_items=[_metadata_batch_context(scope=scope, mode='all')],
         ),
     ]
     _send_items(entries)
@@ -813,7 +784,7 @@ def _show_tuple(show, label_suffix='', metadata_cache=None):
     context = [(
         'Playback options for this show...',
         _context_action('configure_playback', target='show', catalog='tv', show_key=show['show_key']),
-    ), _metadata_context(payload)]
+    ), _metadata_context(payload), _metadata_batch_context(show_key=show['show_key'])]
     result = _folder_tuple(
         display_label, _url('seasons', show_key=show['show_key']), info, context
     )
@@ -843,6 +814,9 @@ def show_browse_index(scope, mode):
         _folder_tuple(
             '{} ({})'.format(label, len(groups[label])),
             _url('browse_items', scope=scope, mode=mode, value=label),
+            context_items=[_metadata_batch_context(
+                scope=scope, mode=mode, value=label
+            )],
         )
         for label in labels
     ]
@@ -872,6 +846,9 @@ def show_browse_items(scope, mode, value, offset=None):
                 _url(
                     'browse_items', scope=scope, mode=mode, value=value, offset=start
                 ),
+                context_items=[_metadata_batch_context(
+                    scope=scope, mode=mode, value=value, offset=start
+                )],
             ))
         _send_items(entries)
         _finish()
@@ -882,33 +859,22 @@ def show_browse_items(scope, mode, value, offset=None):
         except (TypeError, ValueError):
             start = 0
         items = items[start:start + BROWSE_BUCKET_LIMIT]
-    _show_media(scope, items, title='{} {}'.format(
-        'Movies' if scope == 'movies' else 'TV Shows', value
-    ))
+    _show_media(scope, items)
 
 
 def show_browse_recent(scope):
     scope = 'movies' if scope == 'movies' else 'tv'
     items = _scope_items(scope, provider_order=True)[:RECENT_CATALOG_LIMIT]
-    _show_media(
-        scope, items,
-        title='Recently Added {}'.format('Movies' if scope == 'movies' else 'TV Shows'),
-    )
+    _show_media(scope, items)
 
 
 def show_browse_all(scope):
     scope = 'movies' if scope == 'movies' else 'tv'
-    _show_media(
-        scope, _scope_items(scope, provider_order=True),
-        title='All {}'.format('Movies' if scope == 'movies' else 'TV Shows'),
-    )
+    _show_media(scope, _scope_items(scope, provider_order=True))
 
 
 def show_recent_movies():
     entries = _decorate_provider_order(playback_history.recent_movies(limit=100))
-    if _bool_setting('live_browser', True):
-        _show_media('movies', entries, title='Recently Played Movies', recent=True)
-        return
     xbmcplugin.setContent(HANDLE, 'movies')
     _add_video_sort_methods()
     resume_points = playback_history.resume_points('movies')
@@ -916,7 +882,7 @@ def show_recent_movies():
     tuples = [
         _playable_tuple(
             item, 'movies', resume=True, resume_points=resume_points,
-            metadata_cache=metadata_cache, recent=True,
+            metadata_cache=metadata_cache,
         )
         for item in entries
     ]
@@ -939,16 +905,6 @@ def show_recent_tvshows():
         summary = summary_map.get(entry.get('show_key', ''))
         if summary:
             visible.append((entry, summary))
-    if _bool_setting('live_browser', True):
-        from . import browser
-        browser.open_browser(
-            browser.show_entries(
-                [summary for _, summary in visible], recent=True
-            ),
-            'Recently Played TV Shows', BASE_URL,
-        )
-        _finish_browser()
-        return
     xbmcplugin.setContent(HANDLE, 'tvshows')
     _add_video_sort_methods()
     tuples = []
@@ -965,9 +921,7 @@ def show_recent_tvshows():
         context = [(
             'Playback options for this show...',
             _context_action('configure_playback', target='show', catalog='tv', show_key=summary['show_key']),
-        ), _metadata_context(payload), _remove_recent_context(
-            'tv', show_key=summary['show_key']
-        )]
+        ), _metadata_context(payload), _metadata_batch_context(show_key=summary['show_key'])]
         result = _folder_tuple(
             label, _url('recent_show', show_key=summary['show_key']), info, context
         )
@@ -1018,7 +972,7 @@ def show_recent_show(key):
         )
         playable = _playable_tuple(
             continuation, 'tv', key, resume=force_resume,
-            metadata_cache=metadata_cache, recent=True,
+            metadata_cache=metadata_cache,
         )
         try:
             playable[1].setLabel(label)
@@ -1035,6 +989,7 @@ def show_recent_show(key):
             'Season {}'.format(season),
             _url('episodes', show_key=key, season=season),
             info,
+            [_metadata_batch_context(show_key=key, season=season)],
         ))
     _send_items(tuples)
     _finish()
@@ -1054,6 +1009,7 @@ def show_seasons(key):
             'Season {}'.format(season),
             _url('episodes', show_key=key, season=season),
             info,
+            [_metadata_batch_context(show_key=key, season=season)],
         ))
     _send_items(directory_items)
     _finish()
@@ -1069,16 +1025,6 @@ def show_episodes(key, season):
         item.get('episode') if item.get('episode') is not None else 999999,
         (item.get('display_title') or '').casefold(),
     ))
-    if _bool_setting('live_browser', True):
-        from . import browser
-        summary = _summary_by_key(key) or {}
-        browser.open_browser(
-            browser.episode_entries(episodes, key),
-            '{} - Season {}'.format(summary.get('show_title') or 'TV Show', season_number),
-            BASE_URL,
-        )
-        _finish_browser()
-        return
     xbmcplugin.setContent(HANDLE, 'episodes')
     if hasattr(xbmcplugin, 'SORT_METHOD_EPISODE'):
         try:
@@ -1122,7 +1068,7 @@ def search(scope=None, query=None):
             or needle in (item.get('title') or '').casefold()
         ]
         matches = sort_movies(matches, _int_setting('movie_sort', 0))
-        _show_media('movies', matches, title='Search Movies: {}'.format(query))
+        _show_media('movies', matches)
         return
 
     show_matches = [
@@ -1131,7 +1077,7 @@ def search(scope=None, query=None):
     ]
     show_matches = sort_shows(show_matches, _int_setting('tv_sort', 0))
     if scope == 'tv':
-        _show_media('tv', show_matches, title='Search TV Shows: {}'.format(query))
+        _show_media('tv', show_matches)
         return
 
     movie_matches = [
@@ -1142,7 +1088,7 @@ def search(scope=None, query=None):
     combined = [('movies', item) for item in movie_matches]
     combined.extend(('tv', show) for show in show_matches)
     combined.sort(key=lambda pair: _item_title(pair[0], pair[1]).casefold())
-    _show_mixed(combined, title='Search: {}'.format(query))
+    _show_mixed(combined)
 
 
 def _probe_kind(catalog_name, ref, media_url):
@@ -1314,6 +1260,83 @@ def fetch_metadata(params):
         _notify('Metadata could not be queued', error=True)
 
 
+def _metadata_payloads_for_shows(shows, season=None):
+    for show in shows:
+        yield _metadata_payload(show, media_type='tvshow')
+        key = show.get('show_key') or ''
+        if not key:
+            continue
+        for episode in _load_show_episodes(key):
+            if season is not None and episode.get('season') != season:
+                continue
+            yield _metadata_payload(episode, media_type='episode')
+
+
+def _metadata_batch_selection(params):
+    key = params.get('show_key') or ''
+    if key:
+        show = _summary_by_key(key)
+        if not show:
+            return 0, iter(())
+        season = None
+        if params.get('season') not in (None, ''):
+            try:
+                season = int(params['season'])
+            except (TypeError, ValueError):
+                season = None
+        episode_count = sum(
+            1 for item in _load_show_episodes(key)
+            if season is None or item.get('season') == season
+        )
+        return 1 + episode_count, _metadata_payloads_for_shows([show], season)
+
+    scope = 'movies' if params.get('scope') == 'movies' else 'tv'
+    mode = params.get('mode') or 'all'
+    if mode == 'recent':
+        items = _scope_items(scope, provider_order=True)[:RECENT_CATALOG_LIMIT]
+    elif mode in {'alpha', 'year'} and params.get('value') is not None:
+        items = _subset_for_index(scope, mode, params.get('value', '#'))
+        if params.get('offset') not in (None, ''):
+            try:
+                start = max(0, int(params['offset']))
+            except (TypeError, ValueError):
+                start = 0
+            items = items[start:start + BROWSE_BUCKET_LIMIT]
+    else:
+        items = _scope_items(scope, provider_order=True)
+
+    if scope == 'movies':
+        return len(items), (
+            _metadata_payload(item, media_type='movie') for item in items
+        )
+    total = sum(1 + int(show.get('episode_count') or 0) for show in items)
+    return total, _metadata_payloads_for_shows(items)
+
+
+def fetch_metadata_batch(params):
+    status = metadata.status()
+    if not status['helper']:
+        xbmcgui.Dialog().ok(
+            'Appi metadata',
+            'TMDb Helper is not installed. Install and configure '
+            'plugin.video.themoviedb.helper, then try again.',
+        )
+        return
+    total, payloads = _metadata_batch_selection(params)
+    if not total:
+        _notify('This folder contains no media to queue', error=True)
+        return
+    message = (
+        'Queue metadata for {:,} titles?\n\n'
+        'Lookups run one at a time in the background, pause during playback '
+        'and downloads, and may take a long time for large folders.'
+    ).format(total)
+    if not xbmcgui.Dialog().yesno('Appi batch metadata', message):
+        return
+    queued = metadata.queue_many(payloads, pinned=True)
+    _notify('{:,} metadata lookups queued'.format(queued))
+
+
 def queue_download(params):
     from . import downloads
     catalog_name = params.get('catalog', '')
@@ -1351,18 +1374,6 @@ def retry_downloads():
     from . import downloads
     if downloads.retry_errors():
         _notify('Failed downloads queued again')
-
-
-def remove_recent(params):
-    catalog_name = params.get('catalog', '')
-    show_key = params.get('show_key') or ''
-    ref = params.get('ref') or ''
-    removed = (
-        playback_history.remove_show(show_key)
-        if show_key else playback_history.remove(catalog_name, ref)
-    )
-    _notify('Removed from Recently Played' if removed else 'Recent item was already removed')
-    xbmc.executebuiltin('Container.Refresh')
 
 
 def show_metadata_status():
@@ -1485,14 +1496,14 @@ def _run_action(params):
         configure_playback(params)
     elif action == 'fetch_metadata':
         fetch_metadata(params)
+    elif action == 'fetch_metadata_batch':
+        fetch_metadata_batch(params)
     elif action == 'download_ref':
         queue_download(params)
     elif action == 'download_status':
         show_download_status()
     elif action == 'retry_downloads':
         retry_downloads()
-    elif action == 'remove_recent':
-        remove_recent(params)
     elif action == 'metadata_status':
         show_metadata_status()
     elif action == 'refresh_movies':

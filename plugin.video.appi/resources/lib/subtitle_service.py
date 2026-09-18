@@ -127,15 +127,19 @@ def run():
                 if value and value != queued_focus and now - focused_since >= 3.0:
                     payload = metadata.decode_focus(value)
                     if payload:
-                        metadata.queue(payload, priority=100)
+                        metadata.queue(payload)
                     queued_focus = value
                 if now >= next_metadata_poll:
-                    try:
-                        metadata.process_one()
-                    except Exception as exc:
-                        xbmc.log('Appi metadata worker failed: {}'.format(exc), xbmc.LOGWARNING)
-                    next_metadata_poll = now + 1.0
-            if monitor.waitForAbort(1.0):
+                    # Keep downloads and playback ahead of background metadata
+                    # on low-power devices. Otherwise process one lookup at a
+                    # time without blocking directory navigation.
+                    if not downloads.status().get('downloading', 0):
+                        try:
+                            metadata.process_one()
+                        except Exception as exc:
+                            xbmc.log('Appi metadata worker failed: {}'.format(exc), xbmc.LOGWARNING)
+                    next_metadata_poll = now + 2.0
+            if monitor.waitForAbort(2.0):
                 break
     finally:
         download_stop.set()

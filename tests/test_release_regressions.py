@@ -10,22 +10,21 @@ STRINGS = PLUGIN / 'resources' / 'language' / 'resource.language.en_gb' / 'strin
 
 
 class SettingsLocalizationTests(unittest.TestCase):
-    def test_tmdb_helper_is_required_and_live_browser_is_packaged(self):
+    def test_stable_browser_and_download_batch_features_are_packaged(self):
         addon = ET.parse(PLUGIN / 'addon.xml').getroot()
+        self.assertEqual(addon.attrib.get('version'), '0.7.1')
         helper = addon.find("./requires/import[@addon='plugin.video.themoviedb.helper']")
         self.assertIsNotNone(helper)
         self.assertNotEqual(helper.attrib.get('optional'), 'true')
-        browser = PLUGIN / 'resources' / 'lib' / 'browser.py'
-        layout = PLUGIN / 'resources' / 'skins' / 'Default' / '1080i' / 'AppiBrowser.xml'
-        self.assertTrue(browser.is_file())
-        ET.parse(layout)
-        text = browser.read_text(encoding='utf-8')
-        self.assertIn('metadata.queue_many', text)
-        self.assertIn('offscreen=False', text)
-        self.assertIn('INITIAL_LIST_ITEMS', text)
-        layout_text = layout.read_text(encoding='utf-8')
-        for info_label in ('Rating(imdb)', 'ListItem.Director', 'ListItem.CastAndRole'):
-            self.assertIn(info_label, layout_text)
+        self.assertFalse((PLUGIN / 'resources' / 'lib' / 'browser.py').exists())
+        self.assertFalse((PLUGIN / 'resources' / 'skins').exists())
+        self.assertTrue((PLUGIN / 'resources' / 'lib' / 'downloads.py').is_file())
+        app = (PLUGIN / 'resources' / 'lib' / 'app.py').read_text(encoding='utf-8')
+        self.assertIn("'download_ref'", app)
+        self.assertIn("'fetch_metadata_batch'", app)
+        metadata = (PLUGIN / 'resources' / 'lib' / 'metadata.py').read_text(encoding='utf-8')
+        self.assertIn('def show_payload', metadata)
+        self.assertIn("'episode_title', 'plot', 'imdb_rating', 'imdb_votes'", metadata)
 
     def test_po_has_one_entry_per_blank_line_block(self):
         text = STRINGS.read_text(encoding='utf-8')

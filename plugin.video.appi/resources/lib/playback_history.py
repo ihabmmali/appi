@@ -87,43 +87,6 @@ def clear_all():
     cache.remove(SESSION_CACHE)
 
 
-def remove(catalog, ref):
-    """Remove one recent item and its resume position."""
-    if catalog not in {'movies', 'tv'} or not ref:
-        return False
-    history = _history()
-    bucket = history[_bucket(catalog)]
-    if ref not in bucket:
-        return False
-    bucket.pop(ref, None)
-    _save_history(history)
-    session = load_session()
-    if session and session.get('catalog') == catalog and session.get('ref') == ref:
-        clear_session()
-    return True
-
-
-def remove_show(show_key):
-    """Remove every recent episode/resume entry belonging to one show."""
-    if not show_key:
-        return False
-    history = _history()
-    episodes = history['episodes']
-    remove_refs = [
-        ref for ref, entry in episodes.items()
-        if isinstance(entry, dict) and entry.get('show_key') == show_key
-    ]
-    if not remove_refs:
-        return False
-    for ref in remove_refs:
-        episodes.pop(ref, None)
-    _save_history(history)
-    session = load_session()
-    if session and session.get('show_key') == show_key:
-        clear_session()
-    return True
-
-
 def update_progress(position, total=0):
     session = load_session()
     if not session:

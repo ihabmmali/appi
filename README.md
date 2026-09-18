@@ -6,20 +6,17 @@ Appi is a Kodi video add-on for user-configured movie and TV-show M3U catalogues
 
 Add `https://ihabmmali.github.io/appi/` in Kodi File Manager, then install the current `plugin.video.appi-<version>.zip`.
 
-## 0.8.0
+## 0.7.1
 
-- Replace static media-result directories with an incrementally loaded Appi `WindowXML` browser whose visible `ListItem` objects can be enriched in place without constructing the entire 20,000-item catalogue at startup.
-- Queue the initial viewport automatically and queue each newly exposed viewport while scrolling; network lookups remain serialized and pause during playback.
-- Update posters, plots, actor names/roles, directors, episode names and genuine IMDb ratings live without leaving and reopening the folder.
-- Require TMDb Helper as a Kodi dependency.
-- Add **Download for offline viewing** to the long-press menu for movies and episodes.
-- Download direct MP4 and completed, unencrypted HLS media in the background, pause downloads during playback, and write Kodi-compatible filenames and NFO files beneath configurable Movies and TV Shows folders.
-- Add **Remove from Recently Played** to individual recent movie and TV-show context menus.
-- Keep 0.7.0 and the known-good 0.6.3 release available on the direct-install page.
+- Restore the stable standard Kodi directory browser from 0.7.0; the experimental 0.8 WindowXML browser is not used.
+- Add **Download for offline viewing** to movie and episode context menus.
+- Download direct MP4 streams and compatible completed, unencrypted HLS streams in the background, yielding whenever playback starts.
+- Write Kodi-compatible movie/episode NFO files and scan completed downloads into the standard Kodi library.
+- Add explicit folder, TV-show and season metadata batch actions. Network lookups remain sequential and pause during playback and downloads.
+- Store shared TV-show poster, cast and identifiers once per show; episode rows contain only episode title, plot and episode-specific ratings.
+- Retain explicitly requested batch metadata while continuing to bound metadata discovered through ordinary item focus.
 
-### Offline library setup
-
-Choose a writable **Download folder** in Appi settings. Appi creates `Movies` and `TV Shows` beneath it. Add those two folders as the corresponding Kodi video sources. Completed downloads trigger a targeted library scan; Kodi can then play and delete the media through its normal library interface. Encrypted or live HLS playlists are rejected rather than saved incompletely.
+Add the generated `Movies` and `TV Shows` subfolders beneath the configured download folder as Kodi video sources to browse and delete downloads using Kodi's standard library interface.
 
 ## 0.7.0
 

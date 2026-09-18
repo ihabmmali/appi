@@ -14,6 +14,7 @@ FALLBACK_PLUGIN_VERSIONS = {
     '0.7.0': 'previous release',
     '0.6.3': 'known-good fallback',
 }
+ARCHIVED_PLUGIN_VERSIONS = {'0.8.0'}
 
 
 def addon_identity(directory):
@@ -37,7 +38,7 @@ def excluded(path):
 def retained_names(addon_id, current_zip_name):
     names = {current_zip_name, current_zip_name + '.sha256'}
     if addon_id == 'plugin.video.appi':
-        for version in FALLBACK_PLUGIN_VERSIONS:
+        for version in set(FALLBACK_PLUGIN_VERSIONS) | ARCHIVED_PLUGIN_VERSIONS:
             name = '{}-{}.zip'.format(addon_id, version)
             names.update({name, name + '.sha256'})
     return names
@@ -132,6 +133,11 @@ def build_pages_entry(plugin_zip):
         if fallback.exists():
             keep.add(name)
             fallback_paths.append((fallback, FALLBACK_PLUGIN_VERSIONS[version]))
+    for version in ARCHIVED_PLUGIN_VERSIONS:
+        name = 'plugin.video.appi-{}.zip'.format(version)
+        archived = ROOT / name
+        if archived.exists():
+            keep.add(name)
     for path in ROOT.glob('plugin.video.appi-*.zip'):
         if path.name not in keep:
             path.unlink()

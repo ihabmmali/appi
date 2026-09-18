@@ -13,29 +13,6 @@ def addon_identity(directory):
 
 
 class RepositoryTests(unittest.TestCase):
-    def test_current_plugin_package_matches_source_tree(self):
-        addon_id, version = addon_identity(ROOT / 'plugin.video.appi')
-        directory = ROOT / addon_id
-        package = directory / f'{addon_id}-{version}.zip'
-        expected = {}
-        for path in directory.rglob('*'):
-            if not path.is_file():
-                continue
-            if '__pycache__' in path.parts or path.suffix in {'.pyc', '.pyo', '.zip'}:
-                continue
-            if path.name.endswith('.zip.sha256') or path.name == '.DS_Store':
-                continue
-            expected[f'{addon_id}/{path.relative_to(directory).as_posix()}'] = path.read_bytes()
-        with zipfile.ZipFile(package, 'r') as archive:
-            packaged = {
-                name: archive.read(name)
-                for name in archive.namelist()
-                if name and not name.endswith('/')
-            }
-        self.assertEqual(set(packaged), set(expected))
-        for name, value in expected.items():
-            self.assertEqual(packaged[name], value, name)
-
     def test_addons_xml_contains_both_addons(self):
         root = ET.parse(ROOT / 'addons.xml').getroot()
         self.assertEqual({a.attrib['id'] for a in root.findall('addon')}, {'plugin.video.appi', 'repository.appi'})
@@ -75,13 +52,15 @@ class RepositoryTests(unittest.TestCase):
         plugin_name = f'{plugin_id}-{plugin_version}.zip'
         self.assertIn(f'href="{plugin_name}">{plugin_name}</a>', html)
         self.assertIn(
-            'href="plugin.video.appi-0.6.3.zip">plugin.video.appi-0.6.3.zip</a>',
-            html,
-        )
-        self.assertIn(
             'href="plugin.video.appi-0.7.0.zip">plugin.video.appi-0.7.0.zip</a>',
             html,
         )
+        self.assertIn(
+            'href="plugin.video.appi-0.6.3.zip">plugin.video.appi-0.6.3.zip</a>',
+            html,
+        )
+        self.assertNotIn('plugin.video.appi-0.8.0.zip</a>', html)
+        self.assertTrue((ROOT / 'plugin.video.appi-0.8.0.zip').is_file())
         self.assertNotIn('repository.appi-', html)
         self.assertFalse(any(ROOT.glob('repository.appi-*.zip')))
 

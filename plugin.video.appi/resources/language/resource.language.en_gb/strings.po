@@ -314,16 +314,16 @@ msgid "Enable background metadata"
 msgstr "Enable background metadata"
 
 msgctxt "#32611"
-msgid "Queues every visible title in Appi's live browser and updates plots, posters, cast, directors, episode names and IMDb ratings as they arrive."
-msgstr "Queues every visible title in Appi's live browser and updates plots, posters, cast, directors, episode names and IMDb ratings as they arrive."
+msgid "Queues focused titles automatically. Folder and show context menus can explicitly queue everything beneath them; lookups run while playback and downloads are idle. Requires TMDb Helper."
+msgstr "Queues focused titles automatically. Folder and show context menus can explicitly queue everything beneath them; lookups run while playback and downloads are idle. Requires TMDb Helper."
 
 msgctxt "#32612"
 msgid "Maximum cached titles"
 msgstr "Maximum cached titles"
 
 msgctxt "#32613"
-msgid "Limits Appi's metadata database. Poster images are cached separately by Kodi and are not included in this limit."
-msgstr "Limits Appi's metadata database. Poster images are cached separately by Kodi and are not included in this limit."
+msgid "Limits automatically discovered metadata. Explicit folder/show batches are retained; shared TV-show artwork and cast are stored once rather than copied into every episode."
+msgstr "Limits automatically discovered metadata. Explicit folder/show batches are retained; shared TV-show artwork and cast are stored once rather than copied into every episode."
 
 msgctxt "#32614"
 msgid "Metadata Status"
@@ -338,8 +338,8 @@ msgid "Clear Metadata Cache"
 msgstr "Clear Metadata Cache"
 
 msgctxt "#32617"
-msgid "Deletes cached plots, posters, cast, directors, episode names and IMDb ratings."
-msgstr "Deletes cached plots, posters, cast, directors, episode names and IMDb ratings."
+msgid "Deletes cached plots, posters, cast, episode names and IMDb ratings."
+msgstr "Deletes cached plots, posters, cast, episode names and IMDb ratings."
 
 msgctxt "#32620"
 msgid "250 titles"
