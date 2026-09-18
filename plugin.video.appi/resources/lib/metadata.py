@@ -13,7 +13,7 @@ import xbmcvfs
 ADDON = xbmcaddon.Addon()
 PROFILE = xbmcvfs.translatePath(ADDON.getAddonInfo('profile'))
 HELPER_ID = 'plugin.video.themoviedb.helper'
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 DEFAULT_MAX_ITEMS = 1000
 
 
@@ -55,9 +55,9 @@ def _connect():
     )
     current_version = connection.execute('PRAGMA user_version').fetchone()[0]
     if current_version and current_version < SCHEMA_VERSION:
-        # Version 1 stored a full copy of show artwork/cast in every episode.
-        # Re-fetch under the normalised schema instead of carrying that
-        # duplication forward indefinitely.
+        # Versions 1 and 2 used incompatible layouts and stored a full copy of
+        # show artwork/cast in every episode. Re-fetch under the normalised
+        # schema instead of carrying duplication or missing columns forward.
         connection.execute('DROP TABLE metadata')
         connection.execute('DROP TABLE queue')
         connection.execute(

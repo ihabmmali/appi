@@ -10,6 +10,43 @@ PLUGIN = ROOT / 'plugin.video.appi'
 
 
 class MetadataTests(unittest.TestCase):
+    def test_version_two_cache_is_rebuilt_for_normalised_schema(self):
+        code = r'''
+import os, sqlite3, sys, tempfile, types
+from pathlib import Path
+PLUGIN=Path(sys.argv[1]); sys.path.insert(0,str(PLUGIN))
+profile=tempfile.mkdtemp(prefix='appi-meta-migrate-')
+path=os.path.join(profile,'metadata.db')
+with sqlite3.connect(path) as connection:
+    connection.execute('CREATE TABLE metadata(cache_key TEXT PRIMARY KEY,fetched_at INTEGER NOT NULL,data TEXT NOT NULL)')
+    connection.execute('CREATE TABLE queue(cache_key TEXT PRIMARY KEY,queued_at INTEGER NOT NULL,payload TEXT NOT NULL,priority INTEGER NOT NULL DEFAULT 0)')
+    connection.execute("INSERT INTO metadata VALUES('old',1,'{}')")
+    connection.execute('PRAGMA user_version=2')
+xbmc=types.ModuleType('xbmc'); xbmc.LOGWARNING=2; xbmc.log=lambda *a,**k:None
+xbmc.getCondVisibility=lambda q:True
+class Player:
+    def isPlayingVideo(self): return False
+xbmc.Player=Player; sys.modules['xbmc']=xbmc
+xa=types.ModuleType('xbmcaddon')
+class Addon:
+    def getSetting(self,n): return 'true' if n=='metadata_enabled' else ''
+    def getAddonInfo(self,n): return profile if n=='profile' else ''
+xa.Addon=Addon; sys.modules['xbmcaddon']=xa
+xv=types.ModuleType('xbmcvfs'); xv.translatePath=lambda p:p; xv.exists=os.path.exists; xv.mkdirs=lambda p:os.makedirs(p,exist_ok=True)
+sys.modules['xbmcvfs']=xv
+from resources.lib import metadata
+with metadata._connect() as connection:
+    assert connection.execute('PRAGMA user_version').fetchone()[0]==3
+    assert 'pinned' in {row[1] for row in connection.execute('PRAGMA table_info(metadata)')}
+    assert 'pinned' in {row[1] for row in connection.execute('PRAGMA table_info(queue)')}
+    assert connection.execute('SELECT COUNT(*) FROM metadata').fetchone()[0]==0
+'''
+        result = subprocess.run(
+            [sys.executable, '-c', textwrap.dedent(code), str(PLUGIN)],
+            capture_output=True, text=True,
+        )
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
     def test_queue_fetch_normalisation_and_bounded_cache(self):
         code = r'''
 import json, os, sys, tempfile, types
