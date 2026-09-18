@@ -382,8 +382,8 @@ msgid "Download folder"
 msgstr "Download folder"
 
 msgctxt "#32711"
-msgid "Choose a writable local folder. Appi creates Movies and TV Shows subfolders here; add those subfolders as Kodi video sources for standard library playback and deletion."
-msgstr "Choose a writable local folder. Appi creates Movies and TV Shows subfolders here; add those subfolders as Kodi video sources for standard library playback and deletion."
+msgid "Choose a writable local folder. Appi creates Movies and TV Shows subfolders here; add those subfolders as Kodi video sources. Separate-audio HLS is stored as a local offline bundle behind a STRM library item."
+msgstr "Choose a writable local folder. Appi creates Movies and TV Shows subfolders here; add those subfolders as Kodi video sources. Separate-audio HLS is stored as a local offline bundle behind a STRM library item."
 
 msgctxt "#32712"
 msgid "Download Status"

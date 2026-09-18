@@ -12,7 +12,7 @@ STRINGS = PLUGIN / 'resources' / 'language' / 'resource.language.en_gb' / 'strin
 class SettingsLocalizationTests(unittest.TestCase):
     def test_stable_browser_and_download_batch_features_are_packaged(self):
         addon = ET.parse(PLUGIN / 'addon.xml').getroot()
-        self.assertEqual(addon.attrib.get('version'), '0.7.3')
+        self.assertEqual(addon.attrib.get('version'), '0.7.4')
         helper = addon.find("./requires/import[@addon='plugin.video.themoviedb.helper']")
         self.assertIsNotNone(helper)
         self.assertNotEqual(helper.attrib.get('optional'), 'true')
@@ -25,9 +25,13 @@ class SettingsLocalizationTests(unittest.TestCase):
         self.assertIn("'fetch_metadata_batch'", app)
         self.assertIn("'clear_metadata_queue'", app)
         self.assertIn("'remove_recent'", app)
+        self.assertIn('Fetch metadata for all Recently Played Movies', app)
+        self.assertIn('Fetch metadata for all Recently Played TV Shows', app)
         metadata = (PLUGIN / 'resources' / 'lib' / 'metadata.py').read_text(encoding='utf-8')
         self.assertIn('def show_payload', metadata)
         self.assertIn("'episode_title', 'plot', 'imdb_rating', 'imdb_votes'", metadata)
+        downloads = (PLUGIN / 'resources' / 'lib' / 'downloads.py').read_text(encoding='utf-8')
+        self.assertIn('def _download_hls_bundle', downloads)
 
     def test_po_has_one_entry_per_blank_line_block(self):
         text = STRINGS.read_text(encoding='utf-8')

@@ -436,9 +436,9 @@ def _remove_recent_context(catalog_name, item=None, show_key=None):
     )
 
 
-def _metadata_batch_context(**params):
+def _metadata_batch_context(label=None, **params):
     return (
-        'Fetch metadata for everything in this folder',
+        label or 'Fetch metadata for everything in this folder',
         _context_action('fetch_metadata_batch', **params),
     )
 
@@ -748,11 +748,17 @@ def show_root():
         _folder_tuple('Search', _url('search')),
         _folder_tuple(
             'Recently Played Movies', _url('recent_movies', page=1),
-            context_items=[_metadata_batch_context(scope='movies', mode='recent_played')],
+            context_items=[_metadata_batch_context(
+                'Fetch metadata for all Recently Played Movies',
+                scope='movies', mode='recent_played',
+            )],
         ),
         _folder_tuple(
             'Recently Played TV Shows', _url('recent_tvshows', page=1),
-            context_items=[_metadata_batch_context(scope='tv', mode='recent_played')],
+            context_items=[_metadata_batch_context(
+                'Fetch metadata for all Recently Played TV Shows',
+                scope='tv', mode='recent_played',
+            )],
         ),
         _folder_tuple('Settings', _url('settings')),
     ]
@@ -898,13 +904,17 @@ def show_recent_movies():
     _add_video_sort_methods()
     resume_points = playback_history.resume_points('movies')
     metadata_cache = metadata.load_all()
-    tuples = [
-        _playable_tuple(
+    tuples = []
+    for item in entries:
+        playable = _playable_tuple(
             item, 'movies', resume=True, resume_points=resume_points,
             metadata_cache=metadata_cache, recent=True,
         )
-        for item in entries
-    ]
+        _add_context(playable[1], [_metadata_batch_context(
+            'Fetch metadata for all Recently Played Movies',
+            scope='movies', mode='recent_played',
+        )])
+        tuples.append(playable)
     _send_items(tuples)
     _finish()
 
@@ -940,7 +950,12 @@ def show_recent_tvshows():
         context = [(
             'Playback options for this show...',
             _context_action('configure_playback', target='show', catalog='tv', show_key=summary['show_key']),
-        ), _metadata_context(payload), _metadata_batch_context(show_key=summary['show_key']),
+        ), _metadata_context(payload), _metadata_batch_context(
+            'Fetch metadata for this entire show', show_key=summary['show_key']
+        ), _metadata_batch_context(
+            'Fetch metadata for all Recently Played TV Shows',
+            scope='tv', mode='recent_played',
+        ),
             _remove_recent_context('tv', show_key=summary['show_key'])]
         result = _folder_tuple(
             label, _url('recent_show', show_key=summary['show_key']), info, context

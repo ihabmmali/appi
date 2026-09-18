@@ -1,3 +1,4 @@
+import hashlib
 import json
 import os
 import re
@@ -7,7 +8,7 @@ import threading
 import time
 import unicodedata
 import xml.etree.ElementTree as ET
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlparse
 from urllib.request import Request, urlopen
 
 import xbmc
@@ -261,9 +262,17 @@ def _parse_attributes(value):
     return result
 
 
-def _media_playlist(url, text):
+def _hls_selection(url, text):
     lines = [line.strip() for line in (text or '').splitlines() if line.strip()]
     variants = []
+    audio_groups = {}
+    for line in lines:
+        if not line.startswith('#EXT-X-MEDIA:'):
+            continue
+        attrs = _parse_attributes(line.split(':', 1)[1])
+        if (attrs.get('TYPE') or '').upper() != 'AUDIO' or not attrs.get('URI'):
+            continue
+        audio_groups.setdefault(attrs.get('GROUP-ID') or '', []).append(attrs)
     for index, line in enumerate(lines):
         if not line.startswith('#EXT-X-STREAM-INF:'):
             continue
@@ -274,19 +283,206 @@ def _media_playlist(url, text):
                 bandwidth = int(attrs.get('AVERAGE-BANDWIDTH') or attrs.get('BANDWIDTH') or 0)
             except (TypeError, ValueError):
                 bandwidth = 0
-            variants.append((bandwidth, urljoin(url, uri), bool(attrs.get('AUDIO'))))
+            variants.append((bandwidth, urljoin(url, uri), attrs))
     if not variants:
-        return url, text
+        return {
+            'video_url': url, 'video_text': text, 'variant': {}, 'audio': None,
+        }
     try:
         maximum = max(250, int(ADDON.getSetting('hls_max_bitrate_kbps') or 8000)) * 1000
     except (TypeError, ValueError):
         maximum = 8000000
     within = [entry for entry in variants if entry[0] and entry[0] <= maximum]
     selected = max(within or variants, key=lambda entry: entry[0])
-    if selected[2]:
-        raise RuntimeError('HLS with a separate audio rendition cannot be packaged safely')
     selected_text = fetch_text(selected[1], timeout=30)
-    return _media_playlist(selected[1], selected_text)
+    audio = None
+    group_id = selected[2].get('AUDIO') or ''
+    candidates = audio_groups.get(group_id) or []
+    if candidates:
+        chosen = max(
+            candidates,
+            key=lambda value: (
+                (value.get('DEFAULT') or '').upper() == 'YES',
+                (value.get('AUTOSELECT') or '').upper() == 'YES',
+            ),
+        )
+        audio_url = urljoin(url, chosen['URI'])
+        audio = {
+            'url': audio_url,
+            'text': fetch_text(audio_url, timeout=30),
+            'attrs': chosen,
+        }
+    if '#EXT-X-STREAM-INF:' in selected_text and not audio:
+        return _hls_selection(selected[1], selected_text)
+    return {
+        'video_url': selected[1], 'video_text': selected_text,
+        'variant': selected[2], 'audio': audio,
+    }
+
+
+def _media_playlist(url, text):
+    selected = _hls_selection(url, text)
+    return selected['video_url'], selected['video_text']
+
+
+def _local_extension(url, fallback):
+    extension = os.path.splitext(urlparse(url).path)[1].lower()
+    if not extension or len(extension) > 8 or not re.match(r'^\.[a-z0-9]+$', extension):
+        return fallback
+    return extension
+
+
+def _format_hls_attributes(attributes):
+    bare = {'BANDWIDTH', 'AVERAGE-BANDWIDTH', 'RESOLUTION', 'FRAME-RATE'}
+    values = []
+    for key, value in attributes.items():
+        value = str(value)
+        if key in bare or value.upper() in {'YES', 'NO'}:
+            values.append('{}={}'.format(key, value))
+        else:
+            values.append('{}="{}"'.format(key, value.replace('"', '')))
+    return ','.join(values)
+
+
+def _offline_playlist_plan(url, text, track_name):
+    if '#EXT-X-ENDLIST' not in text:
+        raise RuntimeError('Only completed HLS programmes can be downloaded')
+    output = []
+    resources = []
+    pending_range = ''
+    previous_end = 0
+    previous_uri = ''
+    segment_index = 0
+    for raw_line in text.splitlines():
+        line = raw_line.strip()
+        if not line:
+            continue
+        if line in {'#EXT-X-GAP', '#EXT-X-I-FRAMES-ONLY'}:
+            raise RuntimeError('HLS playlist contains unsupported gap or iframe-only data')
+        if line.startswith('#EXT-X-KEY:'):
+            attrs = _parse_attributes(line.split(':', 1)[1])
+            if (attrs.get('METHOD') or 'NONE').upper() != 'NONE':
+                raise RuntimeError('Encrypted HLS cannot be downloaded')
+            output.append(line)
+        elif line.startswith('#EXT-X-MAP:'):
+            attrs = _parse_attributes(line.split(':', 1)[1])
+            raw_uri = attrs.get('URI') or ''
+            if not raw_uri:
+                raise RuntimeError('HLS initialization segment has no URI')
+            resource_url = urljoin(url, raw_uri)
+            if attrs.get('BYTERANGE') and '@' not in attrs['BYTERANGE'] and previous_uri != resource_url:
+                previous_end = 0
+            byte_range, previous_end = _byterange(attrs.get('BYTERANGE'), previous_end)
+            local_name = 'init' + _local_extension(resource_url, '.mp4')
+            resources.append((resource_url, byte_range, local_name))
+            output.append('#EXT-X-MAP:URI="{}"'.format(local_name))
+            previous_uri = resource_url
+        elif line.startswith('#EXT-X-BYTERANGE:'):
+            pending_range = line.split(':', 1)[1]
+        elif not line.startswith('#'):
+            resource_url = urljoin(url, line)
+            if pending_range and '@' not in pending_range and previous_uri != resource_url:
+                raise RuntimeError('Invalid implicit HLS byte range across different resources')
+            byte_range, previous_end = _byterange(pending_range, previous_end)
+            pending_range = ''
+            local_name = '{0}-{1:05d}{2}'.format(
+                track_name, segment_index, _local_extension(resource_url, '.bin')
+            )
+            segment_index += 1
+            resources.append((resource_url, byte_range, local_name))
+            output.append(local_name)
+            previous_uri = resource_url
+        else:
+            output.append(line)
+    if not segment_index:
+        raise RuntimeError('HLS playlist contained no media segments')
+    return output, resources
+
+
+def _download_offline_track(
+        directory, playlist_lines, resources, identifier, completed, total,
+        stop_event, playing_callback):
+    _ensure_directory(directory)
+    for resource_url, byte_range, local_name in resources:
+        target = os.path.join(directory, local_name)
+        if not os.path.exists(target) or os.path.getsize(target) == 0:
+            part = target + '.part'
+            try:
+                _download_resource(
+                    resource_url, byte_range, part, stop_event, playing_callback
+                )
+                os.replace(part, target)
+            except Exception:
+                try:
+                    os.remove(part)
+                except FileNotFoundError:
+                    pass
+                raise
+        completed += 1
+        _progress(identifier, float(completed) / total if total else 0.0)
+    with open(os.path.join(directory, 'playlist.m3u8'), 'w', encoding='utf-8') as handle:
+        handle.write('\n'.join(playlist_lines) + '\n')
+    return completed
+
+
+def _download_hls_bundle(
+        selected, target_base, identifier, stop_event,
+        playing_callback=lambda: False):
+    audio = selected.get('audio')
+    if not audio:
+        raise RuntimeError('Offline HLS bundle requires a separate audio rendition')
+    video_lines, video_resources = _offline_playlist_plan(
+        selected['video_url'], selected['video_text'], 'video'
+    )
+    audio_lines, audio_resources = _offline_playlist_plan(
+        audio['url'], audio['text'], 'audio'
+    )
+    identity = hashlib.sha256((
+        selected['video_url'] + '\n' + selected['video_text'] + '\n' +
+        audio['url'] + '\n' + audio['text']
+    ).encode('utf-8')).hexdigest()
+    part_dir = target_base + '.hls.part'
+    final_dir = target_base + '.hls'
+    identity_path = os.path.join(part_dir, '.identity')
+    existing_identity = ''
+    try:
+        with open(identity_path, 'r', encoding='ascii') as handle:
+            existing_identity = handle.read().strip()
+    except OSError:
+        pass
+    if existing_identity != identity:
+        shutil.rmtree(part_dir, ignore_errors=True)
+    _ensure_directory(part_dir)
+    with open(identity_path, 'w', encoding='ascii') as handle:
+        handle.write(identity + '\n')
+    total = len(video_resources) + len(audio_resources)
+    completed = _download_offline_track(
+        os.path.join(part_dir, 'video'), video_lines, video_resources,
+        identifier, 0, total, stop_event, playing_callback,
+    )
+    _download_offline_track(
+        os.path.join(part_dir, 'audio'), audio_lines, audio_resources,
+        identifier, completed, total, stop_event, playing_callback,
+    )
+    audio_attrs = dict(audio.get('attrs') or {})
+    audio_attrs.update({'TYPE': 'AUDIO', 'GROUP-ID': 'offline-audio', 'URI': 'audio/playlist.m3u8'})
+    variant_attrs = dict(selected.get('variant') or {})
+    variant_attrs['AUDIO'] = 'offline-audio'
+    master = [
+        '#EXTM3U',
+        '#EXT-X-MEDIA:' + _format_hls_attributes(audio_attrs),
+        '#EXT-X-STREAM-INF:' + _format_hls_attributes(variant_attrs),
+        'video/playlist.m3u8',
+    ]
+    with open(os.path.join(part_dir, 'master.m3u8'), 'w', encoding='utf-8') as handle:
+        handle.write('\n'.join(master) + '\n')
+    shutil.rmtree(final_dir, ignore_errors=True)
+    os.replace(part_dir, final_dir)
+    target = target_base + '.strm'
+    with open(target + '.part', 'w', encoding='utf-8') as handle:
+        handle.write(os.path.join(final_dir, 'master.m3u8') + '\n')
+    os.replace(target + '.part', target)
+    return target
 
 
 def _byterange(value, previous_end):
@@ -363,7 +559,12 @@ def _download_resource(
 def _download_hls(
         url, text, target_base, identifier, stop_event,
         playing_callback=lambda: False):
-    media_url, media_text = _media_playlist(url, text)
+    selected = _hls_selection(url, text)
+    if selected.get('audio'):
+        return _download_hls_bundle(
+            selected, target_base, identifier, stop_event, playing_callback
+        )
+    media_url, media_text = selected['video_url'], selected['video_text']
     init_segment, segments = _parse_hls(media_url, media_text)
     extension = '.mp4' if init_segment else '.ts'
     target = target_base + extension
@@ -479,6 +680,24 @@ def _scan(path):
         pass
 
 
+def _cleanup_orphaned_hls():
+    root = download_root()
+    for current, directories, _files in os.walk(root):
+        for name in list(directories):
+            if not name.endswith('.hls'):
+                continue
+            package = os.path.join(current, name)
+            base = package[:-4]
+            if not os.path.exists(base + '.strm'):
+                shutil.rmtree(package, ignore_errors=True)
+                for suffix in ('.nfo', '-poster.jpg', '-fanart.jpg'):
+                    try:
+                        os.remove(base + suffix)
+                    except FileNotFoundError:
+                        pass
+            directories.remove(name)
+
+
 def _download(job, stop_event, playing_callback=lambda: False):
     item = job['item']
     payload = metadata.lookup_payload(item)
@@ -506,7 +725,14 @@ def _download(job, stop_event, playing_callback=lambda: False):
 
 
 def worker(stop_event, playing_callback):
+    next_cleanup = 0.0
     while not stop_event.wait(1.0):
+        if time.monotonic() >= next_cleanup:
+            try:
+                _cleanup_orphaned_hls()
+            except (OSError, RuntimeError) as exc:
+                xbmc.log('Appi offline HLS cleanup failed: {}'.format(exc), xbmc.LOGWARNING)
+            next_cleanup = time.monotonic() + 300.0
         if playing_callback():
             continue
         job = _claim_next()

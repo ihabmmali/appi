@@ -6,6 +6,14 @@ Appi is a Kodi video add-on for user-configured movie and TV-show M3U catalogues
 
 Add `https://ihabmmali.github.io/appi/` in Kodi File Manager, then install the current `plugin.video.appi-<version>.zip`.
 
+## 0.7.4
+
+- Expose **Fetch metadata for all Recently Played...** from within both recent-media lists as well as on their home-screen folders.
+- Give recent TV shows separate batch actions for the selected show and for every recently played show.
+- Download completed, unencrypted HLS programmes that use separate video and audio renditions as a local offline HLS bundle.
+- Surface the offline bundle through a Kodi-library-compatible STRM file and remove orphaned bundle data after that STRM file is deleted.
+- Keep the existing direct MP4 and single-track HLS download paths unchanged.
+
 ## 0.7.3
 
 - Add **Stop and Clear Metadata Queue** without deleting metadata already fetched.

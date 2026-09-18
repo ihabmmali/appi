@@ -83,11 +83,42 @@ try:
     raise AssertionError('encrypted HLS should be rejected')
 except RuntimeError as exc:
     assert 'Encrypted HLS' in str(exc)
-try:
-    downloads._media_playlist('https://x/master.m3u8','#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=1000000,AUDIO="audio"\nvideo.m3u8')
-    raise AssertionError('separate HLS audio should require a remuxer')
-except RuntimeError as exc:
-    assert 'separate audio' in str(exc)
+master="""#EXTM3U
+#EXT-X-MEDIA:TYPE=AUDIO,GROUP-ID="audio",NAME="English",DEFAULT=YES,AUTOSELECT=YES,URI="audio.m3u8"
+#EXT-X-STREAM-INF:BANDWIDTH=1000000,CODECS="avc1.4d401f,mp4a.40.2",AUDIO="audio"
+video.m3u8
+"""
+video="""#EXTM3U
+#EXT-X-TARGETDURATION:4
+#EXTINF:4,
+video-1.m4s
+#EXT-X-ENDLIST
+"""
+audio="""#EXTM3U
+#EXT-X-TARGETDURATION:4
+#EXTINF:4,
+audio-1.m4s
+#EXT-X-ENDLIST
+"""
+downloads.fetch_text=lambda url,timeout=30: {
+    'https://x/video.m3u8':video,
+    'https://x/audio.m3u8':audio,
+}[url]
+bundle_base=os.path.join(settings['download_folder'],'separate-audio')
+bundle=downloads._download_hls(
+    'https://x/master.m3u8',master,bundle_base,'separate',threading.Event()
+)
+assert bundle.endswith('.strm') and os.path.exists(bundle)
+local_master=open(bundle,encoding='utf-8').read().strip()
+assert os.path.exists(local_master)
+master_text=open(local_master,encoding='utf-8').read()
+assert 'AUDIO="offline-audio"' in master_text
+assert 'audio/playlist.m3u8' in master_text and 'video/playlist.m3u8' in master_text
+assert os.path.exists(os.path.join(bundle_base+'.hls','video','video-00000.m4s'))
+assert os.path.exists(os.path.join(bundle_base+'.hls','audio','audio-00000.m4s'))
+os.remove(bundle)
+downloads._cleanup_orphaned_hls()
+assert not os.path.exists(bundle_base+'.hls')
 '''
         result = subprocess.run(
             [sys.executable, '-c', textwrap.dedent(code), str(PLUGIN)],
