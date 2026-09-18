@@ -50,7 +50,11 @@ class RepositoryTests(unittest.TestCase):
         plugin_id, plugin_version = addon_identity(ROOT / 'plugin.video.appi')
         html = (ROOT / 'index.html').read_text(encoding='utf-8')
         plugin_name = f'{plugin_id}-{plugin_version}.zip'
-        self.assertIn(plugin_name, html)
+        self.assertIn(f'href="{plugin_name}">{plugin_name}</a>', html)
+        self.assertIn(
+            'href="plugin.video.appi-0.6.3.zip">plugin.video.appi-0.6.3.zip</a>',
+            html,
+        )
         self.assertNotIn('repository.appi-', html)
         self.assertFalse(any(ROOT.glob('repository.appi-*.zip')))
 

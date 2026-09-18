@@ -135,9 +135,9 @@ def build_pages_entry(plugin_zip):
     for path in ROOT.glob('repository.appi-*.zip'):
         path.unlink()
 
-    links = ['  <p><a href="{0}">{0} (current)</a></p>'.format(current.name)]
+    links = ['  <p><a href="{0}">{0}</a> (current)</p>'.format(current.name)]
     links.extend(
-        '  <p><a href="{0}">{0} (known-good fallback)</a></p>'.format(path.name)
+        '  <p><a href="{0}">{0}</a> (known-good fallback)</p>'.format(path.name)
         for path in fallback_paths
     )
     html = '''<!doctype html>
