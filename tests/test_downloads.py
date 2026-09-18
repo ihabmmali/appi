@@ -124,8 +124,16 @@ assert downloads.control(control_id,'pause')
 assert next(value for value in downloads.entries() if value['download_id']==control_id)['status']=='paused'
 assert downloads.control(control_id,'resume')
 assert next(value for value in downloads.entries() if value['download_id']==control_id)['status']=='queued'
+control_base=downloads._base_destination(
+    {'download_id':control_id,'catalog':'movies','show_key':'','item':control_movie}, {}
+)
+for suffix in ('.ts.part','.ts.part.json','.ts.part.segment'):
+    with open(control_base+suffix,'wb') as handle: handle.write(b'partial')
+with downloads._connect() as connection:
+    connection.execute('UPDATE downloads SET target_path=? WHERE download_id=?',(control_base,control_id))
 assert downloads.control(control_id,'cancel')
 assert not any(value['download_id']==control_id for value in downloads.entries())
+assert not any(os.path.exists(control_base+suffix) for suffix in ('.ts.part','.ts.part.json','.ts.part.segment'))
 '''
         result = subprocess.run(
             [sys.executable, '-c', textwrap.dedent(code), str(PLUGIN)],

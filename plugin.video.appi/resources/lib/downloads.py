@@ -240,6 +240,8 @@ def _remove_job_files(target_path):
     for suffix in (
         '.strm', '.mp4', '.ts', '.mkv', '.nfo', '.part',
         '.mp4.part', '.ts.part', '.part.json',
+        '.mp4.part.json', '.ts.part.json',
+        '.mp4.part.segment', '.ts.part.segment',
     ):
         try:
             os.remove(base + suffix)
