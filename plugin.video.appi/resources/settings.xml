@@ -100,6 +100,38 @@
       </group>
     </category>
 
+    <category id="metadata" label="32600" help="">
+      <group id="1" label="32601">
+        <setting id="metadata_enabled" type="boolean" label="32610" help="32611">
+          <level>0</level><default>true</default><control type="toggle"/>
+        </setting>
+        <setting id="metadata_cache_items" type="integer" label="32612" help="32613">
+          <level>0</level><default>1000</default>
+          <constraints>
+            <options>
+              <option label="32620">250</option>
+              <option label="32621">500</option>
+              <option label="32622">1000</option>
+              <option label="32623">2000</option>
+            </options>
+          </constraints>
+          <control type="list" format="string"><heading>32612</heading></control>
+        </setting>
+      </group>
+      <group id="2" label="32602">
+        <setting id="metadata_status" type="action" label="32614" help="32615">
+          <level>0</level>
+          <data>RunPlugin(plugin://$ID/?action=metadata_status)</data>
+          <control type="button" format="action"><close>false</close></control>
+        </setting>
+        <setting id="clear_metadata_cache" type="action" label="32616" help="32617">
+          <level>0</level>
+          <data>RunPlugin(plugin://$ID/?action=clear_data&amp;scope=metadata)</data>
+          <control type="button" format="action"><close>true</close></control>
+        </setting>
+      </group>
+    </category>
+
     <category id="maintenance" label="32500" help="">
       <group id="1" label="32501">
         <setting id="refresh_movie_list" type="action" label="32510" help="32511">

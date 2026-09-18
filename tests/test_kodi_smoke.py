@@ -11,7 +11,7 @@ PLUGIN = ROOT / 'plugin.video.appi'
 class KodiControllerSmokeTests(unittest.TestCase):
     def test_indexed_browse_search_refresh_sort_and_playback_paths(self):
         code = r'''
-import os, sys, tempfile, types
+import json, os, sys, tempfile, types
 from pathlib import Path
 from urllib.error import HTTPError
 PLUGIN = Path(sys.argv[1])
@@ -30,6 +30,7 @@ xbmc.log=lambda *a,**k: None; xbmc.executebuiltin=lambda *a,**k: None
 xbmc.getCondVisibility=lambda q: True
 xbmc.executeJSONRPC=lambda s:'{"jsonrpc":"2.0","id":1,"result":{"value":0}}'
 xbmc.Player=type('Player',(),{}); xbmc.Monitor=type('Monitor',(),{})
+xbmc.Actor=lambda name,role='',order=0,thumbnail='': {'name':name,'role':role}
 sys.modules['xbmc']=xbmc
 profile=tempfile.mkdtemp(prefix='appi-smoke-')
 xa=types.ModuleType('xbmcaddon')
@@ -42,12 +43,18 @@ xv=types.ModuleType('xbmcvfs'); xv.translatePath=lambda p: tempfile.gettempdir()
 sys.modules['xbmcvfs']=xv
 xg=types.ModuleType('xbmcgui'); xg.NOTIFICATION_ERROR=1; xg.NOTIFICATION_INFO=0; xg.INPUT_ALPHANUM=0; xg.INPUT_NUMERIC=1
 class Tag:
+    def __init__(self,owner): self.owner=owner
+    def setPlot(self,value): self.owner.tagdata['plot']=value
+    def setRating(self,*value): self.owner.tagdata['rating']=value
+    def setCast(self,value): self.owner.tagdata['cast']=value
+    def setTitle(self,value): self.owner.tagdata['tag_title']=value
     def __getattr__(self,n): return lambda *a,**k: None
 class ListItem:
-    def __init__(self,label='',path='',offscreen=False): self.label=label; self.path=path; self.info={}; self.props={}; self.context=[]
+    def __init__(self,label='',path='',offscreen=False): self.label=label; self.path=path; self.info={}; self.props={}; self.context=[]; self.art={}; self.tagdata={}
     def setInfo(self,t,d): self.info.update(d)
     def setProperty(self,k,v): self.props[k]=v
-    def getVideoInfoTag(self): return Tag()
+    def getVideoInfoTag(self): return Tag(self)
+    def setArt(self,value): self.art.update(value)
     def setMimeType(self,v): self.mime=v
     def setContentLookup(self,v): self.lookup=v
     def setSubtitles(self,v): self.subs=v
@@ -76,12 +83,17 @@ xp.addSortMethod=lambda h,m,*args: state['sort'].append(m)
 xp.endOfDirectory=lambda *a,**k: state['ended'].append(True) or True
 xp.setResolvedUrl=lambda *a,**k: True
 sys.modules['xbmcplugin']=xp
-from resources.lib import app, playback_prefs
+from resources.lib import app, metadata, playback_prefs
 
 movies=[{'kind':'movie','display_title':'Movie %03d (2025)'%i,'title':'Movie %03d'%i,'year':2025,'tvg_id':'tt%03d'%i,'media_url':'https://x/m%d'%i} for i in range(30)]
 shows=[{'show_key':'tt%03d\\x1fShow %03d\\x1f2025'%(i,i),'cache_name':'tv_show_%d'%i,'show_title':'Show %03d'%i,'group_title':'Show %03d (2025)'%i,'year':2025,'tvg_id':'tt%03d'%i,'seasons':[1],'episode_count':1} for i in range(30)]
 eps=[{'kind':'episode','display_title':'Show 000 (2025) S01 E01','show_title':'Show 000','year':2025,'tvg_id':'tt000','season':1,'episode':1,'media_url':'https://x/e'}]
 app._load_movies=lambda: movies; app._load_tv_shows=lambda: shows; app._load_show_episodes=lambda key: eps
+
+lookup=metadata.lookup_payload(movies[0])
+enriched={'plot':'Cached plot','poster':'https://img/poster.jpg','cast':[{'name':'Actor','role':'Lead'}],'imdb_rating':7.7,'imdb_votes':99}
+with metadata._connect() as connection:
+    connection.execute('INSERT INTO metadata(cache_key,fetched_at,data) VALUES(?,?,?)',(metadata.cache_key(lookup),1,json.dumps(enriched)))
 
 app.show_root()
 root_labels=[row[1].label for row in state['items']]
@@ -105,6 +117,9 @@ assert [row[1].label for row in state['items'][:3]] == [
     'Movie 000 (2025)', 'Movie 001 (2025)', 'Movie 002 (2025)'
 ]
 assert state['items'][0][1].info['title'] == 'Movie 000 (2025)'
+assert state['items'][0][1].art['poster'] == 'https://img/poster.jpg'
+assert state['items'][0][1].tagdata['plot'] == 'Cached plot'
+assert state['items'][0][1].tagdata['rating'] == (7.7, 99, 'imdb', True)
 assert state['items'][0][1].info['dateadded'] > state['items'][1][1].info['dateadded']
 state['items'].clear(); state['sort'].clear()
 app.show_browse_index('movies','alpha')

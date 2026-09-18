@@ -296,3 +296,63 @@ msgstr "Clear Recent Media"
 msgctxt "#32529"
 msgid "Deletes Recently Played entries and their resume positions."
 msgstr "Deletes Recently Played entries and their resume positions."
+
+msgctxt "#32600"
+msgid "Metadata"
+msgstr "Metadata"
+
+msgctxt "#32601"
+msgid "On-demand metadata"
+msgstr "On-demand metadata"
+
+msgctxt "#32602"
+msgid "Metadata cache"
+msgstr "Metadata cache"
+
+msgctxt "#32610"
+msgid "Enable background metadata"
+msgstr "Enable background metadata"
+
+msgctxt "#32611"
+msgid "Queues one title after it remains focused for three seconds and fetches it while playback is idle. Requires TMDb Helper."
+msgstr "Queues one title after it remains focused for three seconds and fetches it while playback is idle. Requires TMDb Helper."
+
+msgctxt "#32612"
+msgid "Maximum cached titles"
+msgstr "Maximum cached titles"
+
+msgctxt "#32613"
+msgid "Limits Appi's metadata database. Poster images are cached separately by Kodi and are not included in this limit."
+msgstr "Limits Appi's metadata database. Poster images are cached separately by Kodi and are not included in this limit."
+
+msgctxt "#32614"
+msgid "Metadata Status"
+msgstr "Metadata Status"
+
+msgctxt "#32615"
+msgid "Shows whether TMDb Helper is installed and how many metadata entries are cached or queued."
+msgstr "Shows whether TMDb Helper is installed and how many metadata entries are cached or queued."
+
+msgctxt "#32616"
+msgid "Clear Metadata Cache"
+msgstr "Clear Metadata Cache"
+
+msgctxt "#32617"
+msgid "Deletes cached plots, posters, cast, episode names and IMDb ratings."
+msgstr "Deletes cached plots, posters, cast, episode names and IMDb ratings."
+
+msgctxt "#32620"
+msgid "250 titles"
+msgstr "250 titles"
+
+msgctxt "#32621"
+msgid "500 titles"
+msgstr "500 titles"
+
+msgctxt "#32622"
+msgid "1,000 titles"
+msgstr "1,000 titles"
+
+msgctxt "#32623"
+msgid "2,000 titles"
+msgstr "2,000 titles"

@@ -57,9 +57,10 @@ class SettingsLocalizationTests(unittest.TestCase):
                 'refresh_movie_list', 'refresh_tv_list', 'refresh_all_lists',
                 'clear_movie_cache', 'clear_tv_cache', 'clear_catalog_caches',
                 'clear_saved_subtitles', 'clear_recent_media',
+                'metadata_status', 'clear_metadata_cache',
             },
         )
-        for scope in ('movies', 'tv', 'catalogs', 'subtitles', 'recent'):
+        for scope in ('movies', 'tv', 'catalogs', 'subtitles', 'recent', 'metadata'):
             self.assertTrue(any('scope={}'.format(scope) in value for value in actions.values()))
 
 

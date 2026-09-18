@@ -4,6 +4,7 @@ import xbmc
 import xbmcaddon
 
 from . import playback_history
+from . import metadata
 from . import subtitle_store
 
 ADDON = xbmcaddon.Addon()
@@ -95,6 +96,10 @@ def run():
     monitor = xbmc.Monitor()
     player = AppiPlayer()
     next_progress_poll = 0.0
+    next_metadata_poll = 0.0
+    focused_value = ''
+    focused_since = 0.0
+    queued_focus = ''
     while not monitor.abortRequested():
         playing = player.isPlayingVideo()
         if playing and _enabled('persist_subtitles', True):
@@ -108,5 +113,24 @@ def run():
             next_progress_poll = now + 5.0
         if not playing:
             next_progress_poll = 0.0
+            try:
+                value = xbmc.getInfoLabel('ListItem.Property(Appi.MetadataLookup)') or ''
+            except Exception:
+                value = ''
+            if value != focused_value:
+                focused_value = value
+                focused_since = now
+                queued_focus = ''
+            if value and value != queued_focus and now - focused_since >= 3.0:
+                payload = metadata.decode_focus(value)
+                if payload:
+                    metadata.queue(payload)
+                queued_focus = value
+            if now >= next_metadata_poll:
+                try:
+                    metadata.process_one()
+                except Exception as exc:
+                    xbmc.log('Appi metadata worker failed: {}'.format(exc), xbmc.LOGWARNING)
+                next_metadata_poll = now + 5.0
         if monitor.waitForAbort(2.0):
             break

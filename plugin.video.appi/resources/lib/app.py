@@ -12,6 +12,7 @@ import xbmcplugin
 
 from . import cache
 from . import kodi_cache
+from . import metadata
 from . import playback_history
 from . import playback_prefs
 from . import subtitle_store
@@ -269,6 +270,10 @@ def clear_data(scope):
             'Clear Recent Media?',
             'Recently Played items and their resume positions will be deleted.',
         ),
+        'metadata': (
+            'Clear Metadata Cache?',
+            'Cached plots, posters, cast, episode names and IMDb ratings will be deleted.',
+        ),
     }
     if scope not in choices:
         raise ValueError('Unknown clear-data scope: {}'.format(scope))
@@ -288,6 +293,8 @@ def clear_data(scope):
         subtitle_store.clear_all()
     if scope == 'recent':
         playback_history.clear_all()
+    if scope == 'metadata':
+        metadata.clear_all()
     _notify('Data cleared')
     return True
 
@@ -391,7 +398,91 @@ def _directory_video_info(item, media_type=None):
     return info
 
 
-def _set_playback_metadata(list_item, item):
+def _metadata_payload(item, media_type=None):
+    return metadata.lookup_payload(item, media_type=media_type)
+
+
+def _metadata_context(payload):
+    return (
+        'Fetch / refresh metadata',
+        _context_action(
+            'fetch_metadata',
+            media_type=payload.get('media_type'),
+            title=payload.get('title'),
+            year=payload.get('year'),
+            imdb_id=payload.get('imdb_id'),
+            season=payload.get('season'),
+            episode=payload.get('episode'),
+        ),
+    )
+
+
+def _apply_metadata(list_item, payload, data):
+    if not payload:
+        return
+    try:
+        list_item.setProperty('Appi.MetadataLookup', metadata.encode_focus(payload))
+    except Exception:
+        pass
+    if not data:
+        return
+    poster = data.get('poster') or ''
+    if poster:
+        try:
+            list_item.setArt({'poster': poster, 'thumb': poster})
+        except Exception:
+            pass
+    try:
+        tag = list_item.getVideoInfoTag()
+    except Exception:
+        return
+    if data.get('plot'):
+        try:
+            tag.setPlot(data['plot'])
+        except Exception:
+            pass
+    if data.get('episode_title') and payload.get('media_type') == 'episode':
+        try:
+            tag.setTitle(data['episode_title'])
+        except Exception:
+            pass
+    rating = data.get('imdb_rating')
+    if rating is not None:
+        try:
+            tag.setRating(float(rating), int(data.get('imdb_votes') or 0), 'imdb', True)
+        except Exception:
+            pass
+    actors = []
+    for order, person in enumerate(data.get('cast') or []):
+        try:
+            actors.append(xbmc.Actor(
+                person.get('name') or '',
+                person.get('role') or '',
+                order,
+                person.get('thumbnail') or '',
+            ))
+        except Exception:
+            continue
+    if actors:
+        try:
+            tag.setCast(actors)
+        except Exception:
+            pass
+
+
+def _episode_label(item, data=None):
+    if data and data.get('episode_title'):
+        season = item.get('season')
+        episode = item.get('episode')
+        if season is not None and episode is not None:
+            return 'S{:02d}E{:02d} - {}'.format(
+                int(season), int(episode), data['episode_title']
+            )
+        return data['episode_title']
+    return item.get('display_title') or item.get('show_title') or ''
+
+
+def _set_playback_metadata(list_item, item, enriched=None):
     tag = list_item.getVideoInfoTag()
     kind = item.get('kind')
     if kind == 'movie':
@@ -399,7 +490,7 @@ def _set_playback_metadata(list_item, item):
         tag.setTitle(item.get('title') or item.get('display_title') or '')
     else:
         tag.setMediaType('episode')
-        tag.setTitle(item.get('display_title') or '')
+        tag.setTitle((enriched or {}).get('episode_title') or item.get('display_title') or '')
         tag.setTvShowTitle(item.get('show_title') or '')
         if item.get('season') is not None:
             tag.setSeason(int(item['season']))
@@ -416,6 +507,7 @@ def _set_playback_metadata(list_item, item):
             tag.setIMDBNumber(item['tvg_id'])
         except Exception:
             pass
+    _apply_metadata(list_item, _metadata_payload(item), enriched)
 
 
 def _apply_resume_metadata(
@@ -461,16 +553,22 @@ def _add_context(list_item, items):
 
 
 def _playable_tuple(
-    item, catalog_name, key=None, resume=False, resume_points=None, label_suffix=''
+    item, catalog_name, key=None, resume=False, resume_points=None, label_suffix='',
+    metadata_cache=None,
 ):
+    payload = _metadata_payload(item)
+    enriched = metadata.get(payload, metadata_cache)
     label = _year_label(
-        item.get('display_title') or item.get('title') or '', item.get('year')
+        _episode_label(item, enriched) if item.get('kind') == 'episode'
+        else item.get('display_title') or item.get('title') or '',
+        item.get('year'),
     )
     display_label = label + label_suffix
     list_item = xbmcgui.ListItem(label=display_label, offscreen=True)
     info = _directory_video_info(item)
     info['title'] = display_label
     list_item.setInfo('video', info)
+    _apply_metadata(list_item, payload, enriched)
     list_item.setProperty('IsPlayable', 'true')
     ref = item_ref(item)
     _apply_resume_metadata(
@@ -481,6 +579,7 @@ def _playable_tuple(
         ('Playback options...', _context_action(
             'configure_playback', target=target, catalog=catalog_name, ref=ref, show_key=key
         )),
+        _metadata_context(payload),
     ])
     return (
         _url('play_ref', catalog=catalog_name, ref=ref, show_key=key, resume='1' if resume else None),
@@ -562,6 +661,7 @@ def _show_media(scope, items, mixed=False):
     else:
         xbmcplugin.setContent(HANDLE, 'movies' if scope == 'movies' else 'tvshows')
     _add_video_sort_methods()
+    metadata_cache = metadata.load_all()
     resume_points = playback_history.resume_points('movies') if scope == 'movies' else None
     tuples = []
     for item in items:
@@ -571,9 +671,14 @@ def _show_media(scope, items, mixed=False):
                 'movies',
                 resume_points=resume_points,
                 label_suffix=' [Movie]' if mixed else '',
+                metadata_cache=metadata_cache,
             ))
         else:
-            tuples.append(_show_tuple(item, label_suffix=' [TV Show]' if mixed else ''))
+            tuples.append(_show_tuple(
+                item,
+                label_suffix=' [TV Show]' if mixed else '',
+                metadata_cache=metadata_cache,
+            ))
     _send_items(tuples)
     _finish()
 
@@ -582,14 +687,18 @@ def _show_mixed(items):
     xbmcplugin.setContent(HANDLE, 'files')
     _add_video_sort_methods()
     resume_points = playback_history.resume_points('movies')
+    metadata_cache = metadata.load_all()
     tuples = []
     for scope, item in items:
         if scope == 'movies':
             tuples.append(_playable_tuple(
-                item, 'movies', resume_points=resume_points, label_suffix=' [Movie]'
+                item, 'movies', resume_points=resume_points, label_suffix=' [Movie]',
+                metadata_cache=metadata_cache,
             ))
         else:
-            tuples.append(_show_tuple(item, label_suffix=' [TV Show]'))
+            tuples.append(_show_tuple(
+                item, label_suffix=' [TV Show]', metadata_cache=metadata_cache
+            ))
     _send_items(tuples)
     _finish()
 
@@ -633,7 +742,7 @@ def show_tvshows():
     _show_browse_root('tv')
 
 
-def _show_tuple(show, label_suffix=''):
+def _show_tuple(show, label_suffix='', metadata_cache=None):
     title = show.get('show_title') or show.get('group_title') or 'TV Show'
     label = _year_label(show.get('group_title') or title, show.get('year'))
     display_label = label + label_suffix
@@ -644,13 +753,16 @@ def _show_tuple(show, label_suffix=''):
         info['imdbnumber'] = show['tvg_id']
     if show.get('dateadded'):
         info['dateadded'] = show['dateadded']
+    payload = _metadata_payload(show, media_type='tvshow')
     context = [(
         'Playback options for this show...',
         _context_action('configure_playback', target='show', catalog='tv', show_key=show['show_key']),
-    )]
-    return _folder_tuple(
+    ), _metadata_context(payload)]
+    result = _folder_tuple(
         display_label, _url('seasons', show_key=show['show_key']), info, context
     )
+    _apply_metadata(result[1], payload, metadata.get(payload, metadata_cache))
+    return result
 
 
 def show_browse_index(scope, mode):
@@ -733,8 +845,12 @@ def show_recent_movies():
     xbmcplugin.setContent(HANDLE, 'movies')
     _add_video_sort_methods()
     resume_points = playback_history.resume_points('movies')
+    metadata_cache = metadata.load_all()
     tuples = [
-        _playable_tuple(item, 'movies', resume=True, resume_points=resume_points)
+        _playable_tuple(
+            item, 'movies', resume=True, resume_points=resume_points,
+            metadata_cache=metadata_cache,
+        )
         for item in entries
     ]
     _send_items(tuples)
@@ -759,6 +875,7 @@ def show_recent_tvshows():
     xbmcplugin.setContent(HANDLE, 'tvshows')
     _add_video_sort_methods()
     tuples = []
+    metadata_cache = metadata.load_all()
     for entry, summary in visible:
         title = summary.get('show_title') or entry.get('show_title') or 'TV Show'
         label = _year_label(summary.get('group_title') or title, summary.get('year'))
@@ -767,13 +884,16 @@ def show_recent_tvshows():
             info['year'] = int(summary['year'])
         if summary.get('tvg_id'):
             info['imdbnumber'] = summary['tvg_id']
+        payload = _metadata_payload(summary, media_type='tvshow')
         context = [(
             'Playback options for this show...',
             _context_action('configure_playback', target='show', catalog='tv', show_key=summary['show_key']),
-        )]
-        tuples.append(_folder_tuple(
+        ), _metadata_context(payload)]
+        result = _folder_tuple(
             label, _url('recent_show', show_key=summary['show_key']), info, context
-        ))
+        )
+        _apply_metadata(result[1], payload, metadata.get(payload, metadata_cache))
+        tuples.append(result)
     _send_items(tuples)
     _finish()
 
@@ -807,6 +927,7 @@ def show_recent_show(key):
             force_resume = playback_history.resume_point('tv', item_ref(continuation)) is not None
 
     xbmcplugin.setContent(HANDLE, 'seasons')
+    metadata_cache = metadata.load_all()
     tuples = []
     if continuation:
         season = continuation.get('season')
@@ -816,7 +937,10 @@ def show_recent_show(key):
             prefix, int(season or 0), int(episode or 0),
             continuation.get('display_title') or continuation.get('show_title') or 'Episode',
         )
-        playable = _playable_tuple(continuation, 'tv', key, resume=force_resume)
+        playable = _playable_tuple(
+            continuation, 'tv', key, resume=force_resume,
+            metadata_cache=metadata_cache,
+        )
         try:
             playable[1].setLabel(label)
         except Exception:
@@ -873,8 +997,12 @@ def show_episodes(key, season):
         except Exception:
             pass
     resume_points = playback_history.resume_points('tv')
+    metadata_cache = metadata.load_all()
     _send_items([
-        _playable_tuple(item, 'tv', key, resume_points=resume_points)
+        _playable_tuple(
+            item, 'tv', key, resume_points=resume_points,
+            metadata_cache=metadata_cache,
+        )
         for item in episodes
     ])
     _finish()
@@ -1015,12 +1143,19 @@ def play_ref(params):
         return
 
     preferences = playback_prefs.effective(catalog_name, ref, key or '')
+    lookup = _metadata_payload(item)
+    enriched = metadata.get(lookup)
+    # Queue a cache miss without waiting for network access. The service worker
+    # remains paused during video playback and will enrich the title afterward.
+    if not enriched:
+        metadata.queue(lookup)
     list_item = xbmcgui.ListItem(
-        label=item.get('display_title') or item.get('title') or '',
+        label=_episode_label(item, enriched) if item.get('kind') == 'episode'
+        else item.get('display_title') or item.get('title') or '',
         path=media_url,
         offscreen=True,
     )
-    _set_playback_metadata(list_item, item)
+    _set_playback_metadata(list_item, item, enriched)
     list_item.setProperty('IsPlayable', 'true')
     _apply_resume_metadata(
         list_item, catalog_name, ref,
@@ -1062,6 +1197,44 @@ def _dialog_select(heading, choices, preselect=0):
         return xbmcgui.Dialog().select(heading, choices, preselect=preselect)
     except TypeError:
         return xbmcgui.Dialog().select(heading, choices)
+
+
+def fetch_metadata(params):
+    payload = {
+        'media_type': params.get('media_type') or 'movie',
+        'title': params.get('title') or '',
+        'year': params.get('year') or '',
+        'imdb_id': params.get('imdb_id') or '',
+    }
+    for name in ('season', 'episode'):
+        if params.get(name) not in (None, ''):
+            try:
+                payload[name] = int(params[name])
+            except (TypeError, ValueError):
+                pass
+    status = metadata.status()
+    if not status['helper']:
+        xbmcgui.Dialog().ok(
+            'Appi metadata',
+            'TMDb Helper is not installed. Install and configure plugin.video.themoviedb.helper, then try again.',
+        )
+        return
+    if metadata.queue(payload, force=True):
+        _notify('Metadata queued. It will appear when this list is next opened.')
+    else:
+        _notify('Metadata could not be queued', error=True)
+
+
+def show_metadata_status():
+    status = metadata.status()
+    helper = 'installed' if status['helper'] else 'not installed'
+    xbmcgui.Dialog().ok(
+        'Appi metadata',
+        'TMDb Helper: {}\nCached titles: {}\nQueued lookups: {}\n\n'
+        'IMDb ratings require the OMDb ratings source to be configured in TMDb Helper.'.format(
+            helper, status['cached'], status['queued']
+        ),
+    )
 
 
 def configure_playback(params):
@@ -1170,6 +1343,10 @@ def _run_action(params):
         play_ref(params)
     elif action == 'configure_playback':
         configure_playback(params)
+    elif action == 'fetch_metadata':
+        fetch_metadata(params)
+    elif action == 'metadata_status':
+        show_metadata_status()
     elif action == 'refresh_movies':
         refresh_movies()
         xbmc.executebuiltin('Container.Update({})'.format(BASE_URL))
