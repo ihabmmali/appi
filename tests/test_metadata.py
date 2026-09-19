@@ -36,8 +36,9 @@ xv=types.ModuleType('xbmcvfs'); xv.translatePath=lambda p:p; xv.exists=os.path.e
 sys.modules['xbmcvfs']=xv
 from resources.lib import metadata
 with metadata._connect() as connection:
-    assert connection.execute('PRAGMA user_version').fetchone()[0]==3
+    assert connection.execute('PRAGMA user_version').fetchone()[0]==4
     assert 'pinned' in {row[1] for row in connection.execute('PRAGMA table_info(metadata)')}
+    assert {'media_type','title'} <= {row[1] for row in connection.execute('PRAGMA table_info(metadata)')}
     assert 'pinned' in {row[1] for row in connection.execute('PRAGMA table_info(queue)')}
     assert connection.execute('SELECT COUNT(*) FROM metadata').fetchone()[0]==0
 '''
@@ -72,6 +73,7 @@ def rpc(raw):
       'rating':9.9,
       'customproperties':{'IMDb_Rating':'7.8','IMDb_Votes':'12,345','IMDb_ID':'tt123'},
       'cast':[{'name':'Actor One','role':'Lead','thumbnail':'https://img/a.jpg'}],
+      'director':['Director One'],
       'uniqueid':{'tmdb':'55'}
     }
     return json.dumps({'jsonrpc':'2.0','id':1,'result':{'files':[item]}})
@@ -91,6 +93,7 @@ data=metadata.get(payload)
 assert data['plot']=='A plot'
 assert data['poster']=='https://img/poster.jpg'
 assert data['cast'][0]['name']=='Actor One'
+assert data['directors']==['Director One']
 assert data['episode_title']=='Pilot'
 assert data['imdb_rating']==7.8 and data['imdb_votes']==12345
 # The generic JSON-RPC rating is deliberately ignored; only IMDb_Rating is accepted.
@@ -114,7 +117,9 @@ batch=[
 assert metadata.queue_many(batch,pinned=True)==2
 with metadata._connect() as connection:
     assert connection.execute('SELECT COUNT(*) FROM queue WHERE pinned=1').fetchone()[0]==2
-assert metadata.status()['bytes'] > 0
+status=metadata.status()
+assert status['bytes'] > 0 and status['successful']==1
+assert status['show_cached']==1 and status['episode_cached']==1
 assert metadata.clear_queue()==2
 assert metadata.status()['queued']==0
 with metadata._connect() as connection:

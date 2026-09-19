@@ -9,131 +9,68 @@ ROOT = Path(__file__).resolve().parents[1]
 PLUGIN = ROOT / 'plugin.video.appi'
 
 
-class DownloadTests(unittest.TestCase):
-    def test_queue_paths_hls_packaging_and_nfo(self):
+class DownloadScriptTests(unittest.TestCase):
+    def test_atomic_ffmpeg_script_generation_through_kodi_vfs(self):
         code = r'''
-import os, sys, tempfile, threading, types
+import os, subprocess, sys, tempfile, types
 from pathlib import Path
 PLUGIN=Path(sys.argv[1]); sys.path.insert(0,str(PLUGIN))
-profile=tempfile.mkdtemp(prefix='appi-download-')
-settings={'download_folder':os.path.join(profile,'offline'),'hls_max_bitrate_kbps':'8000'}
-xbmc=types.ModuleType('xbmc'); xbmc.LOGWARNING=2; xbmc.LOGERROR=1
-xbmc.log=lambda *a,**k: None; xbmc.executeJSONRPC=lambda value:'{}'
-sys.modules['xbmc']=xbmc
+profile=tempfile.mkdtemp(prefix='appi-script-')
+watch=os.path.join(profile,'watch')
+settings={'download_folder':watch,'download_output_folder':'/srv/media/appi'}
+xbmc=types.ModuleType('xbmc'); xbmc.LOGWARNING=2
+xbmc.log=lambda *a,**k:None; xbmc.getCondVisibility=lambda q:True
+class Player:
+    def isPlayingVideo(self): return False
+xbmc.Player=Player; sys.modules['xbmc']=xbmc
 xa=types.ModuleType('xbmcaddon')
 class Addon:
     def getSetting(self,n): return settings.get(n,'')
     def getAddonInfo(self,n): return profile if n=='profile' else ''
 xa.Addon=Addon; sys.modules['xbmcaddon']=xa
-xg=types.ModuleType('xbmcgui'); xg.NOTIFICATION_ERROR=1
-class Dialog:
-    def notification(self,*a,**k): pass
-xg.Dialog=Dialog; sys.modules['xbmcgui']=xg
-xv=types.ModuleType('xbmcvfs'); xv.translatePath=lambda p:p; xv.exists=os.path.exists; xv.mkdirs=lambda p:os.makedirs(p,exist_ok=True)
-sys.modules['xbmcvfs']=xv
+xv=types.ModuleType('xbmcvfs'); xv.translatePath=lambda p:p
+xv.exists=os.path.exists
+xv.mkdirs=lambda p: (os.makedirs(p,exist_ok=True) or True)
+xv.rename=lambda source,target: (os.replace(source,target) or True)
+xv.delete=lambda p: (os.remove(p) or True) if os.path.exists(p) else True
+xv.listdir=lambda p: ([],os.listdir(p))
+class File:
+    def __init__(self,path,mode): self.handle=open(path,mode,encoding='utf-8')
+    def write(self,value): self.handle.write(value); return True
+    def close(self): self.handle.close()
+xv.File=File; sys.modules['xbmcvfs']=xv
 from resources.lib import downloads
-movie={'kind':'movie','title':'A/B: Movie','display_title':'A/B: Movie (2025)','year':2025,'tvg_id':'tt1','media_url':'https://x/movie'}
-assert downloads.queue_item('movies',movie)
-assert not downloads.queue_item('movies',movie)
-assert downloads.status()['queued']==1
-job={'download_id':'movies|m:tt1','catalog':'movies','show_key':'','item':movie}
-base=downloads._base_destination(job,{})
-assert 'A_B_ Movie (2025)' in base, base
-playlist="""#EXTM3U
-#EXT-X-TARGETDURATION:4
-#EXTINF:4,
-one.ts
-#EXTINF:4,
-two.ts
-#EXT-X-ENDLIST
-"""
-init, segments=downloads._parse_hls('https://x/path/list.m3u8',playlist)
-assert init is None and [value[0] for value in segments]==['https://x/path/one.ts','https://x/path/two.ts']
-def fake_resource(url, byte_range, path, stop_event, playing_callback=lambda:False, identifier=''):
-    with open(path,'wb') as handle: handle.write(b'one' if url.endswith('one.ts') else b'two')
-downloads._download_resource=fake_resource
-target=downloads._download_hls('https://x/path/list.m3u8',playlist,base,'movies|m:tt1',threading.Event())
-assert target.endswith('.ts') and open(target,'rb').read()==b'onetwo'
-downloads._write_nfo(target,job,{'plot':'Plot','imdb_rating':8.1,'imdb_votes':10,'imdb_id':'tt1','cast':[{'name':'Actor','role':'Lead'}],'directors':['Director']})
-assert os.path.exists(os.path.splitext(target)[0]+'.nfo')
-nfo=open(os.path.splitext(target)[0]+'.nfo',encoding='utf-8').read()
-assert '<director>Director</director>' in nfo
-episode={'kind':'episode','show_title':'Example Show','display_title':'Example Show S01 E02','year':2025,'tvg_id':'tt2','season':1,'episode':2,'media_url':'https://x/episode'}
-episode_job={'download_id':'tv|e:tt2:1:2','catalog':'tv','show_key':'show','item':episode}
-episode_base=downloads._base_destination(episode_job,{})
-downloads._write_nfo(episode_base+'.mp4',episode_job,{})
-assert os.path.exists(os.path.join(os.path.dirname(os.path.dirname(episode_base)), 'tvshow.nfo'))
-class Response:
-    status=200
-    headers={'Content-Length':'6'}
-    def __enter__(self): return self
-    def __exit__(self,*args): pass
-    def getcode(self): return self.status
-    def read(self,size): return b'abcdef'
-downloads.urlopen=lambda *a,**k:Response()
-paused=os.path.join(profile,'paused.mp4')
-try:
-    downloads._download_direct(
-        'https://x/direct', paused, 'movies|m:tt1', threading.Event(), lambda:True
-    )
-    raise AssertionError('active download should yield to playback')
-except downloads.PlaybackStarted:
-    pass
-assert os.path.exists(paused+'.part') and not os.path.exists(paused)
-try:
-    downloads._parse_hls('https://x/list.m3u8','#EXTM3U\n#EXT-X-KEY:METHOD=AES-128,URI="key"\n#EXTINF:1,\na.ts\n#EXT-X-ENDLIST')
-    raise AssertionError('encrypted HLS should be rejected')
-except RuntimeError as exc:
-    assert 'Encrypted HLS' in str(exc)
-master="""#EXTM3U
-#EXT-X-MEDIA:TYPE=AUDIO,GROUP-ID="audio",NAME="English",DEFAULT=YES,AUTOSELECT=YES,URI="audio.m3u8"
-#EXT-X-STREAM-INF:BANDWIDTH=1000000,CODECS="avc1.4d401f,mp4a.40.2",AUDIO="audio"
-video.m3u8
-"""
-video="""#EXTM3U
-#EXT-X-TARGETDURATION:4
-#EXTINF:4,
-video-1.ts
-#EXT-X-ENDLIST
-"""
-audio="""#EXTM3U
-#EXT-X-TARGETDURATION:4
-#EXTINF:4,
-audio-1.ts
-#EXT-X-ENDLIST
-"""
-downloads.fetch_text=lambda url,timeout=30: {
-    'https://x/video.m3u8':video,
-    'https://x/audio.m3u8':audio,
-}[url]
-bundle_base=os.path.join(settings['download_folder'],'separate-audio')
-def fake_mux(video_paths,audio_paths,target):
-    assert len(video_paths)==len(audio_paths)==1
-    with open(target,'wb') as handle: handle.write(b'muxed-ts')
-    return target
-downloads.tsmux.mux_segments=fake_mux
-bundle=downloads._download_hls(
-    'https://x/master.m3u8',master,bundle_base,'movies|m:tt1',threading.Event()
-)
-assert bundle.endswith('.ts') and open(bundle,'rb').read()==b'muxed-ts'
-assert not os.path.exists(bundle_base+'.mux.part')
-control_movie={'kind':'movie','title':'Control Movie','year':2024,'tvg_id':'tt-control','media_url':'https://x/control'}
-assert downloads.queue_item('movies',control_movie)
-control_id='movies|m:tt-control'
-assert downloads.control(control_id,'pause')
-assert next(value for value in downloads.entries() if value['download_id']==control_id)['status']=='paused'
-assert downloads.control(control_id,'resume')
-assert next(value for value in downloads.entries() if value['download_id']==control_id)['status']=='queued'
-control_base=downloads._base_destination(
-    {'download_id':control_id,'catalog':'movies','show_key':'','item':control_movie}, {}
-)
-for suffix in ('.ts.part','.ts.part.json','.ts.part.segment'):
-    with open(control_base+suffix,'wb') as handle: handle.write(b'partial')
-with downloads._connect() as connection:
-    connection.execute('UPDATE downloads SET target_path=? WHERE download_id=?',(control_base,control_id))
-assert downloads.control(control_id,'cancel')
-assert not any(value['download_id']==control_id for value in downloads.entries())
-assert not any(os.path.exists(control_base+suffix) for suffix in ('.ts.part','.ts.part.json','.ts.part.segment'))
+movie={
+  'kind':'movie','title':'Synthetic/Feature','display_title':'Synthetic/Feature (2042)',
+  'year':2042,'tvg_id':'tt9900001',
+  'media_url':"https://media.invalid/token/stream.m3u8?label=a'b"
+}
+result=downloads.generate('movies',movie)
+assert result['created'] is True
+assert result['path'].endswith('.sh') and os.path.isfile(result['path'])
+assert not any('.tmp-' in name for name in os.listdir(watch))
+script=open(result['path'],encoding='utf-8').read()
+assert subprocess.run(['sh','-n',result['path']],capture_output=True).returncode==0
+assert '#!/bin/sh' in script and 'set -eu' in script
+assert '-c copy' in script and '-sn -dn' in script and '-f mp4' in script
+assert '-map ' not in script and 'ffprobe' not in script
+assert 'stream.m3u8' in script and "'\"'\"'" in script
+assert '/srv/media/appi/Movies/Synthetic_Feature (2042)/Synthetic_Feature (2042).mp4' in script
+assert '.part.mp4' in script and 'mv -f --' in script
+duplicate=downloads.generate('movies',movie)
+assert duplicate['created'] is False and duplicate['path']==result['path']
+value=downloads.status()
+assert value['scripts']==1 and value['folder']==watch
+
+episode={
+  'kind':'episode','show_title':'Synthetic Series','display_title':'Synthetic Series S02 E03',
+  'year':2042,'tvg_id':'tt9900002','season':2,'episode':3,
+  'media_url':'https://media.invalid/episode.mp4'
+}
+episode_result=downloads.generate('tv',episode,'synthetic-show')
+episode_script=open(episode_result['path'],encoding='utf-8').read()
+assert '/TV Shows/Synthetic Series/Season 02/' in episode_script
+assert downloads.status()['scripts']==2
 '''
         result = subprocess.run(
             [sys.executable, '-c', textwrap.dedent(code), str(PLUGIN)],

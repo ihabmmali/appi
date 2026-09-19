@@ -105,6 +105,12 @@
         <setting id="metadata_enabled" type="boolean" label="32610" help="32611">
           <level>0</level><default>true</default><control type="toggle"/>
         </setting>
+        <setting id="metadata_pause_playback" type="boolean" label="32624" help="32625">
+          <level>0</level><default>true</default><control type="toggle"/>
+        </setting>
+        <setting id="metadata_confirm_bulk" type="boolean" label="32626" help="32627">
+          <level>0</level><default>false</default><control type="toggle"/>
+        </setting>
         <setting id="metadata_cache_items" type="integer" label="32612" help="32613">
           <level>0</level><default>1000</default>
           <constraints>
@@ -142,21 +148,21 @@
         <setting id="download_folder" type="path" label="32710" help="32711">
           <level>0</level><default/>
           <constraints>
-            <sources><source>videos</source><source>local</source></sources>
+            <sources><source>files</source></sources>
+            <writable>true</writable>
             <allowempty>true</allowempty>
           </constraints>
           <control type="button" format="path"><heading>32710</heading></control>
+        </setting>
+        <setting id="download_output_folder" type="string" label="32714" help="32715">
+          <level>0</level><default/>
+          <control type="edit" format="string"><heading>32714</heading></control>
         </setting>
       </group>
       <group id="2" label="32702">
         <setting id="download_status" type="action" label="32712" help="32713">
           <level>0</level>
           <data>RunPlugin(plugin://$ID/?action=download_status)</data>
-          <control type="button" format="action"><close>false</close></control>
-        </setting>
-        <setting id="retry_downloads" type="action" label="32714" help="32715">
-          <level>0</level>
-          <data>RunPlugin(plugin://$ID/?action=retry_downloads)</data>
           <control type="button" format="action"><close>false</close></control>
         </setting>
       </group>

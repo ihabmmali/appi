@@ -125,7 +125,7 @@ assert [row[1].label for row in state['items'][:3]] == [
 ]
 assert state['items'][0][1].info['title'] == 'Movie 000 (2025)'
 assert state['items'][0][1].art['poster'] == 'https://img/poster.jpg'
-assert state['items'][0][1].tagdata['plot'] == 'Cached plot'
+assert state['items'][0][1].tagdata['plot'] == 'IMDb: 7.7/10\nCast: Actor\n\nCached plot'
 assert state['items'][0][1].tagdata['rating'] == (7.7, 99, 'imdb', True)
 assert state['items'][0][1].info['dateadded'] > state['items'][1][1].info['dateadded']
 state['items'].clear(); state['sort'].clear()

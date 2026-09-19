@@ -93,7 +93,6 @@ class AppiPlayer(xbmc.Player):
 
 
 def run():
-    from . import downloads
     monitor = xbmc.Monitor()
     player = AppiPlayer()
     next_progress_poll = 0.0
@@ -101,45 +100,39 @@ def run():
     focused_value = ''
     focused_since = 0.0
     queued_focus = ''
-    download_stop, _download_thread = downloads.start_worker(player.isPlayingVideo)
-    try:
-        while not monitor.abortRequested():
-            playing = player.isPlayingVideo()
-            if playing and _enabled('persist_subtitles', True):
-                try:
-                    subtitle_store.capture_temp_changes()
-                except Exception as exc:
-                    xbmc.log('Appi subtitle polling failed: {}'.format(exc), xbmc.LOGWARNING)
-            now = time.monotonic()
-            if playing and now >= next_progress_poll:
-                player._capture_progress()
-                next_progress_poll = now + 5.0
-            if not playing:
-                next_progress_poll = 0.0
-                try:
-                    value = xbmc.getInfoLabel('ListItem.Property(Appi.MetadataLookup)') or ''
-                except Exception:
-                    value = ''
-                if value != focused_value:
-                    focused_value = value
-                    focused_since = now
-                    queued_focus = ''
-                if value and value != queued_focus and now - focused_since >= 3.0:
-                    payload = metadata.decode_focus(value)
-                    if payload:
-                        metadata.queue(payload)
-                    queued_focus = value
-                if now >= next_metadata_poll:
-                    # Keep downloads and playback ahead of background metadata
-                    # on low-power devices. Otherwise process one lookup at a
-                    # time without blocking directory navigation.
-                    if not downloads.status().get('downloading', 0):
-                        try:
-                            metadata.process_one()
-                        except Exception as exc:
-                            xbmc.log('Appi metadata worker failed: {}'.format(exc), xbmc.LOGWARNING)
-                    next_metadata_poll = now + 2.0
-            if monitor.waitForAbort(2.0):
-                break
-    finally:
-        download_stop.set()
+    while not monitor.abortRequested():
+        playing = player.isPlayingVideo()
+        if playing and _enabled('persist_subtitles', True):
+            try:
+                subtitle_store.capture_temp_changes()
+            except Exception as exc:
+                xbmc.log('Appi subtitle polling failed: {}'.format(exc), xbmc.LOGWARNING)
+        now = time.monotonic()
+        if playing and now >= next_progress_poll:
+            player._capture_progress()
+            next_progress_poll = now + 5.0
+        if not playing:
+            next_progress_poll = 0.0
+            try:
+                value = xbmc.getInfoLabel('ListItem.Property(Appi.MetadataLookup)') or ''
+            except Exception:
+                value = ''
+            if value != focused_value:
+                focused_value = value
+                focused_since = now
+                queued_focus = ''
+            if value and value != queued_focus and now - focused_since >= 3.0:
+                payload = metadata.decode_focus(value)
+                if payload:
+                    metadata.queue(payload)
+                queued_focus = value
+        if now >= next_metadata_poll:
+            # One lookup at a time avoids blocking directory navigation.
+            # Playback pausing is controlled independently in metadata settings.
+            try:
+                metadata.process_one()
+            except Exception as exc:
+                xbmc.log('Appi metadata worker failed: {}'.format(exc), xbmc.LOGWARNING)
+            next_metadata_poll = now + 2.0
+        if monitor.waitForAbort(2.0):
+            break

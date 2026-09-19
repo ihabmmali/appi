@@ -13,12 +13,17 @@ import xbmcvfs
 ADDON = xbmcaddon.Addon()
 PROFILE = xbmcvfs.translatePath(ADDON.getAddonInfo('profile'))
 HELPER_ID = 'plugin.video.themoviedb.helper'
-SCHEMA_VERSION = 3
+SCHEMA_VERSION = 4
 DEFAULT_MAX_ITEMS = 1000
 
 
 def enabled():
     value = ADDON.getSetting('metadata_enabled')
+    return True if value == '' else value.lower() == 'true'
+
+
+def pause_during_playback():
+    value = ADDON.getSetting('metadata_pause_playback')
     return True if value == '' else value.lower() == 'true'
 
 
@@ -46,15 +51,20 @@ def _connect():
     connection.execute(
         'CREATE TABLE IF NOT EXISTS metadata ('
         'cache_key TEXT PRIMARY KEY, fetched_at INTEGER NOT NULL, data TEXT NOT NULL, '
-        'pinned INTEGER NOT NULL DEFAULT 0)'
+        'pinned INTEGER NOT NULL DEFAULT 0, media_type TEXT NOT NULL DEFAULT "", '
+        'title TEXT NOT NULL DEFAULT "")'
     )
     connection.execute(
         'CREATE TABLE IF NOT EXISTS queue ('
         'cache_key TEXT PRIMARY KEY, queued_at INTEGER NOT NULL, payload TEXT NOT NULL, '
         'pinned INTEGER NOT NULL DEFAULT 0)'
     )
+    connection.execute(
+        'CREATE TABLE IF NOT EXISTS state ('
+        'name TEXT PRIMARY KEY, value TEXT NOT NULL)'
+    )
     current_version = connection.execute('PRAGMA user_version').fetchone()[0]
-    if current_version and current_version < SCHEMA_VERSION:
+    if current_version and current_version < 3:
         # Versions 1 and 2 used incompatible layouts and stored a full copy of
         # show artwork/cast in every episode. Re-fetch under the normalised
         # schema instead of carrying duplication or missing columns forward.
@@ -63,15 +73,66 @@ def _connect():
         connection.execute(
             'CREATE TABLE metadata ('
             'cache_key TEXT PRIMARY KEY, fetched_at INTEGER NOT NULL, data TEXT NOT NULL, '
-            'pinned INTEGER NOT NULL DEFAULT 0)'
+            'pinned INTEGER NOT NULL DEFAULT 0, media_type TEXT NOT NULL DEFAULT "", '
+            'title TEXT NOT NULL DEFAULT "")'
         )
         connection.execute(
             'CREATE TABLE queue ('
             'cache_key TEXT PRIMARY KEY, queued_at INTEGER NOT NULL, payload TEXT NOT NULL, '
             'pinned INTEGER NOT NULL DEFAULT 0)'
         )
+    connection.execute(
+        'CREATE TABLE IF NOT EXISTS state ('
+        'name TEXT PRIMARY KEY, value TEXT NOT NULL)'
+    )
+    metadata_columns = {
+        row[1] for row in connection.execute('PRAGMA table_info(metadata)')
+    }
+    if 'media_type' not in metadata_columns:
+        connection.execute(
+            'ALTER TABLE metadata ADD COLUMN media_type TEXT NOT NULL DEFAULT ""'
+        )
+    if 'title' not in metadata_columns:
+        connection.execute(
+            'ALTER TABLE metadata ADD COLUMN title TEXT NOT NULL DEFAULT ""'
+        )
     connection.execute('PRAGMA user_version={}'.format(SCHEMA_VERSION))
     return connection
+
+
+def _state_values(connection):
+    return dict(connection.execute('SELECT name,value FROM state').fetchall())
+
+
+def _set_state(connection, **values):
+    connection.executemany(
+        'INSERT OR REPLACE INTO state(name,value) VALUES(?,?)',
+        [(name, str(value)) for name, value in values.items()],
+    )
+
+
+def _increment_state(connection, name):
+    row = connection.execute('SELECT value FROM state WHERE name=?', (name,)).fetchone()
+    try:
+        value = int(row[0]) + 1 if row else 1
+    except (TypeError, ValueError):
+        value = 1
+    _set_state(connection, **{name: value})
+
+
+_LAST_WORKER_STATE = None
+
+
+def set_worker_state(value):
+    global _LAST_WORKER_STATE
+    if value == _LAST_WORKER_STATE:
+        return
+    try:
+        with _connect() as connection:
+            _set_state(connection, worker_state=value)
+        _LAST_WORKER_STATE = value
+    except sqlite3.Error:
+        pass
 
 
 def _clean_id(value):
@@ -276,12 +337,22 @@ def _normalise_result(item, payload):
                 'role': person.get('role') or '',
                 'thumbnail': person.get('thumbnail') or '',
             })
+    raw_directors = item.get('director') or item.get('directors') or []
+    if isinstance(raw_directors, str):
+        raw_directors = [raw_directors]
+    directors = []
+    for person in raw_directors:
+        name = person.get('name') if isinstance(person, dict) else person
+        name = str(name or '').strip()
+        if name and name not in directors:
+            directors.append(name)
     rating = _float(lower_props.get('imdb_rating'))
     votes = _int(lower_props.get('imdb_votes'))
     result = {
         'plot': item.get('plot') or '',
         'poster': art.get('poster') or item.get('thumbnail') or '',
         'cast': cast,
+        'directors': directors[:6],
         'imdb_rating': rating,
         'imdb_votes': votes,
         'imdb_id': _clean_id(
@@ -307,21 +378,33 @@ def _prune(connection):
 
 
 def process_one():
-    if not enabled() or xbmc.Player().isPlayingVideo():
+    if not enabled():
+        set_worker_state('disabled')
+        return False
+    if pause_during_playback() and xbmc.Player().isPlayingVideo():
+        set_worker_state('paused for playback')
         return False
     if not xbmc.getCondVisibility('System.HasAddon({})'.format(HELPER_ID)):
+        set_worker_state('TMDb Helper unavailable')
         return False
     with _connect() as connection:
         row = connection.execute(
             'SELECT cache_key, payload, pinned FROM queue ORDER BY queued_at LIMIT 1'
         ).fetchone()
     if not row:
+        set_worker_state('idle')
         return False
     key, encoded, pinned = row
     payload = decode_focus(encoded)
+    title = (payload or {}).get('title') or 'Unknown title'
+    with _connect() as connection:
+        _set_state(
+            connection, worker_state='processing', current_title=title,
+            last_started=int(time.time()),
+        )
     try:
         properties = [
-            'title', 'plot', 'year', 'cast', 'thumbnail', 'art',
+            'title', 'plot', 'year', 'cast', 'director', 'thumbnail', 'art',
             'imdbnumber', 'uniqueid', 'customproperties',
         ]
         request = {
@@ -367,31 +450,43 @@ def process_one():
                         parent_data[name] = data[name]
                 connection.execute(
                     'INSERT OR REPLACE INTO metadata('
-                    'cache_key,fetched_at,data,pinned) VALUES(?,?,?,?)',
+                    'cache_key,fetched_at,data,pinned,media_type,title) VALUES(?,?,?,?,?,?)',
                     (parent_key, int(time.time()), json.dumps(
                         parent_data, ensure_ascii=False, separators=(',', ':')
-                    ), 1 if parent_pinned else 0),
+                    ), 1 if parent_pinned else 0, 'tvshow', parent_payload.get('title') or ''),
                 )
                 data = {
                     name: data[name] for name in (
-                        'episode_title', 'plot', 'imdb_rating', 'imdb_votes'
+                        'episode_title', 'plot', 'imdb_rating', 'imdb_votes', 'directors'
                     ) if data.get(name) not in (None, '', [], {})
                 }
             connection.execute(
                 'INSERT OR REPLACE INTO metadata('
-                'cache_key,fetched_at,data,pinned) VALUES(?,?,?,?)',
+                'cache_key,fetched_at,data,pinned,media_type,title) VALUES(?,?,?,?,?,?)',
                 (key, int(time.time()), json.dumps(
                     data, ensure_ascii=False, separators=(',', ':')
-                ), 1 if pinned else 0),
+                ), 1 if pinned else 0, payload.get('media_type') or '', title),
             )
             connection.execute('DELETE FROM queue WHERE cache_key=?', (key,))
             _prune(connection)
+            _increment_state(connection, 'successful')
+            _set_state(
+                connection, worker_state='idle', current_title='',
+                last_title=title, last_result='success', last_error='',
+                last_finished=int(time.time()),
+            )
         return True
     except Exception as exc:
         xbmc.log('Appi metadata lookup failed: {}'.format(exc), xbmc.LOGWARNING)
         # Drop a failed request so a bad match or network outage cannot create a tight loop.
         with _connect() as connection:
             connection.execute('DELETE FROM queue WHERE cache_key=?', (key,))
+            _increment_state(connection, 'failed')
+            _set_state(
+                connection, worker_state='idle', current_title='',
+                last_title=title, last_result='failed', last_error=str(exc),
+                last_finished=int(time.time()),
+            )
         return False
 
 
@@ -408,6 +503,7 @@ def clear_queue():
         with _connect() as connection:
             queued = connection.execute('SELECT COUNT(*) FROM queue').fetchone()[0]
             connection.execute('DELETE FROM queue')
+            _set_state(connection, worker_state='idle', current_title='')
         return int(queued or 0)
     except sqlite3.Error as exc:
         xbmc.log('Appi metadata queue clear failed: {}'.format(exc), xbmc.LOGWARNING)
@@ -429,8 +525,48 @@ def status():
         with _connect() as connection:
             cached = connection.execute('SELECT COUNT(*) FROM metadata').fetchone()[0]
             queued = connection.execute('SELECT COUNT(*) FROM queue').fetchone()[0]
+            pinned_cached = connection.execute(
+                'SELECT COUNT(*) FROM metadata WHERE pinned=1'
+            ).fetchone()[0]
+            pinned_queued = connection.execute(
+                'SELECT COUNT(*) FROM queue WHERE pinned=1'
+            ).fetchone()[0]
+            oldest = connection.execute('SELECT MIN(queued_at) FROM queue').fetchone()[0]
+            state = _state_values(connection)
+            type_counts = dict(connection.execute(
+                'SELECT media_type,COUNT(*) FROM metadata GROUP BY media_type'
+            ).fetchall())
     except sqlite3.Error:
-        cached, queued = 0, 0
-    return {'cached': cached, 'queued': queued, 'bytes': _disk_usage(), 'helper': bool(
-        xbmc.getCondVisibility('System.HasAddon({})'.format(HELPER_ID))
-    )}
+        cached, queued, pinned_cached, pinned_queued, oldest, state, type_counts = 0, 0, 0, 0, None, {}, {}
+    helper = bool(xbmc.getCondVisibility('System.HasAddon({})'.format(HELPER_ID)))
+    worker_state = state.get('worker_state') or 'idle'
+    if not enabled():
+        worker_state = 'disabled'
+    elif not helper:
+        worker_state = 'TMDb Helper unavailable'
+    elif pause_during_playback() and xbmc.Player().isPlayingVideo():
+        worker_state = 'paused for playback'
+    return {
+        'cached': cached,
+        'queued': queued,
+        'pinned_cached': pinned_cached,
+        'pinned_queued': pinned_queued,
+        'movie_cached': int(type_counts.get('movie') or 0),
+        'show_cached': int(type_counts.get('tvshow') or 0),
+        'episode_cached': int(type_counts.get('episode') or 0),
+        'unknown_cached': int(type_counts.get('') or 0),
+        'oldest_queued': int(oldest or 0),
+        'bytes': _disk_usage(),
+        'helper': helper,
+        'enabled': enabled(),
+        'pause_playback': pause_during_playback(),
+        'max_items': _max_items(),
+        'worker_state': worker_state,
+        'current_title': state.get('current_title') or '',
+        'last_title': state.get('last_title') or '',
+        'last_result': state.get('last_result') or '',
+        'last_error': state.get('last_error') or '',
+        'last_finished': int(state.get('last_finished') or 0),
+        'successful': int(state.get('successful') or 0),
+        'failed': int(state.get('failed') or 0),
+    }

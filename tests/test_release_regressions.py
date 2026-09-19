@@ -12,7 +12,7 @@ STRINGS = PLUGIN / 'resources' / 'language' / 'resource.language.en_gb' / 'strin
 class SettingsLocalizationTests(unittest.TestCase):
     def test_stable_browser_and_download_batch_features_are_packaged(self):
         addon = ET.parse(PLUGIN / 'addon.xml').getroot()
-        self.assertEqual(addon.attrib.get('version'), '0.7.5')
+        self.assertEqual(addon.attrib.get('version'), '0.7.6')
         helper = addon.find("./requires/import[@addon='plugin.video.themoviedb.helper']")
         self.assertIsNotNone(helper)
         self.assertNotEqual(helper.attrib.get('optional'), 'true')
@@ -29,13 +29,15 @@ class SettingsLocalizationTests(unittest.TestCase):
         self.assertIn('Fetch metadata for all Recently Played TV Shows', app)
         metadata = (PLUGIN / 'resources' / 'lib' / 'metadata.py').read_text(encoding='utf-8')
         self.assertIn('def show_payload', metadata)
-        self.assertIn("'episode_title', 'plot', 'imdb_rating', 'imdb_votes'", metadata)
+        self.assertIn("'episode_title', 'plot', 'imdb_rating', 'imdb_votes', 'directors'", metadata)
+        self.assertIn("'worker_state': worker_state", metadata)
         downloads = (PLUGIN / 'resources' / 'lib' / 'downloads.py').read_text(encoding='utf-8')
-        self.assertIn('def _download_separate_ts', downloads)
-        self.assertIn('tsmux.mux_segments', downloads)
-        self.assertNotIn('def _download_hls_bundle', downloads)
-        self.assertIn('def control(identifier, action)', downloads)
-        self.assertTrue((PLUGIN / 'resources' / 'lib' / 'tsmux.py').is_file())
+        self.assertIn('def generate(catalog, item, show_key=', downloads)
+        self.assertIn('-sn -dn -c copy -f mp4', downloads)
+        self.assertIn('xbmcvfs.File', downloads)
+        self.assertNotIn('urlopen', downloads)
+        self.assertNotIn('ffprobe', downloads)
+        self.assertFalse((PLUGIN / 'resources' / 'lib' / 'tsmux.py').exists())
 
     def test_po_has_one_entry_per_blank_line_block(self):
         text = STRINGS.read_text(encoding='utf-8')
@@ -85,7 +87,7 @@ class SettingsLocalizationTests(unittest.TestCase):
                 'clear_movie_cache', 'clear_tv_cache', 'clear_catalog_caches',
                 'clear_saved_subtitles', 'clear_recent_media',
                 'metadata_status', 'clear_metadata_queue', 'clear_metadata_cache',
-                'download_status', 'retry_downloads',
+                'download_status',
             },
         )
         for scope in ('movies', 'tv', 'catalogs', 'subtitles', 'recent', 'metadata'):

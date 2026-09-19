@@ -1,5 +1,6 @@
 import hashlib
 import sys
+import time
 import traceback
 from datetime import datetime, timedelta
 from urllib.error import HTTPError
@@ -419,7 +420,7 @@ def _metadata_context(payload):
 
 def _download_context(item, catalog_name, key=None):
     return (
-        'Download for offline viewing',
+        'Generate FFmpeg download script',
         _context_action(
             'download_ref', catalog=catalog_name, ref=item_ref(item), show_key=key
         ),
@@ -462,9 +463,20 @@ def _apply_metadata(list_item, payload, data):
         tag = list_item.getVideoInfoTag()
     except Exception:
         return
+    plot_details = []
+    if data.get('imdb_rating') is not None:
+        plot_details.append('IMDb: {:.1f}/10'.format(float(data['imdb_rating'])))
+    if data.get('directors'):
+        plot_details.append('Director: {}'.format(', '.join(data['directors'])))
+    cast_names = [person.get('name') for person in (data.get('cast') or []) if person.get('name')]
+    if cast_names:
+        plot_details.append('Cast: {}'.format(', '.join(cast_names[:8])))
+    display_plot = '\n'.join(plot_details)
     if data.get('plot'):
+        display_plot += ('\n\n' if display_plot else '') + data['plot']
+    if display_plot:
         try:
-            tag.setPlot(data['plot'])
+            tag.setPlot(display_plot)
         except Exception:
             pass
     if data.get('episode_title') and payload.get('media_type') == 'episode':
@@ -492,6 +504,11 @@ def _apply_metadata(list_item, payload, data):
     if actors:
         try:
             tag.setCast(actors)
+        except Exception:
+            pass
+    if data.get('directors'):
+        try:
+            tag.setDirectors(data['directors'])
         except Exception:
             pass
 
@@ -1218,8 +1235,8 @@ def play_ref(params):
     preferences = playback_prefs.effective(catalog_name, ref, key or '')
     lookup = _metadata_payload(item)
     enriched = metadata.get(lookup)
-    # Queue a cache miss without waiting for network access. The service worker
-    # remains paused during video playback and will enrich the title afterward.
+    # Queue a cache miss without waiting for network access. Whether the service
+    # pauses metadata processing during playback is user-configurable.
     if not enriched:
         metadata.queue(lookup)
     list_item = xbmcgui.ListItem(
@@ -1374,13 +1391,14 @@ def fetch_metadata_batch(params):
     if not total:
         _notify('This folder contains no media to queue', error=True)
         return
-    message = (
-        'Queue metadata for {:,} titles?\n\n'
-        'Lookups run one at a time in the background, pause during playback '
-        'and downloads, and may take a long time for large folders.'
-    ).format(total)
-    if not xbmcgui.Dialog().yesno('Appi batch metadata', message):
-        return
+    if (ADDON.getSetting('metadata_confirm_bulk') or '').lower() == 'true':
+        message = (
+            'Queue metadata for {:,} titles?\n\n'
+            'Lookups run one at a time in the background and may take a long '
+            'time for large folders.'
+        ).format(total)
+        if not xbmcgui.Dialog().yesno('Appi batch metadata', message):
+            return
     queued = metadata.queue_many(payloads, pinned=True)
     _notify('{:,} metadata lookups queued'.format(queued))
 
@@ -1399,98 +1417,87 @@ def queue_download(params):
             'This item is no longer present in the cached catalogue.',
         )
         return
-    if downloads.queue_item(catalog_name, item, key or ''):
-        _notify('Download queued. It will run while video playback is idle.')
+    try:
+        result = downloads.generate(catalog_name, item, key or '')
+    except Exception as exc:
+        xbmcgui.Dialog().ok('Appi download script', str(exc))
+        return
+    if result['created']:
+        _notify('FFmpeg download script created')
     else:
-        _notify('This item is already downloaded or queued', error=True)
+        _notify('A download script for this item already exists')
 
 
 def show_download_status():
     from . import downloads
     value = downloads.status()
-    entries = downloads.entries()
-    if not entries:
-        xbmcgui.Dialog().ok(
-            'Appi downloads',
-            'No downloads.\n\nDownload folder:\n{}'.format(downloads.download_root()),
-        )
-        return
-    status_names = {
-        'queued': 'Queued', 'downloading': 'Downloading', 'paused': 'Stopped',
-        'complete': 'Complete', 'error': 'Failed',
-    }
-    labels = []
-    for entry in entries:
-        item = entry.get('item') or {}
-        title = (
-            item.get('title') or item.get('show_title') or
-            item.get('display_title') or 'Download'
-        )
-        if item.get('season') is not None and item.get('episode') is not None:
-            title = '{} S{:02d}E{:02d}'.format(
-                item.get('show_title') or title,
-                int(item.get('season') or 0), int(item.get('episode') or 0),
-            )
-        state = status_names.get(entry.get('status'), entry.get('status', 'Unknown'))
-        progress = int(round(float(entry.get('progress') or 0) * 100))
-        suffix = ' - {}%'.format(progress) if entry.get('status') in {'downloading', 'paused'} else ''
-        labels.append('[{}{}] {}'.format(state, suffix, title))
-    heading = 'Appi downloads — {} active, {} stopped, {} complete'.format(
-        value.get('downloading', 0) + value.get('queued', 0),
-        value.get('paused', 0), value.get('complete', 0),
+    details = (
+        'Scripts currently in watch folder: {scripts}\n\n'
+        'Kodi script folder:\n{folder}\n\n'
+        'Media server output root:\n{output}'
+    ).format(
+        scripts=value['scripts'], folder=value['folder'],
+        output=value['output_root'] or 'Not configured',
     )
-    selected = xbmcgui.Dialog().select(heading, labels)
-    if selected < 0:
-        return
-    entry = entries[selected]
-    status_name = entry.get('status')
-    if status_name in {'queued', 'downloading'}:
-        actions = [('Stop and keep partial download', 'pause'),
-                   ('Cancel and delete partial download', 'cancel')]
-    elif status_name == 'paused':
-        actions = [('Resume download', 'resume'),
-                   ('Cancel and delete partial download', 'cancel')]
-    elif status_name == 'error':
-        actions = [('Retry download', 'resume'),
-                   ('Delete record and partial download', 'delete')]
-    else:
-        actions = [('Delete downloaded file', 'delete')]
-    if entry.get('error'):
-        actions.append(('Show failure details', 'details'))
-    chosen = xbmcgui.Dialog().select('Download action', [label for label, _action in actions])
-    if chosen < 0:
-        return
-    label, action = actions[chosen]
-    if action == 'details':
-        xbmcgui.Dialog().ok('Download failure', entry.get('error') or 'No details available')
-        return
-    if action in {'cancel', 'delete'} and not xbmcgui.Dialog().yesno('Appi downloads', label + '?'):
-        return
-    if downloads.control(entry['download_id'], action):
-        _notify({
-            'pause': 'Download stopped', 'resume': 'Download queued to resume',
-            'cancel': 'Download cancelled', 'delete': 'Download deleted',
-        }[action])
-    else:
-        _notify('Download state changed; reopen Manage Downloads', error=True)
-
-
-def retry_downloads():
-    from . import downloads
-    if downloads.retry_errors():
-        _notify('Failed downloads queued again')
+    if value.get('error'):
+        details += '\n\nFolder read error:\n' + value['error']
+    details += (
+        '\n\nAppi only creates scripts. Actual download progress and failures '
+        'are managed by the external watcher and FFmpeg.'
+    )
+    xbmcgui.Dialog().ok('Appi download scripts', details)
 
 
 def show_metadata_status():
     status = metadata.status()
     helper = 'installed' if status['helper'] else 'not installed'
     size = _format_bytes(status.get('bytes', 0))
+    last_activity = (
+        datetime.fromtimestamp(status['last_finished']).strftime('%Y-%m-%d %H:%M:%S')
+        if status.get('last_finished') else 'None yet'
+    )
+    oldest_age = 'None'
+    if status.get('oldest_queued'):
+        seconds = max(0, int(time.time() - status['oldest_queued'] / 1000.0))
+        oldest_age = '{}m {}s'.format(seconds // 60, seconds % 60)
+    last_item = status.get('last_title') or 'None yet'
+    if status.get('last_result'):
+        last_item += ' ({})'.format(status['last_result'])
+    detail = (
+        'TMDb Helper: {helper}\n'
+        'Worker: {worker}\n'
+        'Current item: {current}\n'
+        'Queued lookups: {queued} ({pinned_queue} bulk-pinned)\n'
+        'Oldest queued: {oldest}\n'
+        'Successful lookups: {success}\n'
+        'Failed/no-match lookups: {failed}\n'
+        'Last item: {last_item}\n'
+        'Last activity: {last_activity}\n\n'
+        'Cached rows: {cached} ({pinned_cache} bulk-pinned)\n'
+        'Movies / shows / episodes: {movies} / {shows} / {episodes}\n'
+        'Legacy unclassified rows: {unknown}\n'
+        'Automatic cache limit: {limit}\n'
+        'Disk usage: {size}\n'
+        'Pause during playback: {pause}'
+    ).format(
+        helper=helper, worker=status['worker_state'],
+        current=status.get('current_title') or 'None', queued=status['queued'],
+        pinned_queue=status['pinned_queued'], oldest=oldest_age,
+        success=status['successful'], failed=status['failed'],
+        last_item=last_item, last_activity=last_activity,
+        cached=status['cached'], pinned_cache=status['pinned_cached'],
+        movies=status['movie_cached'], shows=status['show_cached'],
+        episodes=status['episode_cached'], unknown=status['unknown_cached'],
+        limit=status['max_items'], size=size,
+        pause='yes' if status['pause_playback'] else 'no',
+    )
+    if status.get('last_error'):
+        detail += '\n\nLast failure:\n' + status['last_error']
+    detail += (
+        '\n\nIMDb ratings require the OMDb ratings source to be configured in TMDb Helper.'
+    )
     xbmcgui.Dialog().ok(
-        'Appi metadata',
-        'TMDb Helper: {}\nCached titles: {}\nQueued lookups: {}\nDisk usage: {}\n\n'
-        'IMDb ratings require the OMDb ratings source to be configured in TMDb Helper.'.format(
-            helper, status['cached'], status['queued'], size
-        ),
+        'Appi metadata', detail,
     )
 
 
@@ -1635,8 +1642,6 @@ def _run_action(params):
         queue_download(params)
     elif action == 'download_status':
         show_download_status()
-    elif action == 'retry_downloads':
-        retry_downloads()
     elif action == 'metadata_status':
         show_metadata_status()
     elif action == 'clear_metadata_queue':

@@ -16,14 +16,14 @@ from resources.lib.m3u import parse_m3u  # noqa: E402
 
 class CoreTests(unittest.TestCase):
     def test_movie_parser_preserves_year_in_display_label(self):
-        text = '''#EXTM3U\n#EXTINF:-1 tvg-id="tt1234567" tvg-name="tt1234567" tvg-type="movies" group-title="Movies 2025" ,The Good, the Bad (2025)\nhttps://example.invalid/movie/tt1234567\n'''
+        text = '''#EXTM3U\n#EXTINF:-1 tvg-id="tt9900001" tvg-name="tt9900001" tvg-type="movies" group-title="Synthetic Movies 2042" ,Azure, Copper Horizon (2042)\nhttps://media.invalid/movie/tt9900001\n'''
         item = parse_m3u(text)[0]
-        self.assertEqual(item['display_title'], 'The Good, the Bad (2025)')
-        self.assertEqual(item['title'], 'The Good, the Bad')
-        self.assertEqual(item['year'], 2025)
+        self.assertEqual(item['display_title'], 'Azure, Copper Horizon (2042)')
+        self.assertEqual(item['title'], 'Azure, Copper Horizon')
+        self.assertEqual(item['year'], 2042)
 
     def test_tv_group_index(self):
-        text = '''#EXTM3U\n#EXTINF:-1 tvg-id="tt8740614" tvg-type="tvshows" group-title="The Residence (2025)" ,The Residence (2025) S01 E01\nhttps://example.invalid/tvshow/tt8740614/1/1\n#EXTINF:-1 tvg-id="tt8740614" tvg-type="tvshows" group-title="The Residence (2025)" ,The Residence (2025) S02 E03\nhttps://example.invalid/tvshow/tt8740614/2/3\n'''
+        text = '''#EXTM3U\n#EXTINF:-1 tvg-id="tt9900002" tvg-type="tvshows" group-title="Synthetic Series (2042)" ,Synthetic Series (2042) S01 E01\nhttps://media.invalid/tvshow/tt9900002/1/1\n#EXTINF:-1 tvg-id="tt9900002" tvg-type="tvshows" group-title="Synthetic Series (2042)" ,Synthetic Series (2042) S02 E03\nhttps://media.invalid/tvshow/tt9900002/2/3\n'''
         episodes = parse_m3u(text)
         summaries, groups = build_tv_groups(episodes)
         self.assertEqual(len(summaries), 1)

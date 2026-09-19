@@ -11,26 +11,26 @@ from resources.lib.m3u import parse_m3u  # noqa: E402
 class M3UTests(unittest.TestCase):
     def test_movies_preserve_display_title_and_commas(self):
         text = '''#EXTM3U
-#EXTINF:-1 tvg-id="tt1234567" tvg-name="tt1234567" tvg-type="movies" group-title="Movies 2025" ,The Good, the Bad and the Test (2025)
-https://example.invalid/api/movie/tt1234567
+#EXTINF:-1 tvg-id="tt9900001" tvg-name="tt9900001" tvg-type="movies" group-title="Synthetic Movies 2042" ,Azure, Copper and the Test (2042)
+https://media.invalid/api/movie/tt9900001
 '''
         items = parse_m3u(text)
         self.assertEqual(len(items), 1)
         self.assertEqual(items[0]['kind'], 'movie')
-        self.assertEqual(items[0]['display_title'], 'The Good, the Bad and the Test (2025)')
-        self.assertEqual(items[0]['title'], 'The Good, the Bad and the Test')
-        self.assertEqual(items[0]['year'], 2025)
-        self.assertEqual(items[0]['tvg_id'], 'tt1234567')
+        self.assertEqual(items[0]['display_title'], 'Azure, Copper and the Test (2042)')
+        self.assertEqual(items[0]['title'], 'Azure, Copper and the Test')
+        self.assertEqual(items[0]['year'], 2042)
+        self.assertEqual(items[0]['tvg_id'], 'tt9900001')
 
     def test_tv_metadata_from_display_title(self):
         text = '''#EXTM3U
-#EXTINF:-1 tvg-id="tt8740614" tvg-name="tt8740614" tvg-type="tvshows" group-title="The Residence (2025)" ,The Residence (2025) S01 E05
-https://example.invalid/api/tvshow/tt8740614/1/5
+#EXTINF:-1 tvg-id="tt9900002" tvg-name="tt9900002" tvg-type="tvshows" group-title="Synthetic Series (2042)" ,Synthetic Series (2042) S01 E05
+https://media.invalid/api/tvshow/tt9900002/1/5
 '''
         item = parse_m3u(text)[0]
         self.assertEqual(item['kind'], 'episode')
-        self.assertEqual(item['show_title'], 'The Residence')
-        self.assertEqual(item['year'], 2025)
+        self.assertEqual(item['show_title'], 'Synthetic Series')
+        self.assertEqual(item['year'], 2042)
         self.assertEqual(item['season'], 1)
         self.assertEqual(item['episode'], 5)
 

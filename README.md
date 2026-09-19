@@ -6,6 +6,17 @@ Appi is a Kodi video add-on for user-configured movie and TV-show M3U catalogues
 
 Add `https://ihabmmali.github.io/appi/` in Kodi File Manager, then install the current `plugin.video.appi-<version>.zip`.
 
+## 0.7.6
+
+- Replace all device-side media downloading and TS muxing with atomic POSIX shell scripts for an external FFmpeg watcher.
+- Use Kodi's native path selector and VFS layer for local, SMB, NFS and other writable sources supported by the installed Kodi build.
+- Pass the original media URL to FFmpeg and use automatic stream selection with `-c copy`, producing one MP4 without re-encoding or playback-speed throttling.
+- Add a separate media-server output-root setting because the server's filesystem path may differ from Kodi's script-watch path.
+- Expand metadata status with worker state, queue age, success/failure totals, last activity, pinned retention and disk usage.
+- Make metadata pausing during playback configurable and disable repetitive bulk-queue confirmations by default.
+- Fetch directors and place IMDb rating, director and a concise cast list above the plot in standard Kodi browse descriptions.
+- Keep 0.7.5 and earlier working packages directly available as fallbacks.
+
 ## 0.7.5
 
 - Keep both **Fetch metadata for all Recently Played...** actions on their home-screen folders and prevent Kodi from reusing stale cached root-menu items after an upgrade.
@@ -44,7 +55,7 @@ Add `https://ihabmmali.github.io/appi/` in Kodi File Manager, then install the c
 - Store shared TV-show poster, cast and identifiers once per show; episode rows contain only episode title, plot and episode-specific ratings.
 - Retain explicitly requested batch metadata while continuing to bound metadata discovered through ordinary item focus.
 
-Add the generated `Movies` and `TV Shows` subfolders beneath the configured download folder as Kodi video sources to browse and delete downloads using Kodi's standard library interface.
+In releases 0.7.1 through 0.7.5, downloaded `Movies` and `TV Shows` subfolders could be added as Kodi video sources. Version 0.7.6 delegates file creation and library integration to the external watcher.
 
 ## 0.7.0
 
