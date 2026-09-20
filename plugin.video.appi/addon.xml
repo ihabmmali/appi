@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <addon id="plugin.video.appi"
        name="Appi"
-       version="0.7.6"
+       version="0.7.7"
        provider-name="Eyecon">
   <requires>
     <import addon="xbmc.python" version="3.0.1"/>
@@ -18,6 +18,6 @@
     <platform>all</platform>
     <license>GPL-3.0-or-later</license>
     <source>https://github.com/ihabmmali/appi</source>
-    <news>0.7.6 - Replace device-side downloads with external FFmpeg scripts, expand metadata status, make playback pausing and bulk confirmation configurable, and surface IMDb rating, director and cast in browse descriptions.</news>
+    <news>0.7.7 - Fix resume/start behavior, add watched-aware TV progression and Appi favorites, remove synthetic dates, refresh stale IMDb ratings, and write generated downloads beside their scripts.</news>
   </extension>
 </addon>

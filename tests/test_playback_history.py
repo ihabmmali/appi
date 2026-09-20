@@ -28,6 +28,8 @@ ep2={'kind':'episode','display_title':'Show S01 E02','show_title':'Show','year':
 playback_history.start_session('movies','m:tt1',movie)
 playback_history.update_progress(321,1200)
 assert playback_history.resume_point('movies','m:tt1')==(321.0,1200.0)
+assert playback_history.reset_resume('movies','m:tt1') is True
+assert playback_history.resume_point('movies','m:tt1') is None
 assert playback_history.recent_movies()[0]['title']=='Movie'
 playback_history.finish_session(False)
 show_key='tt2\\x1fShow\\x1f2025'
@@ -40,6 +42,10 @@ recent=playback_history.recent_shows()
 assert len(recent)==1 and recent[0]['ref']=='e:tt2:1:2'
 playback_history.finish_session(True)
 assert playback_history.get_entry('tv','e:tt2:1:2')['completed'] is True
+assert playback_history.is_watched(show_key,'e:tt2:1:2') is True
+assert playback_history.set_watched(show_key,'e:tt2:1:2',ep2,False) is True
+assert playback_history.is_watched(show_key,'e:tt2:1:2') is False
+assert playback_history.set_watched(show_key,'e:tt2:1:2',ep2,True) is True
 assert playback_history.resume_point('tv','e:tt2:1:2') is None
 assert playback_history.remove('movies','m:tt1') is True
 assert playback_history.recent_movies()==[]

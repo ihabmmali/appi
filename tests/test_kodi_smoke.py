@@ -17,7 +17,7 @@ from urllib.error import HTTPError
 PLUGIN = Path(sys.argv[1])
 sys.path.insert(0, str(PLUGIN))
 sys.argv = ['plugin://plugin.video.appi', '1', '']
-state = {'items': [], 'content': [], 'sort': [], 'ended': [], 'notifications': [], 'selects': []}
+state = {'items': [], 'content': [], 'sort': [], 'ended': [], 'notifications': [], 'selects': [], 'resolved': []}
 settings = {
     'movie_sort':'0','tv_sort':'0',
     'persist_subtitles':'false','auto_saved_subtitles':'true',
@@ -81,9 +81,9 @@ xp.addDirectoryItems=lambda h,items,totalItems=0: state['items'].extend(items) o
 xp.setContent=lambda h,c: state['content'].append(c)
 xp.addSortMethod=lambda h,m,*args: state['sort'].append(m)
 xp.endOfDirectory=lambda *a,**k: state['ended'].append((a,k)) or True
-xp.setResolvedUrl=lambda *a,**k: True
+xp.setResolvedUrl=lambda *a,**k: state['resolved'].append((a,k)) or True
 sys.modules['xbmcplugin']=xp
-from resources.lib import app, metadata, playback_prefs
+from resources.lib import app, favorites, metadata, playback_history, playback_prefs
 
 movies=[{'kind':'movie','display_title':'Movie %03d (2025)'%i,'title':'Movie %03d'%i,'year':2025,'tvg_id':'tt%03d'%i,'media_url':'https://x/m%d'%i} for i in range(30)]
 shows=[{'show_key':'tt%03d\\x1fShow %03d\\x1f2025'%(i,i),'cache_name':'tv_show_%d'%i,'show_title':'Show %03d'%i,'group_title':'Show %03d (2025)'%i,'year':2025,'tvg_id':'tt%03d'%i,'seasons':[1],'episode_count':1} for i in range(30)]
@@ -100,7 +100,9 @@ root_labels=[row[1].label for row in state['items']]
 assert root_labels[:5] == [
     'Movies', 'TV Shows', 'Search', 'Recently Played Movies', 'Recently Played TV Shows'
 ], root_labels
-assert root_labels == root_labels[:5] + ['Settings'], root_labels
+assert root_labels == root_labels[:5] + [
+    'Favorite Movies', 'Favorite TV Shows', 'Settings'
+], root_labels
 assert not any(label.startswith('Refresh ') for label in root_labels), root_labels
 assert not any(label.startswith('Search Movies') for label in [row[1].label for row in state['items']])
 root_context={row[1].label:[entry[0] for entry in row[1].context] for row in state['items']}
@@ -127,7 +129,8 @@ assert state['items'][0][1].info['title'] == 'Movie 000 (2025)'
 assert state['items'][0][1].art['poster'] == 'https://img/poster.jpg'
 assert state['items'][0][1].tagdata['plot'] == 'IMDb: 7.7/10\nCast: Actor\n\nCached plot'
 assert state['items'][0][1].tagdata['rating'] == (7.7, 99, 'imdb', True)
-assert state['items'][0][1].info['dateadded'] > state['items'][1][1].info['dateadded']
+assert 'dateadded' not in state['items'][0][1].info
+assert any('Add to Appi Favorites' == row[0] for row in state['items'][0][1].context)
 state['items'].clear(); state['sort'].clear()
 app.show_browse_index('movies','alpha')
 assert [row[1].label for row in state['items']] == ['M (30)']
@@ -142,7 +145,7 @@ state['items'].clear(); state['sort'].clear()
 app.show_browse_items('movies','alpha','M','10')
 assert len(state['items']) == 10
 assert all(not row[2] for row in state['items'])
-assert state['sort'] == [0,4,1,2], state['sort']
+assert state['sort'] == [0,1,2], state['sort']
 assert state['items'][0][1].context and 'configure_playback' in state['items'][0][1].context[0][1]
 state['items'].clear()
 
@@ -170,6 +173,36 @@ pref=playback_prefs.get_target('movie',ref='m:tt000')
 assert pref.get('hls_mode')==1
 assert pref.get('subtitle_mode')=='search'
 li3=ListItem(); app._configure_hls(li3, pref); assert li3.props.get('inputstream.adaptive.stream_selection_type')=='ask-quality'
+
+favorites.set_favorite('movie','m:tt000',movies[0],True)
+state['items'].clear(); app.show_favorite_movies()
+assert [row[1].label for row in state['items']] == ['Movie 000 (2025)']
+assert any('Remove from Appi Favorites' == row[0] for row in state['items'][0][1].context)
+
+playback_history.start_session('movies','m:tt000',movies[0])
+playback_history.update_progress(321,1200)
+playback_history.finish_session(False)
+app._probe_kind=lambda *a,**k: {'kind':'mp4'}
+Dialog.select_answers=[1]
+app.play_ref({'catalog':'movies','ref':'m:tt000'})
+resolved=state['resolved'][-1][0][2]
+assert 'StartOffset' not in resolved.props
+assert playback_history.resume_point('movies','m:tt000') is None
+playback_history.update_progress(400,1200)
+playback_history.finish_session(False)
+Dialog.select_answers=[0]
+app.play_ref({'catalog':'movies','ref':'m:tt000'})
+assert state['resolved'][-1][0][2].props['StartOffset']=='400.0'
+
+progression=[dict(eps[0], episode=n, display_title='Show 000 S01 E%02d'%n, media_url='https://x/e%d'%n) for n in (1,2,3)]
+app._load_show_episodes=lambda key: progression
+show_key=shows[0]['show_key']
+playback_history.set_watched(show_key,'e:tt000:1:1',progression[0],True)
+assert app._next_episode_for_show(show_key,'e:tt000:1:1')['episode']==2
+playback_history.set_watched(show_key,'e:tt000:1:2',progression[1],True)
+assert app._next_episode_for_show(show_key,'e:tt000:1:1')['episode']==3
+playback_history.set_watched(show_key,'e:tt000:1:2',progression[1],False)
+assert app._next_episode_for_show(show_key,'e:tt000:1:1')['episode']==2
 
 page1="""#EXTM3U
 #EXTINF:-1 tvg-id="tt101" tvg-type="tvshows" group-title="Alpha Show (2025)",Alpha Show S01 E01

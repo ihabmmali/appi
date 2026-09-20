@@ -1,7 +1,9 @@
 import time
+from urllib.parse import urlencode
 
 import xbmc
 import xbmcaddon
+import xbmcgui
 
 from . import playback_history
 from . import metadata
@@ -79,14 +81,35 @@ class AppiPlayer(xbmc.Player):
             except Exception:
                 pass
         subtitle_store.clear_session()
-        playback_history.finish_session(completed=completed)
+        session = playback_history.finish_session(completed=completed)
         self._search_opened_key = None
+        return session
 
     def onPlayBackStopped(self):
         self._finish(completed=False)
 
     def onPlayBackEnded(self):
-        self._finish(completed=True)
+        session = self._finish(completed=True) or {}
+        if session.get('catalog') != 'tv' or not session.get('show_key'):
+            return
+        try:
+            mode = int(ADDON.getSetting('next_episode_mode') or 0)
+        except (TypeError, ValueError):
+            mode = 0
+        if mode == 1 and not xbmcgui.Dialog().yesno(
+            'Appi', 'Play the next unwatched episode?'
+        ):
+            return
+        if mode not in {1, 2}:
+            return
+        query = urlencode({
+            'action': 'play_next',
+            'show_key': session['show_key'],
+            'after_ref': session.get('ref') or '',
+        })
+        xbmc.executebuiltin(
+            'PlayMedia(plugin://plugin.video.appi/?{})'.format(query)
+        )
 
     def onPlayBackError(self):
         self._finish(completed=False)

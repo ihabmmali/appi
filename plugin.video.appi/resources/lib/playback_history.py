@@ -4,6 +4,7 @@ from . import cache
 
 HISTORY_CACHE = 'playback_history'
 SESSION_CACHE = 'playback_history_session'
+WATCHED_CACHE = 'watched_episodes'
 MAX_MOVIES = 100
 MAX_EPISODES = 500
 
@@ -85,6 +86,69 @@ def clear_session():
 def clear_all():
     cache.remove(HISTORY_CACHE)
     cache.remove(SESSION_CACHE)
+    cache.remove(WATCHED_CACHE)
+
+
+def _watched():
+    value = cache.load_object(WATCHED_CACHE)
+    return value if isinstance(value, dict) else {}
+
+
+def is_watched(show_key, ref):
+    if ref in (_watched().get(show_key) or {}):
+        return True
+    entry = get_entry('tv', ref)
+    return bool(entry and entry.get('completed'))
+
+
+def watched_refs(show_key):
+    result = set((_watched().get(show_key) or {}).keys())
+    for ref, entry in _history()['episodes'].items():
+        if (isinstance(entry, dict) and entry.get('show_key') == show_key
+                and entry.get('completed')):
+            result.add(ref)
+    return result
+
+
+def set_watched(show_key, ref, item=None, watched=True):
+    if not show_key or not ref:
+        return False
+    values = _watched()
+    show = values.setdefault(show_key, {})
+    if watched:
+        show[ref] = {
+            'season': (item or {}).get('season'),
+            'episode': (item or {}).get('episode'),
+            'watched_at': time.time(),
+        }
+    else:
+        show.pop(ref, None)
+        if not show:
+            values.pop(show_key, None)
+    cache.save_object(WATCHED_CACHE, values)
+
+    history = _history()
+    entry = history['episodes'].get(ref)
+    if isinstance(entry, dict):
+        entry['completed'] = bool(watched)
+        entry['position'] = 0.0
+        history['episodes'][ref] = entry
+        _save_history(history)
+    return True
+
+
+def reset_resume(catalog, ref):
+    if catalog not in {'movies', 'tv'} or not ref:
+        return False
+    history = _history()
+    entry = history[_bucket(catalog)].get(ref)
+    if not isinstance(entry, dict):
+        return False
+    entry['position'] = 0.0
+    entry['total'] = 0.0
+    history[_bucket(catalog)][ref] = entry
+    _save_history(history)
+    return True
 
 
 def remove(catalog, ref):
@@ -169,7 +233,10 @@ def finish_session(completed=False):
             entry['position'] = 0.0
         bucket[ref] = entry
         _save_history(history)
+    if completed and catalog == 'tv' and isinstance(entry, dict):
+        set_watched(session.get('show_key') or entry.get('show_key') or '', ref, entry, True)
     clear_session()
+    return session
 
 
 def get_entry(catalog, ref):

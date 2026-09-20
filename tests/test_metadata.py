@@ -99,6 +99,17 @@ assert data['imdb_rating']==7.8 and data['imdb_votes']==12345
 # The generic JSON-RPC rating is deliberately ignored; only IMDb_Rating is accepted.
 assert data['imdb_rating']!=9.9
 with metadata._connect() as connection:
+    connection.execute(
+        'UPDATE metadata SET fetched_at=1 WHERE cache_key=?',
+        (metadata.cache_key(payload),),
+    )
+assert metadata.queue(payload) is True
+assert metadata.clear_queue()==1
+bad_match={'media_type':'movie','title':'Example','year':2025,'imdb_id':'tt999'}
+assert metadata.queue(bad_match,force=True)
+assert metadata.process_one() is False
+assert metadata.get(bad_match) is None
+with metadata._connect() as connection:
     episode_row=connection.execute(
         'SELECT data FROM metadata WHERE cache_key=?',(metadata.cache_key(payload),)
     ).fetchone()
@@ -118,7 +129,7 @@ assert metadata.queue_many(batch,pinned=True)==2
 with metadata._connect() as connection:
     assert connection.execute('SELECT COUNT(*) FROM queue WHERE pinned=1').fetchone()[0]==2
 status=metadata.status()
-assert status['bytes'] > 0 and status['successful']==1
+assert status['bytes'] > 0 and status['successful']==1 and status['failed']==1
 assert status['show_cached']==1 and status['episode_cached']==1
 assert metadata.clear_queue()==2
 assert metadata.status()['queued']==0

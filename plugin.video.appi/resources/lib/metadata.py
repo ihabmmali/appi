@@ -15,6 +15,7 @@ PROFILE = xbmcvfs.translatePath(ADDON.getAddonInfo('profile'))
 HELPER_ID = 'plugin.video.themoviedb.helper'
 SCHEMA_VERSION = 4
 DEFAULT_MAX_ITEMS = 1000
+RATING_REFRESH_SECONDS = 7 * 24 * 60 * 60
 
 
 def enabled():
@@ -256,14 +257,23 @@ def queue_many(payloads, force=False, pinned=False):
                     continue
                 key = cache_key(payload)
                 cached = connection.execute(
-                    'SELECT 1 FROM metadata WHERE cache_key=?', (key,)
+                    'SELECT fetched_at,data FROM metadata WHERE cache_key=?', (key,)
                 ).fetchone()
                 if not force and cached:
                     if pinned:
                         connection.execute(
                             'UPDATE metadata SET pinned=1 WHERE cache_key=?', (key,)
                         )
-                    continue
+                    try:
+                        cached_data = json.loads(cached[1])
+                    except (TypeError, ValueError):
+                        cached_data = {}
+                    rating_stale = (
+                        cached_data.get('imdb_rating') is not None
+                        and time.time() - int(cached[0] or 0) >= RATING_REFRESH_SECONDS
+                    )
+                    if not rating_stale:
+                        continue
                 connection.execute(
                     'INSERT OR REPLACE INTO queue('
                     'cache_key,queued_at,payload,pinned) VALUES(?,?,?,?)',
@@ -348,6 +358,9 @@ def _normalise_result(item, payload):
             directors.append(name)
     rating = _float(lower_props.get('imdb_rating'))
     votes = _int(lower_props.get('imdb_votes'))
+    source_imdb_id = _clean_id(
+        lower_props.get('imdb_id') or item.get('imdbnumber')
+    )
     result = {
         'plot': item.get('plot') or '',
         'poster': art.get('poster') or item.get('thumbnail') or '',
@@ -355,9 +368,8 @@ def _normalise_result(item, payload):
         'directors': directors[:6],
         'imdb_rating': rating,
         'imdb_votes': votes,
-        'imdb_id': _clean_id(
-            lower_props.get('imdb_id') or item.get('imdbnumber') or payload.get('imdb_id')
-        ),
+        'imdb_id': source_imdb_id or payload.get('imdb_id') or '',
+        '_source_imdb_id': source_imdb_id,
         'tmdb_id': lower_props.get('tmdb_id') or (item.get('uniqueid') or {}).get('tmdb') or '',
     }
     if payload.get('media_type') == 'episode':
@@ -428,6 +440,17 @@ def process_one():
         if not files:
             raise RuntimeError('TMDb Helper returned no match')
         data = _normalise_result(files[0], payload)
+        requested_id = payload.get('imdb_id') or ''
+        returned_id = data.pop('_source_imdb_id', '')
+        if (
+            payload.get('media_type') != 'episode' and requested_id and returned_id
+            and requested_id != returned_id
+        ):
+            raise RuntimeError(
+                'TMDb Helper matched {} instead of requested {}'.format(
+                    returned_id, requested_id
+                )
+            )
         with _connect() as connection:
             if payload.get('media_type') == 'episode':
                 parent_payload = show_payload(payload)

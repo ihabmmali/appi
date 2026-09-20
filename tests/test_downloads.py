@@ -17,7 +17,7 @@ from pathlib import Path
 PLUGIN=Path(sys.argv[1]); sys.path.insert(0,str(PLUGIN))
 profile=tempfile.mkdtemp(prefix='appi-script-')
 watch=os.path.join(profile,'watch')
-settings={'download_folder':watch,'download_output_folder':'/srv/media/appi'}
+settings={'download_folder':watch}
 xbmc=types.ModuleType('xbmc'); xbmc.LOGWARNING=2
 xbmc.log=lambda *a,**k:None; xbmc.getCondVisibility=lambda q:True
 class Player:
@@ -55,7 +55,10 @@ assert '#!/bin/sh' in script and 'set -eu' in script
 assert '-c copy' in script and '-sn -dn' in script and '-f mp4' in script
 assert '-map ' not in script and 'ffprobe' not in script
 assert 'stream.m3u8' in script and "'\"'\"'" in script
-assert '/srv/media/appi/Movies/Synthetic_Feature (2042)/Synthetic_Feature (2042).mp4' in script
+assert 'script_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)' in script
+assert 'output="$script_dir"/' in script
+assert "Synthetic_Feature (2042).mp4" in script
+assert '/srv/' not in script
 assert '.part.mp4' in script and 'mv -f --' in script
 duplicate=downloads.generate('movies',movie)
 assert duplicate['created'] is False and duplicate['path']==result['path']
@@ -69,7 +72,7 @@ episode={
 }
 episode_result=downloads.generate('tv',episode,'synthetic-show')
 episode_script=open(episode_result['path'],encoding='utf-8').read()
-assert '/TV Shows/Synthetic Series/Season 02/' in episode_script
+assert 'Synthetic Series - S02E03 - ' in episode_script
 assert downloads.status()['scripts']==2
 '''
         result = subprocess.run(

@@ -42,10 +42,6 @@ def script_folder():
     return configured or _vfs_join(PROFILE, 'download-scripts')
 
 
-def output_root():
-    return (ADDON.getSetting('download_output_folder') or '').strip()
-
-
 def _ensure_script_folder():
     folder = script_folder()
     if not xbmcvfs.exists(folder) and not xbmcvfs.mkdirs(folder):
@@ -58,15 +54,12 @@ def _shell_quote(value):
     return "'{}'".format(str(value).replace("'", "'\"'\"'"))
 
 
-def _output_path(catalog, item, enriched=None):
-    root = output_root().rstrip('/\\')
-    if not root:
-        raise RuntimeError('Configure the media server output root in Appi settings')
+def _output_name(catalog, item, enriched=None):
     if catalog == 'movies':
         title = _safe_name(item.get('title') or item.get('display_title'), 'Movie')
         if item.get('year'):
             title = '{} ({})'.format(title, item['year'])
-        return '{}/Movies/{}/{}.mp4'.format(root, title, title)
+        return '{}.mp4'.format(title)
 
     show = _safe_name(item.get('show_title') or item.get('group_title'), 'TV Show')
     season = int(item.get('season') or 0)
@@ -76,29 +69,27 @@ def _output_path(catalog, item, enriched=None):
     )
     episode_title = _safe_name(episode_title, 'Episode')
     filename = '{} - S{:02d}E{:02d} - {}'.format(show, season, episode, episode_title)
-    return '{}/TV Shows/{}/Season {:02d}/{}.mp4'.format(
-        root, show, season, filename
-    )
+    return '{}.mp4'.format(filename)
 
 
-def _script_text(media_url, destination):
-    partial = destination[:-4] + '.part.mp4'
+def _script_text(media_url, filename):
+    partial_name = filename[:-4] + '.part.mp4'
     return '''#!/bin/sh
 set -eu
 
 FFMPEG="${{FFMPEG:-ffmpeg}}"
-output={output}
-partial={partial}
+script_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+output="$script_dir"/{output}
+partial="$script_dir"/{partial}
 
-mkdir -p -- "$(dirname -- "$output")"
 "$FFMPEG" -hide_banner -nostdin -y \\
   -i {url} \\
   -sn -dn -c copy -f mp4 "$partial"
 mv -f -- "$partial" "$output"
 '''.format(
         url=_shell_quote(media_url),
-        output=_shell_quote(destination),
-        partial=_shell_quote(partial),
+        output=_shell_quote(filename),
+        partial=_shell_quote(partial_name),
     )
 
 
@@ -122,16 +113,16 @@ def generate(catalog, item, show_key=''):
         raise ValueError('Invalid download-script target')
     folder = _ensure_script_folder()
     payload = metadata.lookup_payload(item)
-    destination = _output_path(catalog, item, metadata.get(payload) or {})
+    filename = _output_name(catalog, item, metadata.get(payload) or {})
     final_path = _vfs_join(folder, _script_name(catalog, item))
     if xbmcvfs.exists(final_path):
-        return {'created': False, 'path': final_path, 'destination': destination}
+        return {'created': False, 'path': final_path, 'filename': filename}
 
     temporary = final_path + '.tmp-{}'.format(int(time.time() * 1000))
     handle = None
     try:
         handle = xbmcvfs.File(temporary, 'w')
-        written = handle.write(_script_text(item['media_url'], destination))
+        written = handle.write(_script_text(item['media_url'], filename))
         handle.close()
         handle = None
         if written is False:
@@ -149,7 +140,7 @@ def generate(catalog, item, show_key=''):
         except Exception:
             pass
         raise
-    return {'created': True, 'path': final_path, 'destination': destination}
+    return {'created': True, 'path': final_path, 'filename': filename}
 
 
 def status():
@@ -164,7 +155,6 @@ def status():
         error = '{}: {}'.format(type(exc).__name__, exc)
     return {
         'folder': folder,
-        'output_root': output_root(),
         'scripts': count,
         'error': error,
     }

@@ -6,6 +6,16 @@ Appi is a Kodi video add-on for user-configured movie and TV-show M3U catalogues
 
 Add `https://ihabmmali.github.io/appi/` in Kodi File Manager, then install the current `plugin.video.appi-<version>.zip`.
 
+## 0.7.7
+
+- Replace Kodi's conflicting resume handling with an Appi-controlled Resume / Play from beginning choice and a working reset-resume action.
+- Add Appi watched/unwatched state, watched-aware recent TV progression, and configurable Stop / Ask / Automatic next-episode playback.
+- Add separate Favorite Movies and Favorite TV Shows folders whose entries resolve against the current catalogue and metadata cache.
+- Remove the synthetic `dateadded` timestamps that overflowed to 1963 on affected devices while preserving provider-list order.
+- Validate non-episode IMDb identities and refresh seven-day-old cached IMDb ratings asynchronously when an item is focused.
+- Remove the media-server output-root setting. Generated FFmpeg scripts now write their MP4 beside the script itself using stream copy.
+- Keep 0.7.6 and earlier packages directly available as fallbacks.
+
 ## 0.7.6
 
 - Replace all device-side media downloading and TS muxing with atomic POSIX shell scripts for an external FFmpeg watcher.
@@ -55,7 +65,7 @@ Add `https://ihabmmali.github.io/appi/` in Kodi File Manager, then install the c
 - Store shared TV-show poster, cast and identifiers once per show; episode rows contain only episode title, plot and episode-specific ratings.
 - Retain explicitly requested batch metadata while continuing to bound metadata discovered through ordinary item focus.
 
-In releases 0.7.1 through 0.7.5, downloaded `Movies` and `TV Shows` subfolders could be added as Kodi video sources. Version 0.7.6 delegates file creation and library integration to the external watcher.
+In releases 0.7.1 through 0.7.5, downloaded `Movies` and `TV Shows` subfolders could be added as Kodi video sources. Versions 0.7.6 and later delegate file creation and library integration to the external watcher.
 
 ## 0.7.0
 
