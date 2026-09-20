@@ -54,17 +54,8 @@ class AppiPlayer(xbmc.Player):
             except Exception as exc:
                 xbmc.log('Appi could not restore saved subtitles: {}'.format(exc), xbmc.LOGWARNING)
 
-    def _capture_progress(self):
-        if not self.isPlayingVideo():
-            return
-        try:
-            playback_history.update_progress(self.getTime(), self.getTotalTime())
-        except Exception as exc:
-            xbmc.log('Appi playback progress capture failed: {}'.format(exc), xbmc.LOGWARNING)
-
     def onAVStarted(self):
         self._apply_session_subtitles()
-        self._capture_progress()
 
     def onAVChange(self):
         if _enabled('persist_subtitles', True):
@@ -72,24 +63,23 @@ class AppiPlayer(xbmc.Player):
                 subtitle_store.capture_temp_changes()
             except Exception as exc:
                 xbmc.log('Appi subtitle capture failed: {}'.format(exc), xbmc.LOGWARNING)
-        self._capture_progress()
 
-    def _finish(self, completed=False):
+    def _finish(self):
         if _enabled('persist_subtitles', True):
             try:
                 subtitle_store.capture_temp_changes()
             except Exception:
                 pass
         subtitle_store.clear_session()
-        session = playback_history.finish_session(completed=completed)
+        session = playback_history.finish_session()
         self._search_opened_key = None
         return session
 
     def onPlayBackStopped(self):
-        self._finish(completed=False)
+        self._finish()
 
     def onPlayBackEnded(self):
-        session = self._finish(completed=True) or {}
+        session = self._finish() or {}
         if session.get('catalog') != 'tv' or not session.get('show_key'):
             return
         try:
@@ -106,19 +96,19 @@ class AppiPlayer(xbmc.Player):
             'action': 'play_next',
             'show_key': session['show_key'],
             'after_ref': session.get('ref') or '',
+            'completed': '1',
         })
         xbmc.executebuiltin(
             'PlayMedia(plugin://plugin.video.appi/?{})'.format(query)
         )
 
     def onPlayBackError(self):
-        self._finish(completed=False)
+        self._finish()
 
 
 def run():
     monitor = xbmc.Monitor()
     player = AppiPlayer()
-    next_progress_poll = 0.0
     next_metadata_poll = 0.0
     focused_value = ''
     focused_since = 0.0
@@ -131,11 +121,7 @@ def run():
             except Exception as exc:
                 xbmc.log('Appi subtitle polling failed: {}'.format(exc), xbmc.LOGWARNING)
         now = time.monotonic()
-        if playing and now >= next_progress_poll:
-            player._capture_progress()
-            next_progress_poll = now + 5.0
         if not playing:
-            next_progress_poll = 0.0
             try:
                 value = xbmc.getInfoLabel('ListItem.Property(Appi.MetadataLookup)') or ''
             except Exception:

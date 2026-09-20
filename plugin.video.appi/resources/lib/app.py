@@ -14,6 +14,7 @@ import xbmcplugin
 from . import cache
 from . import favorites
 from . import kodi_cache
+from . import kodi_status
 from . import metadata
 from . import playback_history
 from . import playback_prefs
@@ -437,37 +438,6 @@ def _favorite_context(kind, key, item, favorite_keys=None):
     )
 
 
-def _resume_context(catalog_name, ref, show_key=None, resume_points=None):
-    point = (resume_points.get(ref) if resume_points is not None
-             else playback_history.resume_point(catalog_name, ref))
-    if not point:
-        return []
-    return [
-        ('Resume from saved position', _play_action(
-            catalog=catalog_name, ref=ref, show_key=show_key, play_mode='resume'
-        )),
-        ('Play from beginning', _play_action(
-            catalog=catalog_name, ref=ref, show_key=show_key, play_mode='start'
-        )),
-        ('Reset Appi resume position', _context_action(
-            'reset_resume', catalog=catalog_name, ref=ref
-        )),
-    ]
-
-
-def _watched_context(item, show_key, watched_refs=None):
-    ref = item_ref(item)
-    watched = (ref in watched_refs if watched_refs is not None
-               else playback_history.is_watched(show_key, ref))
-    return (
-        'Mark as unwatched in Appi' if watched else 'Mark as watched in Appi',
-        _context_action(
-            'set_watched', show_key=show_key, ref=ref,
-            watched='0' if watched else '1',
-        ),
-    )
-
-
 def _metadata_batch_context(label=None, **params):
     return (
         label or 'Fetch metadata for everything in this folder',
@@ -588,10 +558,6 @@ def _context_action(action, **params):
     return 'RunPlugin({})'.format(_url(action, **params))
 
 
-def _play_action(**params):
-    return 'PlayMedia({})'.format(_url('play_ref', **params))
-
-
 def _add_context(list_item, items):
     if not items:
         return
@@ -602,8 +568,8 @@ def _add_context(list_item, items):
 
 
 def _playable_tuple(
-    item, catalog_name, key=None, resume_points=None, label_suffix='',
-    metadata_cache=None, recent=False, favorite_keys=None, watched_refs=None,
+    item, catalog_name, key=None, label_suffix='', metadata_cache=None,
+    recent=False, favorite_keys=None,
 ):
     payload = _metadata_payload(item)
     enriched = metadata.get(payload, metadata_cache)
@@ -628,16 +594,13 @@ def _playable_tuple(
         _download_context(item, catalog_name, key),
         _metadata_context(payload),
     ]
-    context.extend(_resume_context(catalog_name, ref, key, resume_points))
     if catalog_name == 'movies':
         context.append(_favorite_context('movie', ref, item, favorite_keys))
-    else:
-        context.append(_watched_context(item, key or '', watched_refs))
     if recent:
         context.append(_remove_recent_context(catalog_name, item=item))
     _add_context(list_item, context)
     return (
-        _url('play_ref', catalog=catalog_name, ref=ref, show_key=key),
+        _play_ref_url(catalog_name, ref, key),
         list_item,
         False,
     )
@@ -687,6 +650,10 @@ def _scope_items(scope, provider_order=False):
     return items if provider_order else sort_shows(items, _int_setting('tv_sort', 0))
 
 
+def _play_ref_url(catalog_name, ref, key=None):
+    return _url('play_ref', catalog=catalog_name, ref=ref, show_key=key)
+
+
 def _item_title(scope, item):
     if scope == 'movies':
         return item.get('title') or item.get('display_title') or ''
@@ -716,7 +683,6 @@ def _show_media(scope, items, mixed=False):
         xbmcplugin.setContent(HANDLE, 'movies' if scope == 'movies' else 'tvshows')
     _add_video_sort_methods()
     metadata_cache = metadata.load_all()
-    resume_points = playback_history.resume_points('movies') if scope == 'movies' else None
     favorite_keys = favorites.keys('movie' if scope == 'movies' else 'show')
     tuples = []
     for item in items:
@@ -724,7 +690,6 @@ def _show_media(scope, items, mixed=False):
             tuples.append(_playable_tuple(
                 item,
                 'movies',
-                resume_points=resume_points,
                 label_suffix=' [Movie]' if mixed else '',
                 metadata_cache=metadata_cache,
                 favorite_keys=favorite_keys,
@@ -743,7 +708,6 @@ def _show_media(scope, items, mixed=False):
 def _show_mixed(items):
     xbmcplugin.setContent(HANDLE, 'files')
     _add_video_sort_methods()
-    resume_points = playback_history.resume_points('movies')
     metadata_cache = metadata.load_all()
     movie_favorites = favorites.keys('movie')
     show_favorites = favorites.keys('show')
@@ -751,7 +715,7 @@ def _show_mixed(items):
     for scope, item in items:
         if scope == 'movies':
             tuples.append(_playable_tuple(
-                item, 'movies', resume_points=resume_points, label_suffix=' [Movie]',
+                item, 'movies', label_suffix=' [Movie]',
                 metadata_cache=metadata_cache,
                 favorite_keys=movie_favorites,
             ))
@@ -955,13 +919,12 @@ def show_recent_movies():
     entries = _decorate_provider_order(playback_history.recent_movies(limit=100))
     xbmcplugin.setContent(HANDLE, 'movies')
     _add_video_sort_methods()
-    resume_points = playback_history.resume_points('movies')
     metadata_cache = metadata.load_all()
     favorite_keys = favorites.keys('movie')
     tuples = []
     for item in entries:
         playable = _playable_tuple(
-            item, 'movies', resume_points=resume_points,
+            item, 'movies',
             metadata_cache=metadata_cache, recent=True,
             favorite_keys=favorite_keys,
         )
@@ -1031,20 +994,28 @@ def _episode_sort_key(item):
     )
 
 
-def _next_episode_for_show(key, after_ref=''):
+def _native_episode_status(key, item):
+    return kodi_status.details(_play_ref_url('tv', item_ref(item), key))
+
+
+def _next_episode_for_show(key, after_ref='', after_completed=False):
     episodes = sorted(_load_show_episodes(key), key=_episode_sort_key)
     if not episodes:
         return None
     start = 0
-    watched_refs = playback_history.watched_refs(key)
     if after_ref:
         index = next((i for i, item in enumerate(episodes) if item_ref(item) == after_ref), None)
         if index is not None:
-            if playback_history.resume_point('tv', after_ref):
-                return episodes[index]
-            start = index + 1 if after_ref in watched_refs else index
+            if after_completed:
+                start = index + 1
+            else:
+                status = _native_episode_status(key, episodes[index])
+                if status['resume'] > 0:
+                    return episodes[index]
+                start = index + 1 if status['available'] and status['playcount'] > 0 else index
     for item in episodes[start:]:
-        if item_ref(item) not in watched_refs:
+        status = _native_episode_status(key, item)
+        if not status['available'] or status['playcount'] <= 0:
             return item
     return None
 
@@ -1058,12 +1029,8 @@ def show_recent_show(key):
         return
 
     recent_ref = recent.get('ref')
-    if recent.get('completed'):
-        playback_history.set_watched(key, recent_ref, recent, True)
     continuation = _next_episode_for_show(key, recent_ref)
-    force_resume = bool(
-        continuation and playback_history.resume_point('tv', item_ref(continuation))
-    )
+    force_resume = bool(continuation and _native_episode_status(key, continuation)['resume'] > 0)
 
     xbmcplugin.setContent(HANDLE, 'seasons')
     metadata_cache = metadata.load_all()
@@ -1137,14 +1104,10 @@ def show_episodes(key, season):
             xbmcplugin.addSortMethod(HANDLE, xbmcplugin.SORT_METHOD_EPISODE)
         except Exception:
             pass
-    resume_points = playback_history.resume_points('tv')
-    watched_refs = playback_history.watched_refs(key)
     metadata_cache = metadata.load_all()
     _send_items([
         _playable_tuple(
-            item, 'tv', key, resume_points=resume_points,
-            metadata_cache=metadata_cache,
-            watched_refs=watched_refs,
+            item, 'tv', key, metadata_cache=metadata_cache,
         )
         for item in episodes
     ])
@@ -1285,25 +1248,15 @@ def play_ref(params):
         xbmcplugin.setResolvedUrl(HANDLE, False, xbmcgui.ListItem())
         return
 
-    point = playback_history.resume_point(catalog_name, ref)
-    play_mode = params.get('play_mode') or 'ask'
-    if point and play_mode == 'ask':
-        position = int(point[0])
-        timestamp = '{:02d}:{:02d}:{:02d}'.format(
-            position // 3600, (position % 3600) // 60, position % 60
-        )
-        choice = _dialog_select(
-            'Resume playback',
-            ['Resume from {}'.format(timestamp), 'Play from beginning'],
-            0,
-        )
-        if choice < 0:
-            xbmcplugin.setResolvedUrl(HANDLE, False, xbmcgui.ListItem())
-            return
-        play_mode = 'resume' if choice == 0 else 'start'
-    if play_mode == 'start':
-        playback_history.reset_resume(catalog_name, ref)
-        point = None
+    # Kodi uses this side-effect-free existence probe before reading status for
+    # plugin URLs through Files.GetFileDetails. Do not create a recent session,
+    # probe the provider, or queue metadata for this internal request.
+    if params.get('kodi_action') == 'check_exists':
+        list_item = xbmcgui.ListItem(path=media_url, offscreen=True)
+        _set_playback_metadata(list_item, item)
+        list_item.setProperty('IsPlayable', 'true')
+        xbmcplugin.setResolvedUrl(HANDLE, True, list_item)
+        return
 
     preferences = playback_prefs.effective(catalog_name, ref, key or '')
     lookup = _metadata_payload(item)
@@ -1320,9 +1273,6 @@ def play_ref(params):
     )
     _set_playback_metadata(list_item, item, enriched)
     list_item.setProperty('IsPlayable', 'true')
-    if play_mode == 'resume' and point:
-        list_item.setProperty('StartOffset', str(float(point[0])))
-
     stream = _probe_kind(catalog_name, ref, media_url)
     if stream.get('kind') == 'hls':
         _configure_hls(list_item, preferences)
@@ -1598,27 +1548,6 @@ def remove_recent(params):
     xbmc.executebuiltin('Container.Refresh')
 
 
-def reset_resume(params):
-    changed = playback_history.reset_resume(
-        params.get('catalog', ''), params.get('ref', '')
-    )
-    _notify('Resume position cleared' if changed else 'No Appi resume position was stored')
-    xbmc.executebuiltin('Container.Refresh')
-
-
-def set_watched(params):
-    key = params.get('show_key') or ''
-    ref = params.get('ref') or ''
-    item = _find_by_ref('tv', ref, key)
-    if not item:
-        _notify('Episode is no longer present in the TV catalogue', error=True)
-        return
-    watched = params.get('watched') != '0'
-    playback_history.set_watched(key, ref, item, watched)
-    _notify('Marked as watched' if watched else 'Marked as unwatched')
-    xbmc.executebuiltin('Container.Refresh')
-
-
 def set_favorite(params):
     kind = params.get('kind') or ''
     key = params.get('key') or ''
@@ -1639,14 +1568,15 @@ def set_favorite(params):
 
 def play_next(params):
     key = params.get('show_key') or ''
-    item = _next_episode_for_show(key, params.get('after_ref') or '')
+    item = _next_episode_for_show(
+        key, params.get('after_ref') or '', params.get('completed') == '1'
+    )
     if not item:
         _notify('No unwatched next episode is available')
         xbmcplugin.setResolvedUrl(HANDLE, False, xbmcgui.ListItem())
         return
     play_ref({
         'catalog': 'tv', 'ref': item_ref(item), 'show_key': key,
-        'play_mode': 'start',
     })
 
 
@@ -1776,10 +1706,6 @@ def _run_action(params):
         clear_metadata_queue()
     elif action == 'remove_recent':
         remove_recent(params)
-    elif action == 'reset_resume':
-        reset_resume(params)
-    elif action == 'set_watched':
-        set_watched(params)
     elif action == 'set_favorite':
         set_favorite(params)
     elif action == 'refresh_movies':

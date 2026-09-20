@@ -52,6 +52,10 @@ class RepositoryTests(unittest.TestCase):
         plugin_name = f'{plugin_id}-{plugin_version}.zip'
         self.assertIn(f'href="{plugin_name}">{plugin_name}</a>', html)
         self.assertIn(
+            'href="plugin.video.appi-0.7.7.zip">plugin.video.appi-0.7.7.zip</a>',
+            html,
+        )
+        self.assertIn(
             'href="plugin.video.appi-0.7.6.zip">plugin.video.appi-0.7.6.zip</a>',
             html,
         )
@@ -59,26 +63,9 @@ class RepositoryTests(unittest.TestCase):
             'href="plugin.video.appi-0.7.5.zip">plugin.video.appi-0.7.5.zip</a>',
             html,
         )
-        self.assertIn(
-            'href="plugin.video.appi-0.7.4.zip">plugin.video.appi-0.7.4.zip</a>',
-            html,
-        )
-        self.assertIn(
-            'href="plugin.video.appi-0.7.3.zip">plugin.video.appi-0.7.3.zip</a>',
-            html,
-        )
-        self.assertIn(
-            'href="plugin.video.appi-0.7.2.zip">plugin.video.appi-0.7.2.zip</a>',
-            html,
-        )
-        self.assertIn(
-            'href="plugin.video.appi-0.7.0.zip">plugin.video.appi-0.7.0.zip</a>',
-            html,
-        )
-        self.assertIn(
-            'href="plugin.video.appi-0.6.3.zip">plugin.video.appi-0.6.3.zip</a>',
-            html,
-        )
+        self.assertEqual(html.count('plugin.video.appi-'), 8)
+        for version in ('0.7.4', '0.7.3', '0.7.2', '0.7.0', '0.6.3'):
+            self.assertNotIn('plugin.video.appi-{}.zip</a>'.format(version), html)
         self.assertNotIn('plugin.video.appi-0.8.0.zip</a>', html)
         self.assertNotIn('plugin.video.appi-0.7.1.zip</a>', html)
         self.assertTrue((ROOT / 'plugin.video.appi-0.8.0.zip').is_file())

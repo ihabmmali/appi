@@ -66,6 +66,7 @@ show_key='tt9000001\\x1fSeries\\x1f2042'
 playback_history.start_session('tv','e:tt9000001:1:1',episode,show_key)
 player.onPlayBackEnded()
 assert any(value.startswith('PlayMedia(plugin://plugin.video.appi/?action=play_next') for value in state['builtins']), state
+assert 'completed=1' in state['builtins'][-1], state
 '''
         result = subprocess.run(
             [sys.executable, '-c', textwrap.dedent(code), str(PLUGIN)],

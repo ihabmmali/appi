@@ -6,6 +6,14 @@ Appi is a Kodi video add-on for user-configured movie and TV-show M3U catalogues
 
 Add `https://ihabmmali.github.io/appi/` in Kodi File Manager, then install the current `plugin.video.appi-<version>.zip`.
 
+## 0.7.8
+
+- Make Kodi's video database the sole authority for watched state and resume bookmarks.
+- Remove Appi's duplicate watched/unwatched, resume, play-from-beginning and reset-resume controls and prompts.
+- Reset the superseded Appi playback-status cache without migrating it; Recently Played begins clean and continues storing identity/order only.
+- Preserve watched-aware recent-TV progression by reading the relevant episode status from Kodi rather than copying it into Appi storage.
+- Limit the GitHub Pages install index to the current release and three prior releases while retaining older packages in GitHub.
+
 ## 0.7.7
 
 - Replace Kodi's conflicting resume handling with an Appi-controlled Resume / Play from beginning choice and a working reset-resume action.

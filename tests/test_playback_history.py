@@ -9,7 +9,7 @@ PLUGIN = ROOT / 'plugin.video.appi'
 
 
 class PlaybackHistoryTests(unittest.TestCase):
-    def test_recent_lists_and_resume_progress(self):
+    def test_recent_identity_only_and_legacy_status_reset(self):
         code = r'''
 import os, sys, tempfile, types
 from pathlib import Path
@@ -21,32 +21,27 @@ class Addon:
 xa.Addon=Addon; sys.modules['xbmcaddon']=xa
 xv=types.ModuleType('xbmcvfs'); xv.translatePath=lambda p:p; xv.exists=os.path.exists; xv.mkdirs=lambda p:os.makedirs(p,exist_ok=True)
 sys.modules['xbmcvfs']=xv
-from resources.lib import playback_history
+from resources.lib import cache, playback_history
 movie={'kind':'movie','display_title':'Movie (2025)','title':'Movie','year':2025,'tvg_id':'tt1'}
 ep1={'kind':'episode','display_title':'Show S01 E01','show_title':'Show','year':2025,'tvg_id':'tt2','season':1,'episode':1}
 ep2={'kind':'episode','display_title':'Show S01 E02','show_title':'Show','year':2025,'tvg_id':'tt2','season':1,'episode':2}
+cache.save_object('playback_history', {'movies': {'legacy': {'position': 321}}})
+cache.save_object('watched_episodes', {'legacy-show': {'legacy': {}}})
 playback_history.start_session('movies','m:tt1',movie)
-playback_history.update_progress(321,1200)
-assert playback_history.resume_point('movies','m:tt1')==(321.0,1200.0)
-assert playback_history.reset_resume('movies','m:tt1') is True
-assert playback_history.resume_point('movies','m:tt1') is None
 assert playback_history.recent_movies()[0]['title']=='Movie'
-playback_history.finish_session(False)
-show_key='tt2\\x1fShow\\x1f2025'
+assert cache.load_object('playback_history') is None
+assert cache.load_object('watched_episodes') is None
+entry=playback_history.get_entry('movies','m:tt1')
+assert 'position' not in entry and 'total' not in entry and 'completed' not in entry
+playback_history.finish_session()
+show_key='tt2\x1fShow\x1f2025'
 playback_history.start_session('tv','e:tt2:1:1',ep1,show_key)
-playback_history.update_progress(600,1800)
-playback_history.finish_session(False)
+playback_history.finish_session()
 playback_history.start_session('tv','e:tt2:1:2',ep2,show_key)
-playback_history.update_progress(50,1800)
 recent=playback_history.recent_shows()
 assert len(recent)==1 and recent[0]['ref']=='e:tt2:1:2'
-playback_history.finish_session(True)
-assert playback_history.get_entry('tv','e:tt2:1:2')['completed'] is True
-assert playback_history.is_watched(show_key,'e:tt2:1:2') is True
-assert playback_history.set_watched(show_key,'e:tt2:1:2',ep2,False) is True
-assert playback_history.is_watched(show_key,'e:tt2:1:2') is False
-assert playback_history.set_watched(show_key,'e:tt2:1:2',ep2,True) is True
-assert playback_history.resume_point('tv','e:tt2:1:2') is None
+playback_history.finish_session()
+assert 'completed' not in playback_history.get_entry('tv','e:tt2:1:2')
 assert playback_history.remove('movies','m:tt1') is True
 assert playback_history.recent_movies()==[]
 assert playback_history.remove_show(show_key) is True

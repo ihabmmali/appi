@@ -12,7 +12,7 @@ STRINGS = PLUGIN / 'resources' / 'language' / 'resource.language.en_gb' / 'strin
 class SettingsLocalizationTests(unittest.TestCase):
     def test_stable_browser_and_download_batch_features_are_packaged(self):
         addon = ET.parse(PLUGIN / 'addon.xml').getroot()
-        self.assertEqual(addon.attrib.get('version'), '0.7.7')
+        self.assertEqual(addon.attrib.get('version'), '0.7.8')
         helper = addon.find("./requires/import[@addon='plugin.video.themoviedb.helper']")
         self.assertIsNotNone(helper)
         self.assertNotEqual(helper.attrib.get('optional'), 'true')
@@ -25,8 +25,10 @@ class SettingsLocalizationTests(unittest.TestCase):
         self.assertIn("'fetch_metadata_batch'", app)
         self.assertIn("'clear_metadata_queue'", app)
         self.assertIn("'remove_recent'", app)
-        self.assertIn("'reset_resume'", app)
-        self.assertIn("'set_watched'", app)
+        self.assertNotIn("'reset_resume'", app)
+        self.assertNotIn("'set_watched'", app)
+        self.assertNotIn("'play_mode'", app)
+        self.assertNotIn("'StartOffset'", app)
         self.assertIn("'set_favorite'", app)
         self.assertIn("'play_next'", app)
         self.assertIn('Fetch metadata for all Recently Played Movies', app)
@@ -44,6 +46,11 @@ class SettingsLocalizationTests(unittest.TestCase):
         self.assertNotIn('urlopen', downloads)
         self.assertNotIn('ffprobe', downloads)
         self.assertFalse((PLUGIN / 'resources' / 'lib' / 'tsmux.py').exists())
+        history = (PLUGIN / 'resources' / 'lib' / 'playback_history.py').read_text(encoding='utf-8')
+        self.assertIn("HISTORY_CACHE = 'recent_media_v2'", history)
+        self.assertNotIn('def resume_point', history)
+        self.assertNotIn('def set_watched', history)
+        self.assertTrue((PLUGIN / 'resources' / 'lib' / 'kodi_status.py').is_file())
 
     def test_po_has_one_entry_per_blank_line_block(self):
         text = STRINGS.read_text(encoding='utf-8')

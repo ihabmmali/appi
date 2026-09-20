@@ -18,6 +18,7 @@ PLUGIN = Path(sys.argv[1])
 sys.path.insert(0, str(PLUGIN))
 sys.argv = ['plugin://plugin.video.appi', '1', '']
 state = {'items': [], 'content': [], 'sort': [], 'ended': [], 'notifications': [], 'selects': [], 'resolved': []}
+native_status = {}
 settings = {
     'movie_sort':'0','tv_sort':'0',
     'persist_subtitles':'false','auto_saved_subtitles':'true',
@@ -28,7 +29,13 @@ settings = {
 xbmc = types.ModuleType('xbmc'); xbmc.LOGERROR=1; xbmc.LOGWARNING=2; xbmc.LOGINFO=3
 xbmc.log=lambda *a,**k: None; xbmc.executebuiltin=lambda *a,**k: None
 xbmc.getCondVisibility=lambda q: True
-xbmc.executeJSONRPC=lambda s:'{"jsonrpc":"2.0","id":1,"result":{"value":0}}'
+def execute_jsonrpc(raw):
+    request=json.loads(raw)
+    if request.get('method')=='Files.GetFileDetails':
+        value=native_status.get(request['params']['file'], {'playcount':0,'resume':{'position':0,'total':0}})
+        return json.dumps({'jsonrpc':'2.0','id':request.get('id'),'result':{'filedetails':value}})
+    return '{"jsonrpc":"2.0","id":1,"result":{"value":0}}'
+xbmc.executeJSONRPC=execute_jsonrpc
 xbmc.Player=type('Player',(),{}); xbmc.Monitor=type('Monitor',(),{})
 xbmc.Actor=lambda name,role='',order=0,thumbnail='': {'name':name,'role':role}
 sys.modules['xbmc']=xbmc
@@ -131,6 +138,7 @@ assert state['items'][0][1].tagdata['plot'] == 'IMDb: 7.7/10\nCast: Actor\n\nCac
 assert state['items'][0][1].tagdata['rating'] == (7.7, 99, 'imdb', True)
 assert 'dateadded' not in state['items'][0][1].info
 assert any('Add to Appi Favorites' == row[0] for row in state['items'][0][1].context)
+assert not any('in Appi' in row[0] or row[0].startswith('Resume from saved') or row[0]=='Play from beginning' for row in state['items'][0][1].context)
 state['items'].clear(); state['sort'].clear()
 app.show_browse_index('movies','alpha')
 assert [row[1].label for row in state['items']] == ['M (30)']
@@ -180,29 +188,28 @@ assert [row[1].label for row in state['items']] == ['Movie 000 (2025)']
 assert any('Remove from Appi Favorites' == row[0] for row in state['items'][0][1].context)
 
 playback_history.start_session('movies','m:tt000',movies[0])
-playback_history.update_progress(321,1200)
-playback_history.finish_session(False)
+playback_history.finish_session()
 app._probe_kind=lambda *a,**k: {'kind':'mp4'}
-Dialog.select_answers=[1]
+recent_before=playback_history.recent_movies()
+app.play_ref({'catalog':'movies','ref':'m:tt000','kodi_action':'check_exists'})
+assert playback_history.recent_movies()==recent_before
 app.play_ref({'catalog':'movies','ref':'m:tt000'})
 resolved=state['resolved'][-1][0][2]
 assert 'StartOffset' not in resolved.props
-assert playback_history.resume_point('movies','m:tt000') is None
-playback_history.update_progress(400,1200)
-playback_history.finish_session(False)
-Dialog.select_answers=[0]
-app.play_ref({'catalog':'movies','ref':'m:tt000'})
-assert state['resolved'][-1][0][2].props['StartOffset']=='400.0'
+assert not state['selects'] or state['selects'][-1][0][0] != 'Resume playback'
+assert 'position' not in playback_history.get_entry('movies','m:tt000')
 
 progression=[dict(eps[0], episode=n, display_title='Show 000 S01 E%02d'%n, media_url='https://x/e%d'%n) for n in (1,2,3)]
 app._load_show_episodes=lambda key: progression
 show_key=shows[0]['show_key']
-playback_history.set_watched(show_key,'e:tt000:1:1',progression[0],True)
+def native_path(item): return app._play_ref_url('tv',app.item_ref(item),show_key)
+native_status[native_path(progression[0])]={'playcount':1,'resume':{'position':0,'total':1800}}
 assert app._next_episode_for_show(show_key,'e:tt000:1:1')['episode']==2
-playback_history.set_watched(show_key,'e:tt000:1:2',progression[1],True)
+native_status[native_path(progression[1])]={'playcount':1,'resume':{'position':0,'total':1800}}
 assert app._next_episode_for_show(show_key,'e:tt000:1:1')['episode']==3
-playback_history.set_watched(show_key,'e:tt000:1:2',progression[1],False)
+native_status[native_path(progression[1])]={'playcount':0,'resume':{'position':400,'total':1800}}
 assert app._next_episode_for_show(show_key,'e:tt000:1:1')['episode']==2
+assert app._next_episode_for_show(show_key,'e:tt000:1:1',after_completed=True)['episode']==2
 
 page1="""#EXTM3U
 #EXTINF:-1 tvg-id="tt101" tvg-type="tvshows" group-title="Alpha Show (2025)",Alpha Show S01 E01
