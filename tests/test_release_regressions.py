@@ -12,7 +12,7 @@ STRINGS = PLUGIN / 'resources' / 'language' / 'resource.language.en_gb' / 'strin
 class SettingsLocalizationTests(unittest.TestCase):
     def test_stable_browser_and_download_batch_features_are_packaged(self):
         addon = ET.parse(PLUGIN / 'addon.xml').getroot()
-        self.assertEqual(addon.attrib.get('version'), '0.7.8')
+        self.assertEqual(addon.attrib.get('version'), '0.7.9')
         helper = addon.find("./requires/import[@addon='plugin.video.themoviedb.helper']")
         self.assertIsNotNone(helper)
         self.assertNotEqual(helper.attrib.get('optional'), 'true')
@@ -31,6 +31,10 @@ class SettingsLocalizationTests(unittest.TestCase):
         self.assertNotIn("'StartOffset'", app)
         self.assertIn("'set_favorite'", app)
         self.assertIn("'play_next'", app)
+        self.assertIn("'search_results'", app)
+        self.assertIn("'set_season_watched'", app)
+        self.assertNotIn("'hls_playback_engine'", app)
+        self.assertNotIn('fetch_text_with_url', app)
         self.assertIn('Fetch metadata for all Recently Played Movies', app)
         self.assertIn('Fetch metadata for all Recently Played TV Shows', app)
         metadata = (PLUGIN / 'resources' / 'lib' / 'metadata.py').read_text(encoding='utf-8')
@@ -51,6 +55,15 @@ class SettingsLocalizationTests(unittest.TestCase):
         self.assertNotIn('def resume_point', history)
         self.assertNotIn('def set_watched', history)
         self.assertTrue((PLUGIN / 'resources' / 'lib' / 'kodi_status.py').is_file())
+        settings = SETTINGS.read_text(encoding='utf-8')
+        self.assertIn('id="auto_next_episode"', settings)
+        self.assertNotIn('id="next_episode_mode"', settings)
+        self.assertNotIn('id="hls_playback_engine"', settings)
+        service = (PLUGIN / 'resources' / 'lib' / 'subtitle_service.py').read_text(encoding='utf-8')
+        self.assertNotIn('yesno(', service)
+        self.assertFalse((PLUGIN / 'resources' / 'lib' / 'hls.py').exists())
+        http = (PLUGIN / 'resources' / 'lib' / 'http.py').read_text(encoding='utf-8')
+        self.assertNotIn('fetch_text_with_url', http)
 
     def test_po_has_one_entry_per_blank_line_block(self):
         text = STRINGS.read_text(encoding='utf-8')

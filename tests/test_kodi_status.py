@@ -36,6 +36,29 @@ assert state['request']['params']['properties']==['playcount','resume']
         )
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
+    def test_native_status_can_be_marked_watched(self):
+        code = r'''
+import json, sys, types
+from pathlib import Path
+PLUGIN=Path(sys.argv[1]); sys.path.insert(0,str(PLUGIN))
+state={'request':None}
+xbmc=types.ModuleType('xbmc'); xbmc.LOGWARNING=2; xbmc.log=lambda *a,**k: None
+def rpc(raw):
+    state['request']=json.loads(raw)
+    return json.dumps({'jsonrpc':'2.0','id':1,'result':'OK'})
+xbmc.executeJSONRPC=rpc; sys.modules['xbmc']=xbmc
+from resources.lib import kodi_status
+path='plugin://plugin.video.appi?action=play_ref&catalog=tv&ref=e%3Att1%3A1%3A2'
+assert kodi_status.set_watched(path, True) is True
+assert state['request']['method']=='Files.SetFileDetails'
+assert state['request']['params']=={'file':path,'media':'video','playcount':1}
+'''
+        result = subprocess.run(
+            [sys.executable, '-c', textwrap.dedent(code), str(PLUGIN)],
+            capture_output=True, text=True,
+        )
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
 
 if __name__ == '__main__':
     unittest.main()

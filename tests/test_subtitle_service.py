@@ -60,7 +60,7 @@ player.onAVStarted(); assert len(state['builtins'])==1, state
 subtitle_store.clear_all()
 assert subtitle_store.saved_subtitles('movies','m:tt1') == []
 assert subtitle_store.load_session() is None
-settings['next_episode_mode']='2'
+settings['auto_next_episode']='true'
 episode={'kind':'episode','display_title':'Series S01 E01','show_title':'Series','season':1,'episode':1,'tvg_id':'tt9000001'}
 show_key='tt9000001\\x1fSeries\\x1f2042'
 playback_history.start_session('tv','e:tt9000001:1:1',episode,show_key)

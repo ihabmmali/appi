@@ -35,3 +35,25 @@ def details(path):
 def is_watched(path):
     value = details(path)
     return value['available'] and value['playcount'] > 0
+
+
+def set_watched(path, watched=True):
+    """Update Kodi's canonical play count for a plugin playback URL."""
+    if not path:
+        return False
+    request = {
+        'jsonrpc': '2.0',
+        'id': 1,
+        'method': 'Files.SetFileDetails',
+        'params': {
+            'file': path,
+            'media': 'video',
+            'playcount': 1 if watched else 0,
+        },
+    }
+    try:
+        response = json.loads(xbmc.executeJSONRPC(json.dumps(request)))
+        return response.get('result') == 'OK' and not response.get('error')
+    except Exception as exc:
+        xbmc.log('Appi could not update Kodi playback status: {}'.format(exc), xbmc.LOGWARNING)
+        return False

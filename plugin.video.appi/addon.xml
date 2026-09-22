@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <addon id="plugin.video.appi"
        name="Appi"
-       version="0.7.8"
+       version="0.7.9"
        provider-name="Eyecon">
   <requires>
     <import addon="xbmc.python" version="3.0.1"/>
@@ -18,6 +18,6 @@
     <platform>all</platform>
     <license>GPL-3.0-or-later</license>
     <source>https://github.com/ihabmmali/appi</source>
-    <news>0.7.8 - Use Kodi's native watched and resume database, remove duplicate Appi status controls, reset legacy status data, and keep only four releases visible on the Pages index.</news>
+    <news>0.7.9 - Keep search results stable through Favorite actions, improve search back-navigation, put Favorites first, add native season watched actions, and make automatic next episode configurable.</news>
   </extension>
 </addon>

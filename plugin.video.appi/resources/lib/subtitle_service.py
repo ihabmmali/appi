@@ -3,7 +3,6 @@ from urllib.parse import urlencode
 
 import xbmc
 import xbmcaddon
-import xbmcgui
 
 from . import playback_history
 from . import metadata
@@ -82,15 +81,7 @@ class AppiPlayer(xbmc.Player):
         session = self._finish() or {}
         if session.get('catalog') != 'tv' or not session.get('show_key'):
             return
-        try:
-            mode = int(ADDON.getSetting('next_episode_mode') or 0)
-        except (TypeError, ValueError):
-            mode = 0
-        if mode == 1 and not xbmcgui.Dialog().yesno(
-            'Appi', 'Play the next unwatched episode?'
-        ):
-            return
-        if mode not in {1, 2}:
+        if not _enabled('auto_next_episode', False):
             return
         query = urlencode({
             'action': 'play_next',

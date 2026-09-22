@@ -166,24 +166,12 @@ msgid "TV episode progression"
 msgstr "TV episode progression"
 
 msgctxt "#32341"
-msgid "After a TV episode ends"
-msgstr "After a TV episode ends"
+msgid "Automatically play next episode"
+msgstr "Automatically play next episode"
 
 msgctxt "#32342"
-msgid "Controls whether Appi stops, asks, or automatically starts the next unwatched episode after normal playback completion."
-msgstr "Controls whether Appi stops, asks, or automatically starts the next unwatched episode after normal playback completion."
-
-msgctxt "#32343"
-msgid "Stop"
-msgstr "Stop"
-
-msgctxt "#32344"
-msgid "Ask to play next episode"
-msgstr "Ask to play next episode"
-
-msgctxt "#32345"
-msgid "Play next episode automatically"
-msgstr "Play next episode automatically"
+msgid "When enabled Appi starts the next unwatched episode after normal playback completion. When disabled playback ends without a prompt."
+msgstr "When enabled Appi starts the next unwatched episode after normal playback completion. When disabled playback ends without a prompt."
 
 msgctxt "#32400"
 msgid "Subtitles"

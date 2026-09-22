@@ -88,16 +88,8 @@
         </setting>
       </group>
       <group id="3" label="32340">
-        <setting id="next_episode_mode" type="integer" label="32341" help="32342">
-          <level>0</level><default>1</default>
-          <constraints>
-            <options>
-              <option label="32343">0</option>
-              <option label="32344">1</option>
-              <option label="32345">2</option>
-            </options>
-          </constraints>
-          <control type="list" format="string"><heading>32341</heading></control>
+        <setting id="auto_next_episode" type="boolean" label="32341" help="32342">
+          <level>0</level><default>false</default><control type="toggle"/>
         </setting>
       </group>
     </category>

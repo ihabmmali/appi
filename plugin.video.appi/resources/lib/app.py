@@ -445,6 +445,13 @@ def _metadata_batch_context(label=None, **params):
     )
 
 
+def _season_watched_context(show_key, season):
+    return (
+        'Mark season as watched',
+        _context_action('set_season_watched', show_key=show_key, season=season),
+    )
+
+
 def _apply_metadata(list_item, payload, data):
     if not payload:
         return
@@ -587,15 +594,16 @@ def _playable_tuple(
     list_item.setProperty('IsPlayable', 'true')
     ref = item_ref(item)
     target = 'movie' if catalog_name == 'movies' else 'episode'
-    context = [
+    context = []
+    if catalog_name == 'movies':
+        context.append(_favorite_context('movie', ref, item, favorite_keys))
+    context.extend([
         ('Playback options...', _context_action(
             'configure_playback', target=target, catalog=catalog_name, ref=ref, show_key=key
         )),
         _download_context(item, catalog_name, key),
         _metadata_context(payload),
-    ]
-    if catalog_name == 'movies':
-        context.append(_favorite_context('movie', ref, item, favorite_keys))
+    ])
     if recent:
         context.append(_remove_recent_context(catalog_name, item=item))
     _add_context(list_item, context)
@@ -822,11 +830,10 @@ def _show_tuple(show, label_suffix='', metadata_cache=None, favorite_keys=None):
     if show.get('tvg_id'):
         info['imdbnumber'] = show['tvg_id']
     payload = _metadata_payload(show, media_type='tvshow')
-    context = [(
+    context = [_favorite_context('show', show['show_key'], show, favorite_keys), (
         'Playback options for this show...',
         _context_action('configure_playback', target='show', catalog='tv', show_key=show['show_key']),
-    ), _metadata_context(payload), _metadata_batch_context(show_key=show['show_key']),
-        _favorite_context('show', show['show_key'], show, favorite_keys)]
+    ), _metadata_context(payload), _metadata_batch_context(show_key=show['show_key'])]
     result = _folder_tuple(
         display_label, _url('seasons', show_key=show['show_key']), info, context
     )
@@ -966,7 +973,7 @@ def show_recent_tvshows():
         if summary.get('tvg_id'):
             info['imdbnumber'] = summary['tvg_id']
         payload = _metadata_payload(summary, media_type='tvshow')
-        context = [(
+        context = [_favorite_context('show', summary['show_key'], summary, favorite_keys), (
             'Playback options for this show...',
             _context_action('configure_playback', target='show', catalog='tv', show_key=summary['show_key']),
         ), _metadata_context(payload), _metadata_batch_context(
@@ -975,7 +982,6 @@ def show_recent_tvshows():
             'Fetch metadata for all Recently Played TV Shows',
             scope='tv', mode='recent_played',
         ),
-            _favorite_context('show', summary['show_key'], summary, favorite_keys),
             _remove_recent_context('tv', show_key=summary['show_key'])]
         result = _folder_tuple(
             label, _url('recent_show', show_key=summary['show_key']), info, context
@@ -1062,7 +1068,10 @@ def show_recent_show(key):
             'Season {}'.format(season),
             _url('episodes', show_key=key, season=season),
             info,
-            [_metadata_batch_context(show_key=key, season=season)],
+            [
+                _season_watched_context(key, season),
+                _metadata_batch_context(show_key=key, season=season),
+            ],
         ))
     _send_items(tuples)
     _finish()
@@ -1082,7 +1091,10 @@ def show_seasons(key):
             'Season {}'.format(season),
             _url('episodes', show_key=key, season=season),
             info,
-            [_metadata_batch_context(show_key=key, season=season)],
+            [
+                _season_watched_context(key, season),
+                _metadata_batch_context(show_key=key, season=season),
+            ],
         ))
     _send_items(directory_items)
     _finish()
@@ -1114,7 +1126,7 @@ def show_episodes(key, season):
     _finish()
 
 
-def search(scope=None, query=None):
+def search(scope=None):
     if scope not in {'movies', 'tv', 'both'}:
         choice = xbmcgui.Dialog().select(
             'Search category', ['Movies and TV Shows', 'Movies', 'TV Shows']
@@ -1123,12 +1135,24 @@ def search(scope=None, query=None):
             xbmcplugin.endOfDirectory(HANDLE, succeeded=False)
             return
         scope = ('both', 'movies', 'tv')[choice]
-    if query is None:
-        query = xbmcgui.Dialog().input('Search', type=xbmcgui.INPUT_ALPHANUM).strip()
-    else:
-        query = query.strip()
+    query = xbmcgui.Dialog().input('Search', type=xbmcgui.INPUT_ALPHANUM).strip()
     if not query:
         xbmcplugin.endOfDirectory(HANDLE, succeeded=False)
+        return
+    # Keep the results in a stable child route. Context actions can refresh
+    # that URL without reopening the keyboard, while selecting ".." returns
+    # to this route and prompts for another search term.
+    xbmc.executebuiltin('Container.Update({})'.format(
+        _url('search_results', scope=scope, query=query)
+    ))
+    xbmcplugin.endOfDirectory(HANDLE, succeeded=False, cacheToDisc=False)
+
+
+def show_search_results(scope, query):
+    scope = scope if scope in {'movies', 'tv', 'both'} else 'both'
+    query = (query or '').strip()
+    if not query:
+        xbmcplugin.endOfDirectory(HANDLE, succeeded=False, cacheToDisc=False)
         return
     needle = query.casefold()
 
@@ -1548,6 +1572,54 @@ def remove_recent(params):
     xbmc.executebuiltin('Container.Refresh')
 
 
+def set_season_watched(params):
+    key = params.get('show_key') or ''
+    try:
+        season = int(params.get('season'))
+    except (TypeError, ValueError):
+        raise ValueError('Invalid season')
+    episodes = [
+        item for item in _load_show_episodes(key)
+        if item.get('season') == season
+    ]
+    if not episodes:
+        _notify('No episodes were found for this season', error=True)
+        return
+    progress = xbmcgui.DialogProgress()
+    progress.create('Appi', 'Marking Season {} as watched...'.format(season))
+    updated = 0
+    attempted = 0
+    canceled = False
+    try:
+        total = len(episodes)
+        for index, item in enumerate(episodes):
+            if progress.iscanceled():
+                canceled = True
+                break
+            attempted += 1
+            if kodi_status.set_watched(
+                _play_ref_url('tv', item_ref(item), key), True
+            ):
+                updated += 1
+            progress.update(
+                int(((index + 1) * 100) / total),
+                'Marked {:,} of {:,} episodes'.format(updated, total),
+            )
+    finally:
+        progress.close()
+    failed = attempted - updated
+    if canceled:
+        _notify('Stopped after marking {:,} episodes as watched'.format(updated))
+    elif failed:
+        _notify(
+            'Marked {:,} episodes; {:,} could not be updated'.format(updated, failed),
+            error=True,
+        )
+    else:
+        _notify('Marked all {:,} episodes as watched'.format(updated))
+    xbmc.executebuiltin('Container.Refresh')
+
+
 def set_favorite(params):
     kind = params.get('kind') or ''
     key = params.get('key') or ''
@@ -1685,7 +1757,9 @@ def _run_action(params):
     elif action == 'episodes':
         show_episodes(params.get('show_key', ''), params.get('season'))
     elif action == 'search':
-        search(params.get('scope'), params.get('query'))
+        search(params.get('scope'))
+    elif action == 'search_results':
+        show_search_results(params.get('scope'), params.get('query'))
     elif action == 'play_ref':
         play_ref(params)
     elif action == 'play_next':
@@ -1706,6 +1780,8 @@ def _run_action(params):
         clear_metadata_queue()
     elif action == 'remove_recent':
         remove_recent(params)
+    elif action == 'set_season_watched':
+        set_season_watched(params)
     elif action == 'set_favorite':
         set_favorite(params)
     elif action == 'refresh_movies':

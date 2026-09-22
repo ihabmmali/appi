@@ -17,23 +17,27 @@ from urllib.error import HTTPError
 PLUGIN = Path(sys.argv[1])
 sys.path.insert(0, str(PLUGIN))
 sys.argv = ['plugin://plugin.video.appi', '1', '']
-state = {'items': [], 'content': [], 'sort': [], 'ended': [], 'notifications': [], 'selects': [], 'resolved': []}
+state = {'items': [], 'content': [], 'sort': [], 'ended': [], 'notifications': [], 'selects': [], 'resolved': [], 'builtins': []}
 native_status = {}
 settings = {
     'movie_sort':'0','tv_sort':'0',
     'persist_subtitles':'false','auto_saved_subtitles':'true',
     'manage_mp4_buffer':'false','hls_quality_mode':'1',
+    'auto_next_episode':'false',
     'tv_m3u_base_url':'https://provider.invalid/tv',
     'request_timeout':'20'
 }
 xbmc = types.ModuleType('xbmc'); xbmc.LOGERROR=1; xbmc.LOGWARNING=2; xbmc.LOGINFO=3
-xbmc.log=lambda *a,**k: None; xbmc.executebuiltin=lambda *a,**k: None
+xbmc.log=lambda *a,**k: None; xbmc.executebuiltin=lambda value,*a,**k: state['builtins'].append(value)
 xbmc.getCondVisibility=lambda q: True
 def execute_jsonrpc(raw):
     request=json.loads(raw)
     if request.get('method')=='Files.GetFileDetails':
         value=native_status.get(request['params']['file'], {'playcount':0,'resume':{'position':0,'total':0}})
         return json.dumps({'jsonrpc':'2.0','id':request.get('id'),'result':{'filedetails':value}})
+    if request.get('method')=='Files.SetFileDetails':
+        native_status[request['params']['file']]={'playcount':request['params']['playcount'],'resume':{'position':0,'total':0}}
+        return json.dumps({'jsonrpc':'2.0','id':request.get('id'),'result':'OK'})
     return '{"jsonrpc":"2.0","id":1,"result":{"value":0}}'
 xbmc.executeJSONRPC=execute_jsonrpc
 xbmc.Player=type('Player',(),{}); xbmc.Monitor=type('Monitor',(),{})
@@ -138,6 +142,7 @@ assert state['items'][0][1].tagdata['plot'] == 'IMDb: 7.7/10\nCast: Actor\n\nCac
 assert state['items'][0][1].tagdata['rating'] == (7.7, 99, 'imdb', True)
 assert 'dateadded' not in state['items'][0][1].info
 assert any('Add to Appi Favorites' == row[0] for row in state['items'][0][1].context)
+assert state['items'][0][1].context[0][0] == 'Add to Appi Favorites'
 assert not any('in Appi' in row[0] or row[0].startswith('Resume from saved') or row[0]=='Play from beginning' for row in state['items'][0][1].context)
 state['items'].clear(); state['sort'].clear()
 app.show_browse_index('movies','alpha')
@@ -154,7 +159,8 @@ app.show_browse_items('movies','alpha','M','10')
 assert len(state['items']) == 10
 assert all(not row[2] for row in state['items'])
 assert state['sort'] == [0,1,2], state['sort']
-assert state['items'][0][1].context and 'configure_playback' in state['items'][0][1].context[0][1]
+assert state['items'][0][1].context[0][0] == 'Add to Appi Favorites'
+assert any('configure_playback' in row[1] for row in state['items'][0][1].context)
 state['items'].clear()
 
 app.show_tvshows()
@@ -164,14 +170,24 @@ state['items'].clear()
 Dialog.select_answers=[0]; Dialog.input_answers=['000']
 app.search()
 assert state['selects'][-1][0][1] == ['Movies and TV Shows', 'Movies', 'TV Shows']
+assert state['builtins'][-1].startswith('Container.Update(plugin://plugin.video.appi?')
+assert 'action=search_results' in state['builtins'][-1] and 'query=000' in state['builtins'][-1]
+assert state['ended'][-1][1].get('succeeded') is False
+state['items'].clear()
+app.show_search_results('both','000')
 assert len(state['items']) == 2, [row[1].label for row in state['items']]
 assert {row[1].label for row in state['items']} == {'Movie 000 (2025) [Movie]', 'Show 000 (2025) [TV Show]'}
+assert all(row[1].context[0][0] == 'Add to Appi Favorites' for row in state['items'])
 assert not any('Next page' in row[1].label for row in state['items'])
 state['items'].clear()
 
-app.show_seasons(shows[0]['show_key']); assert len(state['items'])==1 and state['content'][-1]=='seasons'; state['items'].clear()
+app.show_seasons(shows[0]['show_key']); assert len(state['items'])==1 and state['content'][-1]=='seasons'
+assert state['items'][0][1].context[0][0]=='Mark season as watched'
+state['items'].clear()
 app.show_episodes(shows[0]['show_key'],'1'); assert len(state['items'])==1 and state['content'][-1]=='episodes'
 assert 3 in state['sort']
+app.set_season_watched({'show_key':shows[0]['show_key'],'season':'1'})
+assert native_status[app._play_ref_url('tv',app.item_ref(eps[0]),shows[0]['show_key'])]['playcount']==1
 
 li=ListItem(); app._configure_hls(li); assert li.props.get('inputstream')=='inputstream.adaptive'; assert li.props.get('inputstream.adaptive.stream_selection_type')=='ask-quality'
 settings['hls_quality_mode']='2'; settings['hls_max_bitrate_kbps']='5000'; li2=ListItem(); app._configure_hls(li2); assert li2.props.get('inputstream.adaptive.chooser_bandwidth_max')=='5000000'
