@@ -1142,10 +1142,12 @@ def search(scope=None):
     # Keep the results in a stable child route. Context actions can refresh
     # that URL without reopening the keyboard, while selecting ".." returns
     # to this route and prompts for another search term.
-    xbmc.executebuiltin('Container.Update({})'.format(
-        _url('search_results', scope=scope, query=query)
-    ))
-    xbmcplugin.endOfDirectory(HANDLE, succeeded=False, cacheToDisc=False)
+    target = _url('search_results', scope=scope, query=query)
+    # Finish the prompt route successfully before asking Kodi to open its
+    # results child. Ending it as failed (or updating it while still active)
+    # makes Kodi discard the navigation and return to the add-on root.
+    xbmcplugin.endOfDirectory(HANDLE, succeeded=True, cacheToDisc=False)
+    xbmc.executebuiltin('Container.Update({})'.format(target))
 
 
 def show_search_results(scope, query):

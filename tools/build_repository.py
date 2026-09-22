@@ -11,11 +11,11 @@ import zipfile
 ROOT = Path(__file__).resolve().parents[1]
 ADDON_DIRS = [ROOT / 'plugin.video.appi', ROOT / 'repository.appi']
 FALLBACK_PLUGIN_VERSIONS = {
-    '0.7.8': 'previous release',
+    '0.7.9': 'previous release',
+    '0.7.8': 'earlier release',
     '0.7.7': 'earlier release',
-    '0.7.6': 'earlier release',
 }
-ARCHIVED_PLUGIN_VERSIONS = {'0.8.0', '0.7.5', '0.7.1'}
+ARCHIVED_PLUGIN_VERSIONS = {'0.8.0', '0.7.6', '0.7.5', '0.7.1'}
 
 
 def addon_identity(directory):

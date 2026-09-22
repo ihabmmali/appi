@@ -17,7 +17,7 @@ from urllib.error import HTTPError
 PLUGIN = Path(sys.argv[1])
 sys.path.insert(0, str(PLUGIN))
 sys.argv = ['plugin://plugin.video.appi', '1', '']
-state = {'items': [], 'content': [], 'sort': [], 'ended': [], 'notifications': [], 'selects': [], 'resolved': [], 'builtins': []}
+state = {'items': [], 'content': [], 'sort': [], 'ended': [], 'notifications': [], 'selects': [], 'resolved': [], 'builtins': [], 'events': []}
 native_status = {}
 settings = {
     'movie_sort':'0','tv_sort':'0',
@@ -28,7 +28,10 @@ settings = {
     'request_timeout':'20'
 }
 xbmc = types.ModuleType('xbmc'); xbmc.LOGERROR=1; xbmc.LOGWARNING=2; xbmc.LOGINFO=3
-xbmc.log=lambda *a,**k: None; xbmc.executebuiltin=lambda value,*a,**k: state['builtins'].append(value)
+xbmc.log=lambda *a,**k: None
+def execute_builtin(value,*a,**k):
+    state['builtins'].append(value); state['events'].append(('builtin',value))
+xbmc.executebuiltin=execute_builtin
 xbmc.getCondVisibility=lambda q: True
 def execute_jsonrpc(raw):
     request=json.loads(raw)
@@ -91,7 +94,9 @@ xp.SORT_METHOD_TITLE_IGNORE_THE=1; xp.SORT_METHOD_YEAR=2; xp.SORT_METHOD_EPISODE
 xp.addDirectoryItems=lambda h,items,totalItems=0: state['items'].extend(items) or True
 xp.setContent=lambda h,c: state['content'].append(c)
 xp.addSortMethod=lambda h,m,*args: state['sort'].append(m)
-xp.endOfDirectory=lambda *a,**k: state['ended'].append((a,k)) or True
+def end_directory(*a,**k):
+    state['ended'].append((a,k)); state['events'].append(('end',k)); return True
+xp.endOfDirectory=end_directory
 xp.setResolvedUrl=lambda *a,**k: state['resolved'].append((a,k)) or True
 sys.modules['xbmcplugin']=xp
 from resources.lib import app, favorites, metadata, playback_history, playback_prefs
@@ -166,13 +171,14 @@ state['items'].clear()
 app.show_tvshows()
 assert len(state['items']) == 4
 assert state['items'][0][1].label == 'Browse A-Z'
-state['items'].clear()
+state['items'].clear(); state['events'].clear()
 Dialog.select_answers=[0]; Dialog.input_answers=['000']
 app.search()
 assert state['selects'][-1][0][1] == ['Movies and TV Shows', 'Movies', 'TV Shows']
 assert state['builtins'][-1].startswith('Container.Update(plugin://plugin.video.appi?')
 assert 'action=search_results' in state['builtins'][-1] and 'query=000' in state['builtins'][-1]
-assert state['ended'][-1][1].get('succeeded') is False
+assert state['ended'][-1][1].get('succeeded') is True
+assert state['events'][-2][0]=='end' and state['events'][-1][0]=='builtin', state['events'][-2:]
 state['items'].clear()
 app.show_search_results('both','000')
 assert len(state['items']) == 2, [row[1].label for row in state['items']]

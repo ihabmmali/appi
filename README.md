@@ -6,6 +6,12 @@ Appi is a Kodi video add-on for user-configured movie and TV-show M3U catalogues
 
 Add `https://ihabmmali.github.io/appi/` in Kodi File Manager, then install the current `plugin.video.appi-<version>.zip`.
 
+## 0.7.10
+
+- Fix Search returning to the add-on main menu after category and search-term entry.
+- Finish the prompt directory successfully before navigating to the stable search-results route.
+- Preserve the complete 0.7.8 HLS and playback implementation without modification.
+
 ## 0.7.9
 
 - Keep search results open after Appi Favorite actions and make the results-folder parent reopen the search-term prompt.
