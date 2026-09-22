@@ -12,7 +12,7 @@ STRINGS = PLUGIN / 'resources' / 'language' / 'resource.language.en_gb' / 'strin
 class SettingsLocalizationTests(unittest.TestCase):
     def test_stable_browser_and_download_batch_features_are_packaged(self):
         addon = ET.parse(PLUGIN / 'addon.xml').getroot()
-        self.assertEqual(addon.attrib.get('version'), '0.7.10')
+        self.assertEqual(addon.attrib.get('version'), '0.7.11')
         helper = addon.find("./requires/import[@addon='plugin.video.themoviedb.helper']")
         self.assertIsNotNone(helper)
         self.assertNotEqual(helper.attrib.get('optional'), 'true')
@@ -31,7 +31,7 @@ class SettingsLocalizationTests(unittest.TestCase):
         self.assertNotIn("'StartOffset'", app)
         self.assertIn("'set_favorite'", app)
         self.assertIn("'play_next'", app)
-        self.assertIn("'search_results'", app)
+        self.assertNotIn("'search_results'", app)
         self.assertIn("'set_season_watched'", app)
         self.assertNotIn("'hls_playback_engine'", app)
         self.assertNotIn('fetch_text_with_url', app)

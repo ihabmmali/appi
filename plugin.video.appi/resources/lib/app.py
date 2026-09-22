@@ -1126,7 +1126,7 @@ def show_episodes(key, season):
     _finish()
 
 
-def search(scope=None):
+def search(scope=None, query=None):
     if scope not in {'movies', 'tv', 'both'}:
         choice = xbmcgui.Dialog().select(
             'Search category', ['Movies and TV Shows', 'Movies', 'TV Shows']
@@ -1135,26 +1135,12 @@ def search(scope=None):
             xbmcplugin.endOfDirectory(HANDLE, succeeded=False)
             return
         scope = ('both', 'movies', 'tv')[choice]
-    query = xbmcgui.Dialog().input('Search', type=xbmcgui.INPUT_ALPHANUM).strip()
+    if query is None:
+        query = xbmcgui.Dialog().input('Search', type=xbmcgui.INPUT_ALPHANUM).strip()
+    else:
+        query = query.strip()
     if not query:
         xbmcplugin.endOfDirectory(HANDLE, succeeded=False)
-        return
-    # Keep the results in a stable child route. Context actions can refresh
-    # that URL without reopening the keyboard, while selecting ".." returns
-    # to this route and prompts for another search term.
-    target = _url('search_results', scope=scope, query=query)
-    # Finish the prompt route successfully before asking Kodi to open its
-    # results child. Ending it as failed (or updating it while still active)
-    # makes Kodi discard the navigation and return to the add-on root.
-    xbmcplugin.endOfDirectory(HANDLE, succeeded=True, cacheToDisc=False)
-    xbmc.executebuiltin('Container.Update({})'.format(target))
-
-
-def show_search_results(scope, query):
-    scope = scope if scope in {'movies', 'tv', 'both'} else 'both'
-    query = (query or '').strip()
-    if not query:
-        xbmcplugin.endOfDirectory(HANDLE, succeeded=False, cacheToDisc=False)
         return
     needle = query.casefold()
 
@@ -1759,9 +1745,7 @@ def _run_action(params):
     elif action == 'episodes':
         show_episodes(params.get('show_key', ''), params.get('season'))
     elif action == 'search':
-        search(params.get('scope'))
-    elif action == 'search_results':
-        show_search_results(params.get('scope'), params.get('query'))
+        search(params.get('scope'), params.get('query'))
     elif action == 'play_ref':
         play_ref(params)
     elif action == 'play_next':

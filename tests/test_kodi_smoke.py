@@ -175,16 +175,17 @@ state['items'].clear(); state['events'].clear()
 Dialog.select_answers=[0]; Dialog.input_answers=['000']
 app.search()
 assert state['selects'][-1][0][1] == ['Movies and TV Shows', 'Movies', 'TV Shows']
-assert state['builtins'][-1].startswith('Container.Update(plugin://plugin.video.appi?')
-assert 'action=search_results' in state['builtins'][-1] and 'query=000' in state['builtins'][-1]
-assert state['ended'][-1][1].get('succeeded') is True
-assert state['events'][-2][0]=='end' and state['events'][-1][0]=='builtin', state['events'][-2:]
-state['items'].clear()
-app.show_search_results('both','000')
 assert len(state['items']) == 2, [row[1].label for row in state['items']]
 assert {row[1].label for row in state['items']} == {'Movie 000 (2025) [Movie]', 'Show 000 (2025) [TV Show]'}
 assert all(row[1].context[0][0] == 'Add to Appi Favorites' for row in state['items'])
 assert not any('Next page' in row[1].label for row in state['items'])
+assert not any(value.startswith('Container.Update(') for value in state['builtins'])
+state['items'].clear()
+
+# The routed form uses the same synchronous, proven search path and must not
+# depend on an asynchronous Container.Update handoff.
+app._run_action({'action':'search','scope':'movies','query':'movie 029'})
+assert [row[1].label for row in state['items']] == ['Movie 029 (2025)']
 state['items'].clear()
 
 app.show_seasons(shows[0]['show_key']); assert len(state['items'])==1 and state['content'][-1]=='seasons'
