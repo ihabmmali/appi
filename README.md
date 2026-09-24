@@ -8,7 +8,7 @@ Appi is a Kodi video add-on for user-configured movie and TV-show M3U catalogues
 - [Architecture](ARCHITECTURE.md) — source map and behavior contracts.
 - [Known issues](KNOWN_ISSUES.md) — observed problems and planned work.
 - [Changelog](CHANGELOG.md) — concise implemented feature history.
-- [Release notes](RELEASE_NOTES.md) — latest package summary and release handoff template.
+- [Release notes](RELEASE_NOTES.md) — package summaries and verification records.
 
 ## Direct install
 
