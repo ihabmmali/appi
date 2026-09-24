@@ -4,6 +4,7 @@ Appi is a Kodi video add-on for user-configured movie and TV-show M3U catalogues
 
 ## Project documentation
 
+- [Worker instructions](AGENTS.md) — stable development and release rules.
 - [Project state](PROJECT_STATE.md) — current baseline and next session handoff.
 - [Architecture](ARCHITECTURE.md) — source map and behavior contracts.
 - [Known issues](KNOWN_ISSUES.md) — observed problems and planned work.
