@@ -12,7 +12,8 @@ This is a proposed selection from the backlog. No product task is newly authoriz
 | [REFRESH-1](docs/tasks/REFRESH-1.md) | candidate | requested feature | Fast refresh algorithm needs evidence and acceptance checks |
 | [REFRESH-2](docs/tasks/REFRESH-2.md) | candidate | requested feature | Scheduling requirements; coordinate with refresh design |
 | [LANG-1](docs/tasks/LANG-1.md) | candidate | requested feature | Define matching and fallback before implementation |
-| [HLS-1](docs/tasks/HLS-1.md) | backlog | investigation | Reproducible stream diagnosis needed |
+| [DIAG-1](docs/tasks/DIAG-1.md) | candidate | requested diagnostic feature | Create a privacy-safe evidence bundle for playback/buffering diagnosis |
+| [HLS-1](docs/tasks/HLS-1.md) | backlog | investigation | Diagnose the repeated-stall issue using comparable evidence; prefer DIAG-1 capture once available |
 | [UI-1](docs/tasks/UI-1.md) | backlog | investigation | Skin comparison needed |
 
 Selection values: candidate / committed / deferred / backlog. Task status remains canonical in the linked record. The user or an authorized planner chooses committed scope; record the decision/date here. Prioritization above is a recommendation.
@@ -30,7 +31,8 @@ Selection values: candidate / committed / deferred / backlog. Task status remain
 
 2026-09-24: existing requests migrated as candidates/backlog during lifecycle setup. No release scope or new version has been committed.
 
+2026-09-24: DIAG-1 added as a candidate at user request. It is intended to enable efficient evidence collection for HLS-1; HLS-1 remains a separate investigation rather than being folded into the diagnostic feature.
+
 ## Readiness
 
 No release is declared ready by this file. Task evidence, source checks, required device results and the [release procedure](docs/workflows/release.md) determine readiness. Keep the known-good fallback available.
-
