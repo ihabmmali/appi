@@ -15,7 +15,7 @@ Updated: 2026-09-24. Read this first in each new development session. The reposi
 
 Appi browses user-configured M3U movie and numbered TV episode catalogues, indexes shows and seasons, searches cached titles, plays HLS/MP4, manages favorites/recent items/subtitles, and queues background metadata. Kodi's native video database owns watched and resume status. Current downloads generate external FFmpeg watcher scripts; earlier 0.7.1–0.7.5 device-side download behavior is historical.
 
-See [ARCHITECTURE.md](ARCHITECTURE.md) for code and data flows, [CHANGELOG.md](CHANGELOG.md) for implemented changes, [RELEASE_NOTES.md](RELEASE_NOTES.md) for the current release handoff, and [KNOWN_ISSUES.md](KNOWN_ISSUES.md) for observed problems and pending work.
+See [ARCHITECTURE.md](ARCHITECTURE.md) for code and data flows, [CHANGELOG.md](CHANGELOG.md) for implemented changes, [RELEASE_NOTES.md](RELEASE_NOTES.md) for the latest package's release record, and [KNOWN_ISSUES.md](KNOWN_ISSUES.md) for observed problems and pending work.
 
 ## Current priorities
 
@@ -26,6 +26,6 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for code and data flows, [CHANGELOG.md](C
 
 These are requests or investigations, **not released features**. Consult [KNOWN_ISSUES.md](KNOWN_ISSUES.md) before choosing an iteration.
 
-## Session handoff and release rule
+## Working and release rule
 
-For each focused task, start from the current `main` commit, read these files and relevant source, then document: issue, reproduction, expected behavior, scope, tests, and result. Update the state and issue files only when evidence changes. For a release, update source and tests, increment `addon.xml`, add release notes and a changelog entry, run `python3 -m unittest discover -s tests` and `python3 tools/build_repository.py`, inspect generated ZIP and index, test in Kodi where possible, then publish the source and generated artifacts together. Keep 0.7.8 available. Record the commit and any device verification in [RELEASE_NOTES.md](RELEASE_NOTES.md); do not equate automated tests with device validation.
+For each focused task, start from the current `main` commit, read this state, the relevant issues and source, then record the result in the appropriate tracker. Update the state and issue files only when evidence changes. For a release, update source and tests, increment `addon.xml`, add release notes and a changelog entry, run `python3 -m unittest discover -s tests` and `python3 tools/build_repository.py`, inspect generated ZIP and index, test in Kodi where possible, then publish the source and generated artifacts together. Keep 0.7.8 available. Record the commit and any device verification in [RELEASE_NOTES.md](RELEASE_NOTES.md); do not equate automated tests with device validation.
