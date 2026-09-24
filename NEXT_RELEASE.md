@@ -8,7 +8,8 @@ This is a proposed selection from the backlog. No product task is newly authoriz
 
 | Task | Selection | Priority | Reason |
 | --- | --- | --- | --- |
-| [SEARCH-1](docs/tasks/SEARCH-1.md) | candidate | recommended first | Verify existing 0.7.12 navigation before building on it |
+| [SEARCH-1](docs/tasks/SEARCH-1.md) | candidate | recommended first | Reproduce and repair search cancel/back/favorites navigation before extending search UX |
+| [SEARCH-2](docs/tasks/SEARCH-2.md) | candidate | requested feature | Add persistent, editable and user-manageable keyword history after navigation behavior is stable |
 | [REFRESH-1](docs/tasks/REFRESH-1.md) | candidate | requested feature | Fast refresh algorithm needs evidence and acceptance checks |
 | [REFRESH-2](docs/tasks/REFRESH-2.md) | candidate | requested feature | Scheduling requirements; coordinate with refresh design |
 | [LANG-1](docs/tasks/LANG-1.md) | candidate | requested feature | Define matching and fallback before implementation |
@@ -32,6 +33,8 @@ Selection values: candidate / committed / deferred / backlog. Task status remain
 2026-09-24: existing requests migrated as candidates/backlog during lifecycle setup. No release scope or new version has been committed.
 
 2026-09-24: DIAG-1 added as a candidate at user request. It is intended to enable efficient evidence collection for HLS-1; HLS-1 remains a separate investigation rather than being folded into the diagnostic feature.
+
+2026-09-24: SEARCH-1 was expanded with the user's explicit cancel/favorites navigation failure paths. SEARCH-2 was added as a separate search-history candidate so navigation correctness can be established before layering on new search UX.
 
 ## Readiness
 

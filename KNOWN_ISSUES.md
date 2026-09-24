@@ -4,7 +4,8 @@ Updated: 2026-09-24. Each linked task is the canonical requirements/status/evide
 
 | ID | Status | Role | Task |
 | --- | --- | --- | --- |
-| SEARCH-1 | ready | review | [Search navigation verification](docs/tasks/SEARCH-1.md) |
+| SEARCH-1 | ready | review | [Search navigation regression investigation](docs/tasks/SEARCH-1.md) |
+| SEARCH-2 | proposed | triage | [User-manageable search history](docs/tasks/SEARCH-2.md) |
 | REFRESH-1 | proposed | research | [Fast leading-window catalogue refresh](docs/tasks/REFRESH-1.md) |
 | REFRESH-2 | proposed | triage | [Optional automatic catalogue refresh](docs/tasks/REFRESH-2.md) |
 | LANG-1 | proposed | triage | [Default audio and subtitle languages](docs/tasks/LANG-1.md) |
