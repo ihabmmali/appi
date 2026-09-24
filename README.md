@@ -2,6 +2,14 @@
 
 Appi is a Kodi video add-on for user-configured movie and TV-show M3U catalogues.
 
+## Project documentation
+
+- [Project state](PROJECT_STATE.md) — current baseline and next session handoff.
+- [Architecture](ARCHITECTURE.md) — source map and behavior contracts.
+- [Known issues](KNOWN_ISSUES.md) — observed problems and planned work.
+- [Changelog](CHANGELOG.md) — concise implemented feature history.
+- [Release notes](RELEASE_NOTES.md) — latest package summary and release handoff template.
+
 ## Direct install
 
 Add `https://ihabmmali.github.io/appi/` in Kodi File Manager, then install the current `plugin.video.appi-<version>.zip`.
