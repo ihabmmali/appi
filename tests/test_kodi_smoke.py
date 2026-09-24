@@ -121,6 +121,8 @@ assert root_labels == root_labels[:5] + [
 ], root_labels
 assert not any(label.startswith('Refresh ') for label in root_labels), root_labels
 assert not any(label.startswith('Search Movies') for label in [row[1].label for row in state['items']])
+search_root_url=next(row[0] for row in state['items'] if row[1].label=='Search')
+assert 'action=search' in search_root_url and 'session=' in search_root_url
 root_context={row[1].label:[entry[0] for entry in row[1].context] for row in state['items']}
 assert 'Fetch metadata for everything in this folder' in root_context['Movies']
 assert 'Fetch metadata for everything in this folder' in root_context['TV Shows']
@@ -187,6 +189,35 @@ state['items'].clear()
 app._run_action({'action':'search','scope':'movies','query':'movie 029'})
 assert [row[1].label for row in state['items']] == ['Movie 029 (2025)']
 state['items'].clear()
+
+# A UI search stores its query against the route session. Re-entering the
+# same route (Kodi Back from a show or Container.Refresh after Favorite)
+# must reconstruct the results without reopening either dialog.
+Dialog.select_answers=[2]; Dialog.input_answers=['000']
+app.search(session='stable-search')
+assert [row[1].label for row in state['items']] == [
+    'New Search...', 'Show 000 (2025)'
+]
+new_search_url=state['items'][0][0]
+assert 'session=' in new_search_url and 'stable-search' not in new_search_url
+state['items'].clear()
+select_count=len(state['selects'])
+input_count=len(Dialog.input_answers)
+app.search(session='stable-search')
+assert [row[1].label for row in state['items']] == [
+    'New Search...', 'Show 000 (2025)'
+]
+assert len(state['selects']) == select_count
+assert len(Dialog.input_answers) == input_count
+state['items'].clear()
+
+# Cancelling a fresh search route fails that child cleanly, allowing Kodi to
+# return to the prior results container instead of displaying an empty list.
+Dialog.select_answers=[-1]
+app.search(session='cancelled-search')
+assert state['ended'][-1][1].get('succeeded') is False
+assert state['ended'][-1][1].get('cacheToDisc') is False
+assert not state['items']
 
 app.show_seasons(shows[0]['show_key']); assert len(state['items'])==1 and state['content'][-1]=='seasons'
 assert state['items'][0][1].context[0][0]=='Mark season as watched'

@@ -1,6 +1,6 @@
 <?xml version='1.0' encoding='utf-8'?>
 <addons>
-  <addon id="plugin.video.appi" name="Appi" version="0.7.11" provider-name="Eyecon">
+  <addon id="plugin.video.appi" name="Appi" version="0.7.12" provider-name="Eyecon">
     <requires>
       <import addon="xbmc.python" version="3.0.1" />
       <import addon="inputstream.adaptive" version="21.0.0" optional="true" />
@@ -16,7 +16,7 @@
       <platform>all</platform>
       <license>GPL-3.0-or-later</license>
       <source>https://github.com/ihabmmali/appi</source>
-      <news>0.7.11 - Restore the proven synchronous search-results path so catalogue matches display reliably. Playback remains identical to 0.7.8.</news>
+      <news>0.7.12 - Preserve search results when returning from a show or refreshing after Favorite actions, and provide a stable New Search entry. Playback remains identical to 0.7.8.</news>
     </extension>
   </addon>
   <addon id="repository.appi" name="Appi Repository" version="1.2.0" provider-name="Eyecon">

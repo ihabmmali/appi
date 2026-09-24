@@ -31,6 +31,7 @@ BROWSE_BUCKET_LIMIT = 750
 RECENT_CATALOG_LIMIT = 500
 MAX_TV_CATALOG_PAGES = 10000
 TV_END_HTTP_CODES = {400, 404, 405, 410, 416}
+SEARCH_SESSION_LIMIT = 12
 
 
 def _url(action, **params):
@@ -87,6 +88,40 @@ def _stream_cache():
 
 def _save_stream_cache(data):
     cache.save_object('stream_types', data)
+
+
+def _new_search_session():
+    value = '{}|{}|{}'.format(time.time_ns(), HANDLE, BASE_URL)
+    return hashlib.sha1(value.encode('utf-8')).hexdigest()[:16]
+
+
+def _search_session(session):
+    if not session:
+        return None
+    sessions = cache.load_object('search_sessions') or {}
+    value = sessions.get(session)
+    if not isinstance(value, dict):
+        return None
+    if value.get('scope') not in {'movies', 'tv', 'both'} or not value.get('query'):
+        return None
+    return value
+
+
+def _save_search_session(session, scope, query):
+    if not session:
+        return
+    sessions = cache.load_object('search_sessions') or {}
+    sessions[session] = {
+        'scope': scope,
+        'query': query,
+        'updated_at': time.time(),
+    }
+    ordered = sorted(
+        sessions.items(),
+        key=lambda pair: pair[1].get('updated_at', 0) if isinstance(pair[1], dict) else 0,
+        reverse=True,
+    )
+    cache.save_object('search_sessions', dict(ordered[:SEARCH_SESSION_LIMIT]))
 
 
 def _stream_key(catalog_name, ref):
@@ -684,7 +719,7 @@ def _alpha_bucket(scope, item):
     return first if first and first.isalnum() else '#'
 
 
-def _show_media(scope, items, mixed=False):
+def _show_media(scope, items, mixed=False, prefix_items=None):
     if mixed:
         xbmcplugin.setContent(HANDLE, 'files')
     else:
@@ -692,7 +727,7 @@ def _show_media(scope, items, mixed=False):
     _add_video_sort_methods()
     metadata_cache = metadata.load_all()
     favorite_keys = favorites.keys('movie' if scope == 'movies' else 'show')
-    tuples = []
+    tuples = list(prefix_items or [])
     for item in items:
         if scope == 'movies':
             tuples.append(_playable_tuple(
@@ -713,13 +748,13 @@ def _show_media(scope, items, mixed=False):
     _finish()
 
 
-def _show_mixed(items):
+def _show_mixed(items, prefix_items=None):
     xbmcplugin.setContent(HANDLE, 'files')
     _add_video_sort_methods()
     metadata_cache = metadata.load_all()
     movie_favorites = favorites.keys('movie')
     show_favorites = favorites.keys('show')
-    tuples = []
+    tuples = list(prefix_items or [])
     for scope, item in items:
         if scope == 'movies':
             tuples.append(_playable_tuple(
@@ -748,7 +783,7 @@ def show_root():
                 _metadata_batch_context(scope='tv', mode='all')
             ],
         ),
-        _folder_tuple('Search', _url('search')),
+        _folder_tuple('Search', _url('search', session=_new_search_session())),
         _folder_tuple(
             'Recently Played Movies', _url('recent_movies', page=1),
             context_items=[_metadata_batch_context(
@@ -1126,13 +1161,18 @@ def show_episodes(key, season):
     _finish()
 
 
-def search(scope=None, query=None):
-    if scope not in {'movies', 'tv', 'both'}:
+def search(scope=None, query=None, session=None):
+    stored = _search_session(session)
+    if query is None and stored:
+        scope = stored['scope']
+        query = stored['query']
+
+    if query is None and scope not in {'movies', 'tv', 'both'}:
         choice = xbmcgui.Dialog().select(
             'Search category', ['Movies and TV Shows', 'Movies', 'TV Shows']
         )
         if choice < 0:
-            xbmcplugin.endOfDirectory(HANDLE, succeeded=False)
+            xbmcplugin.endOfDirectory(HANDLE, succeeded=False, cacheToDisc=False)
             return
         scope = ('both', 'movies', 'tv')[choice]
     if query is None:
@@ -1140,9 +1180,15 @@ def search(scope=None, query=None):
     else:
         query = query.strip()
     if not query:
-        xbmcplugin.endOfDirectory(HANDLE, succeeded=False)
+        xbmcplugin.endOfDirectory(HANDLE, succeeded=False, cacheToDisc=False)
         return
+    _save_search_session(session, scope, query)
     needle = query.casefold()
+    prefix = []
+    if session:
+        prefix.append(_folder_tuple(
+            'New Search...', _url('search', session=_new_search_session())
+        ))
 
     if scope == 'movies':
         matches = [
@@ -1151,7 +1197,7 @@ def search(scope=None, query=None):
             or needle in (item.get('title') or '').casefold()
         ]
         matches = sort_movies(matches, _int_setting('movie_sort', 0))
-        _show_media('movies', matches)
+        _show_media('movies', matches, prefix_items=prefix)
         return
 
     show_matches = [
@@ -1160,7 +1206,7 @@ def search(scope=None, query=None):
     ]
     show_matches = sort_shows(show_matches, _int_setting('tv_sort', 0))
     if scope == 'tv':
-        _show_media('tv', show_matches)
+        _show_media('tv', show_matches, prefix_items=prefix)
         return
 
     movie_matches = [
@@ -1171,7 +1217,7 @@ def search(scope=None, query=None):
     combined = [('movies', item) for item in movie_matches]
     combined.extend(('tv', show) for show in show_matches)
     combined.sort(key=lambda pair: _item_title(pair[0], pair[1]).casefold())
-    _show_mixed(combined)
+    _show_mixed(combined, prefix_items=prefix)
 
 
 def _probe_kind(catalog_name, ref, media_url):
@@ -1745,7 +1791,7 @@ def _run_action(params):
     elif action == 'episodes':
         show_episodes(params.get('show_key', ''), params.get('season'))
     elif action == 'search':
-        search(params.get('scope'), params.get('query'))
+        search(params.get('scope'), params.get('query'), params.get('session'))
     elif action == 'play_ref':
         play_ref(params)
     elif action == 'play_next':
