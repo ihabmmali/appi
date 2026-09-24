@@ -4,6 +4,9 @@ Appi is a Kodi video add-on for user-configured movie and TV-show M3U catalogues
 
 ## Project documentation
 
+- [Development lifecycle](LIFECYCLE.md) — roles, task states, ownership and evidence rules.
+- [Next release](NEXT_RELEASE.md) — candidate scope and planning guide.
+- [Record templates](docs/workflows/TEMPLATES.md) — task/experiment/decision formats and session starters.
 - [Worker instructions](AGENTS.md) — stable development and release rules.
 - [Project state](PROJECT_STATE.md) — current baseline and next session handoff.
 - [Architecture](ARCHITECTURE.md) — source map and behavior contracts.
@@ -130,3 +133,4 @@ In releases 0.7.1 through 0.7.5, downloaded `Movies` and `TV Shows` subfolders c
 - Add confirmed Settings actions to clear either or both catalogue caches, saved subtitles, and recent/resume history.
 - Retain indexed A-Z/year browsing and automatic TV catalogue page discovery.
 - Retain long-hold playback options, Recently Played/resume support, MP4 buffering controls and persistent subtitles.
+

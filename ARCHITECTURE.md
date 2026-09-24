@@ -1,6 +1,19 @@
 # Appi architecture
 
-Updated against `main` at add-on version 0.7.12 (2026-09-24). Source code remains authoritative.
+Updated against `main` at add-on version 0.7.12 (2026-09-24). Source describes implemented behavior; accepted requirements and decisions describe intended behavior.
+
+## Project goals and binding rules
+
+- Provide responsive Kodi browsing/search/playback of user-configured movie and TV M3U catalogues.
+- Preserve native Kodi watched/resume authority and user favorites, metadata and subtitles.
+- Preserve provider order where required; a partial refresh must not discard a valid cache on failure/cancellation.
+- Keep navigation predictable through search, show/back, cancellation and favorite actions.
+- Evaluate playback changes with real evidence and retain the fallback named in PROJECT_STATE.
+- Keep experiments, metadata service, external FFmpeg scripts and catalogue refresh scoped to their responsibilities.
+- Release commands: `python3 -m unittest discover -s tests`, then `python3 tools/build_repository.py`; inspect packages/hashes/index and record device checks separately.
+- Tracker-only edits use `python3 tools/check_workflow.py` and relevant checker tests; no add-on package rebuild is needed.
+
+These goals bind the portable [lifecycle](LIFECYCLE.md) to Appi. Accepted changes to these rules require a documented decision; current source may not satisfy every goal.
 
 ## Entry points and modules
 
@@ -33,3 +46,4 @@ Updated against `main` at add-on version 0.7.12 (2026-09-24). Source code remain
 ## Publishing
 
 `python3 tools/build_repository.py` regenerates add-on ZIPs, SHA-256 sidecars, `addons.xml` and its checksum, and the Pages `index.html`. The install page lists the current package plus selected fallback packages; the repository retains other older ZIPs. `repository.appi` reads the repository feed from the raw `main` files. A documentation-only change requires no rebuild or version bump.
+
