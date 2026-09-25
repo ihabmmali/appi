@@ -12,6 +12,7 @@ Updated: 2026-09-24. Each linked task is the canonical requirements/status/evide
 | DIAG-1 | proposed | research | [Export bounded playback diagnostics](docs/tasks/DIAG-1.md) |
 | HLS-1 | proposed | research | [Investigate repeated HLS stalls](docs/tasks/HLS-1.md) |
 | HLS-2 | proposed | research | [Explicit adaptive bitrate HLS mode](docs/tasks/HLS-2.md) |
+| HLS-3 | proposed | triage | [Cancel quality selection without starting playback](docs/tasks/HLS-3.md) |
 | UI-1 | proposed | research | [Playback Program Settings visibility](docs/tasks/UI-1.md) |
 | FRAMEWORK-1 | done | implementation | [Lifecycle pilot setup](docs/tasks/FRAMEWORK-1.md) |
 
