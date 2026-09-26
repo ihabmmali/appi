@@ -52,4 +52,4 @@ Selection values: candidate / committed / deferred / backlog. Task status remain
 
 ## Readiness
 
-Automated implementation verification passed in GitHub Actions run 36277010649 before release preparation. A final release-candidate run is still required after version/documentation changes. Target-device checks remain pending and must stay identified as such rather than being treated as automated acceptance. Keep 0.7.8 available as the known-good fallback.
+Automated implementation verification passed in GitHub Actions run 36277010649. The hardened 0.7.13 release-candidate gate then passed at source commit `469aebb4a040cf5c6a019c9e5e7a175568157b2b` in run 36277371842: synchronized build, full unit/smoke suite, tracker validation, deterministic rebuild, package/hash/index inspection and 0.7.8 fallback preservation. Packaging is authorized. Target-device checks remain pending and must stay identified as such rather than being treated as automated acceptance.
