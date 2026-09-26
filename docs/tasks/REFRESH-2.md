@@ -1,9 +1,9 @@
 ---
 id: REFRESH-2
-role: implementation
-status: active
+role: review
+status: review
 delivery: unreleased
-verification: pending
+verification: partial
 owner: ChatGPT build session 2026-09-26
 base_commit: 8a9b1ad21b3944d8045e1d1abff2a2556c3035cc
 artifact: none
@@ -34,6 +34,12 @@ Existing KNOWN_ISSUES entry preserved. No new experiment, implementation or devi
 - Release branch: `release/0.7.13`; base: `8a9b1ad21b3944d8045e1d1abff2a2556c3035cc`.
 - Planned paths: plugin.video.appi/resources/lib/subtitle_service.py; app.py; settings/tests.
 - This worker owns the committed release sequence; review will be recorded as self-review unless independent evidence is added.
+
+## Review evidence — 2026-09-26
+- Added optional startup/scheduled refresh in the background service, gated on idle video playback.
+- A shared profile lock serializes manual and automatic refreshes; failure state drives bounded retry backoff and a successful refresh resets failures.
+- Direct lock/state regression coverage was added for the final candidate; refresh functions retain prior cache on failures.
+- Verification is partial pending long-running target-device scheduling, playback-interaction and restart observations.
 
 ## Outcome and next action
 Set actionable requirements and dependency on REFRESH-1.
