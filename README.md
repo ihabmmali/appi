@@ -18,6 +18,16 @@ Appi is a Kodi video add-on for user-configured movie and TV-show M3U catalogues
 
 Add `https://ihabmmali.github.io/appi/` in Kodi File Manager, then install the current `plugin.video.appi-<version>.zip`.
 
+## 0.7.13
+
+- Stabilize Search cancellation/context and keep results stable across back/favorite refreshes; add a persistent bounded keyword history with reuse, edit, delete and clear actions.
+- Finalize newly downloaded subtitle capture when playback stops so an immediate exit cannot discard a subtitle that the periodic poller has only observed once.
+- Add leading-window TV fast refresh using contiguous cached overlap, provider-order preservation and automatic full-refresh fallback; add optional idle-only startup/scheduled refresh with locking and failure backoff.
+- Add normalized preferred audio and internal-subtitle language matching, while retaining per-title subtitle overrides and saved external subtitles.
+- Add opt-in bounded playback diagnostics with sanitized ZIP-exportable session summaries and explicit reporting of unavailable Kodi metrics.
+- Separate HLS behavior into Native Kodi automatic, Manual fixed quality, and explicit InputStream Adaptive ABR. Manual quality is selected before playback so Cancel aborts cleanly; ABR supports an optional maximum bitrate ceiling.
+- Automated verification covers unit/smoke tests, tracker validation, package layout, SHA-256 sidecars, repository metadata/index and preservation of the 0.7.8 fallback. Device checks for Kodi navigation, subtitle restore and runtime ABR switching remain pending.
+
 ## 0.7.12
 
 - Preserve the active search query in a bounded search-session cache so returning from a TV show reconstructs the same results instead of reopening the keyboard.
