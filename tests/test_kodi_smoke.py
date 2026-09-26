@@ -199,7 +199,9 @@ assert [row[1].label for row in state['items']] == [
     'New Search...', 'Show 000 (2025)'
 ]
 new_search_url=state['items'][0][0]
-assert 'session=' in new_search_url and 'stable-search' not in new_search_url
+assert 'session=' in new_search_url
+assert 'return_session=stable-search' in new_search_url
+assert 'session=stable-search' not in new_search_url.split('return_session=', 1)[0]
 state['items'].clear()
 select_count=len(state['selects'])
 input_count=len(Dialog.input_answers)
