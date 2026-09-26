@@ -2,6 +2,16 @@
 
 Implemented features, grouped by add-on version. A version listed here means its source/package was published in the repository; it does not by itself certify device testing. For details and earlier 0.7.x entries, see [README.md](README.md). This file is the concise ongoing release history; [RELEASE_NOTES.md](RELEASE_NOTES.md) records what each package shipped and how it was verified.
 
+## 0.7.13 — 2026-09-26
+
+- Repair Search cancellation/context handling and add persistent bounded keyword history with reuse, edit, delete and clear actions.
+- Finalize downloaded-subtitle capture at playback stop so a newly downloaded subtitle is not lost between polling intervals.
+- Add overlap-proven fast TV refresh plus optional idle-only automatic refresh with lock/backoff and full-refresh fallback.
+- Add normalized preferred audio/internal-subtitle language selection while retaining per-title subtitle precedence.
+- Add opt-in bounded, sanitized playback diagnostic capture/export.
+- Separate HLS playback into native Kodi, Appi-selected fixed rendition, and explicit InputStream Adaptive ABR with an optional bitrate ceiling; manual quality Cancel now aborts before playback side effects.
+- Automated tests and package verification pass; target-device verification remains pending for navigation, subtitle restoration and runtime ABR switching.
+
 ## 0.7.12 — 2026-09-24
 
 - Preserve active search query in a bounded session so returning from a TV show can reconstruct results without another keyboard prompt.
@@ -46,4 +56,4 @@ Implemented features, grouped by add-on version. A version listed here means its
 
 ## 0.8.0 experimental archive
 
-- The ZIP and branch exist, but the standard Kodi browser was restored in 0.7.1 and the current `main` add-on manifest is 0.7.12. Do not treat 0.8.0 as the current release based on its higher number.
+- The ZIP and branch exist, but the standard Kodi browser was restored in 0.7.1 and the current release line is 0.7.13. Do not treat 0.8.0 as the current release based on its higher number.
