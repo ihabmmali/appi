@@ -1,7 +1,7 @@
 ---
 id: SUB-1
-role: implementation
-status: active
+role: review
+status: review
 delivery: released
 verification: failed
 owner: ChatGPT build session 2026-09-26
@@ -59,6 +59,11 @@ User device observation on 2026-09-26 indicates this end-to-end behavior is curr
 - Release branch: `release/0.7.13`; base: `8a9b1ad21b3944d8045e1d1abff2a2556c3035cc`.
 - Planned paths: plugin.video.appi/resources/lib/subtitle_store.py; subtitle service/tests.
 - This worker owns the committed release sequence; review will be recorded as self-review unless independent evidence is added.
+
+## Review evidence — 2026-09-26
+- Root cause repaired: the ordinary poller still waits for a stable subtitle-file fingerprint, while playback stop now performs a final capture pass before clearing the subtitle session.
+- Regression coverage includes the immediate-stop case where a subtitle has only been observed once before stop, plus restore/language interaction in the service smoke test.
+- Automated suite passed in Actions run 36277010649. Verification remains partial pending movie and episode stop/resume/restart checks on the target device.
 
 ## Outcome and next action
 Treat SUB-1 as a current-baseline regression. A review worker should reproduce the exact stop/resume/restart flows first, identify whether persistence fails during capture or restoration, then move the same task into implementation for the scoped repair.
