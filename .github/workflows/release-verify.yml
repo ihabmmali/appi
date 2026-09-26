@@ -1,0 +1,52 @@
+name: release-verify
+
+on:
+  push:
+    branches:
+      - release/0.7.13
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Unit and smoke tests
+        run: python3 -m unittest discover -s tests
+      - name: Workflow tracker validation
+        run: python3 tools/check_workflow.py
+      - name: Build repository artifacts
+        run: python3 tools/build_repository.py
+      - name: Inspect package and repository output
+        run: |
+          python3 - <<'PY'
+          import hashlib
+          import xml.etree.ElementTree as ET
+          import zipfile
+          from pathlib import Path
+
+          root = Path('.')
+          addon = ET.parse(root / 'plugin.video.appi' / 'addon.xml').getroot()
+          version = addon.attrib['version']
+          package = root / 'plugin.video.appi' / f'plugin.video.appi-{version}.zip'
+          assert package.is_file(), package
+          with zipfile.ZipFile(package) as z:
+              names = z.namelist()
+              assert names and all(name == 'plugin.video.appi/' or name.startswith('plugin.video.appi/') for name in names)
+              assert z.testzip() is None
+              manifest = ET.fromstring(z.read('plugin.video.appi/addon.xml'))
+              assert manifest.attrib['version'] == version
+          sidecar = package.with_name(package.name + '.sha256')
+          expected = sidecar.read_text().strip()
+          actual = hashlib.sha256(package.read_bytes()).hexdigest()
+          assert expected == actual
+          addons = (root / 'addons.xml').read_bytes()
+          assert (root / 'addons.xml.sha256').read_text().strip() == hashlib.sha256(addons).hexdigest()
+          index = (root / 'index.html').read_text()
+          assert package.name in index
+          assert 'plugin.video.appi-0.7.8.zip' in index
+          print('artifact inspection passed:', package.name, actual)
+          PY
