@@ -1,9 +1,9 @@
 ---
 id: LANG-1
-role: implementation
-status: active
+role: review
+status: review
 delivery: unreleased
-verification: pending
+verification: partial
 owner: ChatGPT build session 2026-09-26
 base_commit: 8a9b1ad21b3944d8045e1d1abff2a2556c3035cc
 artifact: none
@@ -34,6 +34,12 @@ Existing KNOWN_ISSUES entry preserved. No new experiment, implementation or devi
 - Release branch: `release/0.7.13`; base: `8a9b1ad21b3944d8045e1d1abff2a2556c3035cc`.
 - Planned paths: plugin.video.appi/resources/lib/languages.py; subtitle_service.py; settings/tests.
 - This worker owns the committed release sequence; review will be recorded as self-review unless independent evidence is added.
+
+## Review evidence — 2026-09-26
+- Added normalized preferred audio and internal-subtitle selection at AV start, using Kodi language conversion when available and fallback aliases such as English/eng/en.
+- Per-title subtitle modes remain authoritative: global internal-language selection is skipped for saved/off/search overrides, and saved external subtitles can still be attached afterward.
+- Unit/service smoke coverage verifies alias matching plus matching stream indexes.
+- Verification is partial pending provider-specific audio/subtitle labels and manual override behavior on the target Kodi device.
 
 ## Outcome and next action
 Specify matching and fallback behavior, then assign implementation.
