@@ -1,11 +1,11 @@
 ---
 id: SEARCH-2
-role: triage
-status: proposed
+role: implementation
+status: active
 delivery: unreleased
 verification: pending
-owner: unassigned
-base_commit: unset
+owner: ChatGPT build session 2026-09-26
+base_commit: 8a9b1ad21b3944d8045e1d1abff2a2556c3035cc
 artifact: none
 ---
 # SEARCH-2 — User-manageable search history
@@ -41,6 +41,12 @@ Requested by the user on 2026-09-24 as a proposed Appi feature. This authorizes 
 User requirement: provide a manageable list of prior keywords that can be quickly selected, edited and used for another search.
 
 No implementation or device verification has been performed.
+
+## Build session — 2026-09-26
+- User authorization: all candidates committed to the next release; implementation, integration and publication explicitly authorized.
+- Release branch: `release/0.7.13`; base: `8a9b1ad21b3944d8045e1d1abff2a2556c3035cc`.
+- Planned paths: plugin.video.appi/resources/lib/search_history.py; app.py; settings/tests.
+- This worker owns the committed release sequence; review will be recorded as self-review unless independent evidence is added.
 
 ## Outcome and next action
 Keep SEARCH-2 separate from SEARCH-1 so history UX can be implemented without obscuring navigation defects. Before implementation, choose the smallest remote-friendly UI flow and bounded persistence policy consistent with the acceptance criteria.

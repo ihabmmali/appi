@@ -1,11 +1,11 @@
 ---
 id: SUB-1
-role: review
-status: ready
+role: implementation
+status: active
 delivery: released
 verification: failed
-owner: unassigned
-base_commit: unset
+owner: ChatGPT build session 2026-09-26
+base_commit: 8a9b1ad21b3944d8045e1d1abff2a2556c3035cc
 artifact: https://github.com/ihabmmali/appi/blob/main/plugin.video.appi-0.7.12.zip
 ---
 # SUB-1 — Restore downloaded subtitle persistence across playback sessions
@@ -53,6 +53,12 @@ Current source contains the intended persistence path:
 - `play_ref()` prepares the subtitle session and can attach previously saved subtitles before playback.
 
 User device observation on 2026-09-26 indicates this end-to-end behavior is currently failing across stop/resume or restart. No root cause has yet been established.
+
+## Build session — 2026-09-26
+- User authorization: all candidates committed to the next release; implementation, integration and publication explicitly authorized.
+- Release branch: `release/0.7.13`; base: `8a9b1ad21b3944d8045e1d1abff2a2556c3035cc`.
+- Planned paths: plugin.video.appi/resources/lib/subtitle_store.py; subtitle service/tests.
+- This worker owns the committed release sequence; review will be recorded as self-review unless independent evidence is added.
 
 ## Outcome and next action
 Treat SUB-1 as a current-baseline regression. A review worker should reproduce the exact stop/resume/restart flows first, identify whether persistence fails during capture or restoration, then move the same task into implementation for the scoped repair.
