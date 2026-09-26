@@ -289,7 +289,9 @@ def refresh_tv_fast(show_notification=True, show_errors=True):
     old_items = cached['items'] if cached is not None else None
     if not old_items:
         xbmc.log('Appi fast TV refresh has no provider-order cache; falling back to full refresh', xbmc.LOGINFO)
-        return refresh_tv(show_notification=show_notification)
+        return refresh_tv(
+            show_notification=show_notification, show_errors=show_errors
+        )
 
     base = _require_setting('tv_m3u_base_url', 'TV Show M3U base URL')
     if not base:
@@ -392,6 +394,16 @@ def refresh_tv_fast(show_notification=True, show_errors=True):
         )
         return refresh_tv(show_notification=show_notification, show_errors=show_errors)
     return None
+
+
+def _guarded_refresh(callback):
+    if not refresh_state.acquire():
+        _notify('A catalogue refresh is already in progress')
+        return False
+    try:
+        return callback()
+    finally:
+        refresh_state.release()
 
 
 def refresh_all(fast=False, show_notification=True, show_errors=True):
@@ -2060,19 +2072,19 @@ def _run_action(params):
     elif action == 'set_favorite':
         set_favorite(params)
     elif action == 'refresh_movies':
-        refresh_movies()
+        _guarded_refresh(lambda: refresh_movies())
         xbmc.executebuiltin('Container.Update({})'.format(BASE_URL))
     elif action == 'refresh_tv':
-        refresh_tv()
+        _guarded_refresh(lambda: refresh_tv())
         xbmc.executebuiltin('Container.Update({})'.format(BASE_URL))
     elif action == 'refresh_tv_fast':
-        refresh_tv_fast()
+        _guarded_refresh(lambda: refresh_tv_fast())
         xbmc.executebuiltin('Container.Update({})'.format(BASE_URL))
     elif action == 'refresh_all':
-        refresh_all()
+        _guarded_refresh(lambda: refresh_all())
         xbmc.executebuiltin('Container.Update({})'.format(BASE_URL))
     elif action == 'refresh_all_fast':
-        refresh_all(fast=True)
+        _guarded_refresh(lambda: refresh_all(fast=True))
         xbmc.executebuiltin('Container.Update({})'.format(BASE_URL))
     elif action == 'auto_refresh':
         auto_refresh()
