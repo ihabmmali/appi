@@ -1,9 +1,9 @@
 ---
 id: HLS-3
-role: implementation
-status: active
+role: review
+status: review
 delivery: unreleased
-verification: pending
+verification: partial
 owner: ChatGPT build session 2026-09-26
 base_commit: 8a9b1ad21b3944d8045e1d1abff2a2556c3035cc
 artifact: none
@@ -45,6 +45,12 @@ No source-level root cause or target-device reproduction has yet been recorded f
 - Release branch: `release/0.7.13`; base: `8a9b1ad21b3944d8045e1d1abff2a2556c3035cc`.
 - Planned paths: plugin.video.appi/resources/lib/hls.py; app.py; playback tests.
 - This worker owns the committed release sequence; review will be recorded as self-review unless independent evidence is added.
+
+## Review evidence — 2026-09-26
+- Manual quality selection now parses the HLS master and presents an Appi-owned rendition chooser before metadata queueing, subtitle session setup, Recently Played session creation or setResolvedUrl success.
+- Cancel returns a failed resolved URL immediately; selected variants continue through the existing playback metadata/subtitle/history path.
+- Smoke coverage asserts Cancel creates no Recently Played entry and that selecting the higher test rendition resolves its concrete variant URL.
+- Automated suite passed at the implementation checkpoint; target-device Cancel/back behavior remains pending, so verification is partial.
 
 ## Outcome and next action
 Assign a focused implementation/review worker to trace the manual quality-selection cancel path and prevent playback resolution when the chooser is dismissed.
