@@ -1,9 +1,9 @@
 name: release-verify
 
 on:
-  push:
+  pull_request:
     branches:
-      - release/0.7.13
+      - main
   workflow_dispatch:
 
 jobs:
