@@ -9,6 +9,7 @@ This is a proposed selection from the backlog. No product task is newly authoriz
 | Task | Selection | Priority | Reason |
 | --- | --- | --- | --- |
 | [SEARCH-1](docs/tasks/SEARCH-1.md) | candidate | recommended first | Reproduce and repair search cancel/back/favorites navigation before extending search UX |
+| [SUB-1](docs/tasks/SUB-1.md) | candidate | regression | Downloaded subtitles should persist and restore across stop/resume/restart |
 | [SEARCH-2](docs/tasks/SEARCH-2.md) | candidate | requested feature | Add persistent, editable and user-manageable keyword history after navigation behavior is stable |
 | [REFRESH-1](docs/tasks/REFRESH-1.md) | candidate | requested feature | Fast refresh algorithm needs evidence and acceptance checks |
 | [REFRESH-2](docs/tasks/REFRESH-2.md) | candidate | requested feature | Scheduling requirements; coordinate with refresh design |
@@ -43,6 +44,8 @@ Selection values: candidate / committed / deferred / backlog. Task status remain
 2026-09-24: HLS-3 added for the manual quality chooser cancel regression. It is tracked separately from HLS-2 because cancel semantics must be correct regardless of future HLS mode design.
 
 2026-09-24: HLS-2 was refined after the user reported that "Limit maximum bitrate" appears to select the highest rendition below the cap and remain there. The task must now prove whether runtime switching actually occurs before treating the existing path as ABR.
+
+2026-09-26: SUB-1 added as a current-baseline regression candidate after the user reported that downloaded subtitles are forgotten after exiting and resuming/restarting the same media. Existing persistence code must be reproduced end-to-end before repair.
 
 ## Readiness
 

@@ -1,6 +1,6 @@
 # Appi task index
 
-Updated: 2026-09-24. Each linked task is the canonical requirements/status/evidence record. This index covers bugs, features and investigations. Preserve IDs and completed records; archive through Git/history instead of erasing evidence.
+Updated: 2026-09-26. Each linked task is the canonical requirements/status/evidence record. This index covers bugs, features and investigations. Preserve IDs and completed records; archive through Git/history instead of erasing evidence.
 
 | ID | Status | Role | Task |
 | --- | --- | --- | --- |
@@ -13,6 +13,7 @@ Updated: 2026-09-24. Each linked task is the canonical requirements/status/evide
 | HLS-1 | proposed | research | [Investigate repeated HLS stalls](docs/tasks/HLS-1.md) |
 | HLS-2 | proposed | research | [Explicit adaptive bitrate HLS mode](docs/tasks/HLS-2.md) |
 | HLS-3 | proposed | triage | [Cancel quality selection without starting playback](docs/tasks/HLS-3.md) |
+| SUB-1 | ready | review | [Restore downloaded subtitle persistence across playback sessions](docs/tasks/SUB-1.md) |
 | UI-1 | proposed | research | [Playback Program Settings visibility](docs/tasks/UI-1.md) |
 | FRAMEWORK-1 | done | implementation | [Lifecycle pilot setup](docs/tasks/FRAMEWORK-1.md) |
 
