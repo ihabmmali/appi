@@ -56,6 +56,72 @@ https://cdn.example/high.m3u8
         self.assertEqual(languages.match_index('eng', ['French', 'English']), 1)
         self.assertIsNone(languages.match_index('', ['eng']))
 
+    def test_search_history_is_bounded_deduplicated_and_corruption_safe(self):
+        code = r'''
+import json, os, sys, tempfile, types
+from pathlib import Path
+PLUGIN=Path(sys.argv[1]); sys.path.insert(0,str(PLUGIN))
+profile=tempfile.mkdtemp(prefix='appi-search-profile-')
+xa=types.ModuleType('xbmcaddon')
+class Addon:
+    def getAddonInfo(self,name): return profile if name=='profile' else ''
+xa.Addon=Addon; sys.modules['xbmcaddon']=xa
+xv=types.ModuleType('xbmcvfs')
+xv.translatePath=lambda p:p
+xv.exists=os.path.exists
+xv.mkdirs=lambda p: os.makedirs(p,exist_ok=True)
+sys.modules['xbmcvfs']=xv
+from resources.lib import search_history
+for index in range(25):
+    search_history.add('term-{}'.format(index))
+assert len(search_history.entries()) == 20
+search_history.add('TERM-24')
+assert search_history.entries()[0] == 'TERM-24'
+assert len([x for x in search_history.entries() if x.casefold() == 'term-24']) == 1
+search_history.delete('term-24')
+assert all(x.casefold() != 'term-24' for x in search_history.entries())
+search_history.clear()
+assert search_history.entries() == []
+with open(os.path.join(profile,'search_history.json'),'w',encoding='utf-8') as handle:
+    handle.write('{broken')
+assert search_history.entries() == []
+'''
+        result = subprocess.run(
+            [sys.executable, '-c', textwrap.dedent(code), str(PLUGIN)],
+            capture_output=True, text=True,
+        )
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+    def test_refresh_state_serializes_and_resets_backoff_state(self):
+        code = r'''
+import os, sys, tempfile, types
+from pathlib import Path
+PLUGIN=Path(sys.argv[1]); sys.path.insert(0,str(PLUGIN))
+profile=tempfile.mkdtemp(prefix='appi-refresh-profile-')
+xa=types.ModuleType('xbmcaddon')
+class Addon:
+    def getAddonInfo(self,name): return profile if name=='profile' else ''
+xa.Addon=Addon; sys.modules['xbmcaddon']=xa
+xv=types.ModuleType('xbmcvfs')
+xv.translatePath=lambda p:p
+sys.modules['xbmcvfs']=xv
+from resources.lib import refresh_state
+assert refresh_state.acquire() is True
+assert refresh_state.acquire() is False
+refresh_state.release()
+assert refresh_state.acquire() is True
+refresh_state.release()
+failed=refresh_state.record(False)
+assert failed['failures'] == 1 and failed['last_attempt']
+passed=refresh_state.record(True)
+assert passed['failures'] == 0 and passed['last_success']
+'''
+        result = subprocess.run(
+            [sys.executable, '-c', textwrap.dedent(code), str(PLUGIN)],
+            capture_output=True, text=True,
+        )
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
 
 class DiagnosticPrivacyTests(unittest.TestCase):
     def test_export_redacts_authenticated_url(self):
