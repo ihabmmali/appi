@@ -61,7 +61,9 @@ class SettingsLocalizationTests(unittest.TestCase):
         self.assertNotIn('id="hls_playback_engine"', settings)
         service = (PLUGIN / 'resources' / 'lib' / 'subtitle_service.py').read_text(encoding='utf-8')
         self.assertNotIn('yesno(', service)
-        self.assertFalse((PLUGIN / 'resources' / 'lib' / 'hls.py').exists())
+        self.assertTrue((PLUGIN / 'resources' / 'lib' / 'hls.py').is_file())
+        self.assertTrue((PLUGIN / 'resources' / 'lib' / 'search_history.py').is_file())
+        self.assertTrue((PLUGIN / 'resources' / 'lib' / 'diagnostics.py').is_file())
         http = (PLUGIN / 'resources' / 'lib' / 'http.py').read_text(encoding='utf-8')
         self.assertNotIn('fetch_text_with_url', http)
 
@@ -110,10 +112,11 @@ class SettingsLocalizationTests(unittest.TestCase):
             set(actions),
             {
                 'refresh_movie_list', 'refresh_tv_list', 'refresh_all_lists',
+                'fast_refresh_tv', 'fast_refresh_all',
                 'clear_movie_cache', 'clear_tv_cache', 'clear_catalog_caches',
                 'clear_saved_subtitles', 'clear_recent_media',
                 'metadata_status', 'clear_metadata_queue', 'clear_metadata_cache',
-                'download_status',
+                'download_status', 'export_diagnostics',
             },
         )
         for scope in ('movies', 'tv', 'catalogs', 'subtitles', 'recent', 'metadata'):
