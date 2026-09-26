@@ -1,22 +1,22 @@
 # Next Appi release
 
-Planning status: draft. Version: not assigned. Current baseline and fallback: [PROJECT_STATE.md](PROJECT_STATE.md).
+Planning status: committed. Version: not assigned. Current baseline and fallback: [PROJECT_STATE.md](PROJECT_STATE.md).
 
-This is a proposed selection from the backlog. No product task is newly authorized for implementation or publication by this planning file.
+This is the user-authorized committed scope for the next release. Implementation, integration and publication were explicitly authorized on 2026-09-26.
 
 ## Proposed scope
 
 | Task | Selection | Priority | Reason |
 | --- | --- | --- | --- |
-| [SEARCH-1](docs/tasks/SEARCH-1.md) | candidate | recommended first | Reproduce and repair search cancel/back/favorites navigation before extending search UX |
-| [SUB-1](docs/tasks/SUB-1.md) | candidate | regression | Downloaded subtitles should persist and restore across stop/resume/restart |
-| [SEARCH-2](docs/tasks/SEARCH-2.md) | candidate | requested feature | Add persistent, editable and user-manageable keyword history after navigation behavior is stable |
-| [REFRESH-1](docs/tasks/REFRESH-1.md) | candidate | requested feature | Fast refresh algorithm needs evidence and acceptance checks |
-| [REFRESH-2](docs/tasks/REFRESH-2.md) | candidate | requested feature | Scheduling requirements; coordinate with refresh design |
-| [LANG-1](docs/tasks/LANG-1.md) | candidate | requested feature | Define matching and fallback before implementation |
-| [DIAG-1](docs/tasks/DIAG-1.md) | candidate | requested diagnostic feature | Create a privacy-safe evidence bundle for playback/buffering diagnosis |
-| [HLS-3](docs/tasks/HLS-3.md) | candidate | requested bug fix | Cancelling manual HLS quality selection must abort playback and restore the prior Appi view |
-| [HLS-2](docs/tasks/HLS-2.md) | candidate | requested playback feature | Verify whether the current cap is only ceiling-based rendition selection, then expose true ABR distinctly if supported |
+| [SEARCH-1](docs/tasks/SEARCH-1.md) | committed | recommended first | Reproduce and repair search cancel/back/favorites navigation before extending search UX |
+| [SUB-1](docs/tasks/SUB-1.md) | committed | regression | Downloaded subtitles should persist and restore across stop/resume/restart |
+| [SEARCH-2](docs/tasks/SEARCH-2.md) | committed | requested feature | Add persistent, editable and user-manageable keyword history after navigation behavior is stable |
+| [REFRESH-1](docs/tasks/REFRESH-1.md) | committed | requested feature | Fast refresh algorithm needs evidence and acceptance checks |
+| [REFRESH-2](docs/tasks/REFRESH-2.md) | committed | requested feature | Scheduling requirements; coordinate with refresh design |
+| [LANG-1](docs/tasks/LANG-1.md) | committed | requested feature | Define matching and fallback before implementation |
+| [DIAG-1](docs/tasks/DIAG-1.md) | committed | requested diagnostic feature | Create a privacy-safe evidence bundle for playback/buffering diagnosis |
+| [HLS-3](docs/tasks/HLS-3.md) | committed | requested bug fix | Cancelling manual HLS quality selection must abort playback and restore the prior Appi view |
+| [HLS-2](docs/tasks/HLS-2.md) | committed | requested playback feature | Verify whether the current cap is only ceiling-based rendition selection, then expose true ABR distinctly if supported |
 | [HLS-1](docs/tasks/HLS-1.md) | backlog | investigation | Diagnose repeated stalls while distinguishing fixed/ceiling-limited playback from actual ABR |
 | [UI-1](docs/tasks/UI-1.md) | backlog | investigation | Skin comparison needed |
 
@@ -32,6 +32,9 @@ Selection values: candidate / committed / deferred / backlog. Task status remain
 6. Copy shipped task IDs and scope changes into RELEASE_NOTES, then reset this planning file for the next cycle.
 
 ## Scope decisions
+
+2026-09-26: user explicitly committed all current candidate tasks (SEARCH-1, SUB-1, SEARCH-2, REFRESH-1, REFRESH-2, LANG-1, DIAG-1, HLS-3, HLS-2) and authorized the build, integration and publishing lifecycle for this release.
+
 
 2026-09-24: existing requests migrated as candidates/backlog during lifecycle setup. No release scope or new version has been committed.
 
