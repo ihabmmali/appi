@@ -19,6 +19,8 @@ Updated: 2026-09-27. Each linked task is the canonical requirements/status/evide
 | HLS-6 | ready | implementation | [Configurable Buffered Look Ahead buffer, quality choice and debug overlay](docs/tasks/HLS-6.md) |
 | SUB-1 | review | review | [Restore downloaded subtitle persistence across playback sessions](docs/tasks/SUB-1.md) |
 | UI-1 | proposed | research | [Playback Program Settings visibility](docs/tasks/UI-1.md) |
+| UI-2 | ready | implementation | [About / installed Appi version](docs/tasks/UI-2.md) |
+| UI-3 | proposed | implementation | [Appi add-on artwork / icon](docs/tasks/UI-3.md) |
 | FRAMEWORK-1 | done | implementation | [Lifecycle pilot setup](docs/tasks/FRAMEWORK-1.md) |
 
 Use [NEXT_RELEASE.md](NEXT_RELEASE.md) to select release scope. A candidate is not an implementation commitment. Follow [triage](docs/workflows/triage.md) to add/change a task.
