@@ -110,8 +110,8 @@ msgid "HLS quality selection"
 msgstr "HLS quality selection"
 
 msgctxt "#32311"
-msgid "Native leaves HLS handling to Kodi. Ask quality uses the original HLS master URL and InputStream Adaptive, matching the proven 0.7.12 playback path. Adaptive bitrate uses InputStream Adaptive automatically."
-msgstr "Native leaves HLS handling to Kodi. Manual fixed quality uses an Appi chooser before playback. Adaptive bitrate explicitly uses InputStream Adaptive."
+msgid "Native leaves HLS handling to Kodi. Ask quality uses the original HLS master URL and InputStream Adaptive, matching the proven 0.7.12 playback path. Adaptive bitrate uses InputStream Adaptive automatically. Buffered Look Ahead Playback uses Appi's disk-backed localhost HLS proxy with an approximately 30-second media reserve."
+msgstr "Native leaves HLS handling to Kodi. Ask quality uses the original HLS master URL and InputStream Adaptive. Adaptive bitrate uses InputStream Adaptive automatically. Buffered Look Ahead Playback uses Appi's disk-backed localhost HLS proxy with an approximately 30-second media reserve."
 
 msgctxt "#32312"
 msgid "Maximum adaptive bitrate (Kbit/s)"
@@ -132,6 +132,10 @@ msgstr "Manual fixed quality"
 msgctxt "#32322"
 msgid "Adaptive bitrate (InputStream Adaptive)"
 msgstr "Adaptive bitrate (InputStream Adaptive)"
+
+msgctxt "#32323"
+msgid "Buffered Look Ahead Playback"
+msgstr "Buffered Look Ahead Playback"
 
 msgctxt "#32330"
 msgid "Plain MP4 buffering"
