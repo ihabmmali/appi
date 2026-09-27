@@ -247,6 +247,28 @@ def _byterange_header(value):
     return _byterange(value)[0]
 
 
+def _remove_attribute(line, name):
+    """Remove one HLS attribute without disturbing quoted commas/order."""
+    if ':' not in line:
+        return line
+    head, body = line.split(':', 1)
+    parts = []
+    token = []
+    quoted = False
+    for char in body:
+        if char == '"':
+            quoted = not quoted
+        if char == ',' and not quoted:
+            parts.append(''.join(token))
+            token = []
+        else:
+            token.append(char)
+    parts.append(''.join(token))
+    prefix = str(name).upper() + '='
+    kept = [part for part in parts if not part.strip().upper().startswith(prefix)]
+    return head + ':' + ','.join(kept)
+
+
 class _Resource:
     def __init__(self, resource_id, upstream_url, kind, content_type='', metadata=None, byte_range=''):
         self.id = resource_id
@@ -754,7 +776,14 @@ class BufferedHlsSession:
             )
             return 'URI="{}"'.format(local)
 
-        return _URI_RE.sub(replace, line)
+        rewritten = _URI_RE.sub(replace, line)
+        tag = line.split(':', 1)[0].upper()
+        attrs = _attributes(line.split(':', 1)[1] if ':' in line else '')
+        if tag == '#EXT-X-MAP' and attrs.get('BYTERANGE'):
+            # The proxy resource already contains only the requested upstream
+            # byte slice, so leaving BYTERANGE would apply the range twice.
+            rewritten = _remove_attribute(rewritten, 'BYTERANGE')
+        return rewritten
 
     def _rewrite_playlist(self, text, base_url, playlist_resource):
         lines = text.splitlines()
