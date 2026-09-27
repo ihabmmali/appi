@@ -117,9 +117,9 @@
           <control type="edit" format="string"/>
         </setting>
         <setting id="preferred_audio_language_choice" type="string" label="32351" help="32352">
-          <level>0</level><default/>
-          <constraints><allowempty>true</allowempty><options>
-              <option label="32920"></option>
+          <level>0</level><default>none</default>
+          <constraints><options>
+              <option label="32920">none</option>
               <option label="32921">en</option>
               <option label="32922">ar</option>
               <option label="32923">zh</option>
@@ -157,9 +157,9 @@
           <control type="edit" format="string"/>
         </setting>
         <setting id="preferred_subtitle_language_choice" type="string" label="32353" help="32354">
-          <level>0</level><default/>
-          <constraints><allowempty>true</allowempty><options>
-              <option label="32920"></option>
+          <level>0</level><default>none</default>
+          <constraints><options>
+              <option label="32920">none</option>
               <option label="32921">en</option>
               <option label="32922">ar</option>
               <option label="32923">zh</option>

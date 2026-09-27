@@ -9,9 +9,11 @@ Updated: 2026-09-27. Start with [AGENTS.md](AGENTS.md) for role routing.
 - Publication: [PR #5](https://github.com/ihabmmali/appi/pull/5), merge `18ffae9349b2d225b575cee6a276ea8dcd59143b`. Release/package run 36350783947, post-merge verification 36350856112 and Pages deployment 36350855315 passed.
 - Deployed ZIP downloaded and verified: SHA-256 `77dd83244e01bae295d3118073d28b13b2a6d634576cf4ffae84fde14a49b0b1`. Install page: https://ihabmmali.github.io/appi/ .
 - Current usable playback fallback: **0.7.12**. Historical fallback **0.7.8** remains available. 0.7.15/0.7.16 archives are retained for release evidence; they are not additional index entries.
-- **Target-device acceptance is pending.** 0.7.16 Buffered Look Ahead failed device acceptance. 0.7.17 repairs startup/seek/retry lifecycle and adds settings/UI; automated tests and local real-decoder checks do not establish that the user's provider/Fire TV symptoms are fixed.
+- **0.7.17 failed target-device startup acceptance:** Kodi crashes almost immediately after installation, without an error dialog. The empty language-list option is a concrete native settings-parser crash trigger; LANG-2 is reopened for the scoped 0.7.18 hotfix. **Other target-device acceptance is pending.** 0.7.16 Buffered Look Ahead failed device acceptance. 0.7.17 repairs startup/seek/retry lifecycle and adds settings/UI; automated tests and local real-decoder checks do not establish that the user's provider/Fire TV symptoms are fixed.
 
 ## Current work
+
+- **0.7.18 hotfix candidate:** LANG-2 native-settings crash correction is implemented; 76 local tests pass. Publish and verify the scoped correction, then confirm Kodi launches on the target device.
 
 - Shipped committed scope: HLS-7, HLS-6, LANG-2, UI-2 and UI-3. All remain review/partial until required device observations are recorded.
 - Buffered mode has cancellable preparation, explicit bounded failures, session-token cleanup, stable playlists, range/media-extension support, configurable MB capacity, highest/prompt quality and normal/debug buffer indicators. Modes 0–2 retain their previous configuration paths.

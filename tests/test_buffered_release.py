@@ -238,7 +238,7 @@ class ReleaseSettingsTests(unittest.TestCase):
         m.migrate_preferences(addon)
         self.assertEqual(m.preference(addon,'audio'),'en')
         self.assertEqual(m.preference(addon,'subtitle'),'fr')
-        values['preferred_audio_language_choice']=''
+        values['preferred_audio_language_choice']='none'
         m.migrate_preferences(addon)
         self.assertEqual(m.preference(addon,'audio'),'')
         self.assertEqual(m.preference(addon,'subtitle'),'fr')
@@ -254,7 +254,8 @@ class ReleaseSettingsTests(unittest.TestCase):
             setting=root.find('.//setting[@id="preferred_'+kind+'_language_choice"]')
             self.assertEqual(setting.find('control').get('type'),'list')
             options=[e.text or '' for e in setting.findall('constraints/options/option')]
-            self.assertIn('', options)
+            self.assertIn('none', options)
+            self.assertNotIn('', options)
             self.assertIn('en',options)
             self.assertIn('ar',options)
             self.assertGreater(len(options),20)

@@ -59,3 +59,7 @@ Startup needs 12 playable seconds or the available end-of-stream/capacity reserv
 The optional `buffered_ui.py` label uses Kodi fullscreen video window 12005 and reads the live debug toggle without changing fetch behavior. Ordinary buffering text also uses Kodi's Player.Caching condition. Reported seconds are contiguous cached segment durations ahead of Kodi's proxy read cursor, not Kodi's private decoder queue or a guarantee of remaining playback time. The startup progress dialog is independent of diagnostics.
 
 Language choices use new canonical-code settings with a one-time migration from hidden legacy text settings, preserving explicit No preference after migration. About reads `Addon.getAddonInfo`; the manifest references `resources/icon.png`, identical to the approved source artwork.
+
+## Settings parser safety — 0.7.18
+
+Kodi's native string-option parser expects a text child in every static option. No preference therefore uses the non-empty `none` sentinel (normalized to no preference in Python), never an empty XML option. Source/ZIP checks validate option text and listed defaults. The 0.7.17 empty options are retained only in the archived regression fixture; that release failed startup acceptance.

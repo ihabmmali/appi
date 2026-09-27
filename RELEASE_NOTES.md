@@ -2,7 +2,20 @@
 
 Each entry records the package shipped, its main user-visible changes, and verification at release time. For the current baseline and next tasks read [PROJECT_STATE.md](PROJECT_STATE.md) and [KNOWN_ISSUES.md](KNOWN_ISSUES.md); the [CHANGELOG.md](CHANGELOG.md) is the implemented feature history.
 
+## 0.7.18 — candidate, 2026-09-27
+
+- Scoped crash hotfix: reopened LANG-2. Base `a0b9eacb23b4816df7ac4c0f60e9c51fb7d1eb79`; branch `release/0.7.18`.
+- Fix the 0.7.17 Kodi startup crash trigger: the No preference language options now have a non-empty `none` value, avoiding a null text child in Kodi's native settings parser.
+- Preserve legacy language preferences and explicit No preference, including recovery from empty 0.7.17 values. Playback code is unchanged.
+- Add checks against the actual archived 0.7.17 settings and validate every list option/default in both source and ZIP. Target Fire TV recovery still needs confirmation.
+
+- Local verification: 76 tests passed, including all prior regressions plus native-settings structural safety, archived 0.7.17 reproduction fixture and language migration across fresh/legacy/empty/explicit-None cases. This is self-review; no target-device crash dump or recovery observation is available yet.
+- Candidate ZIP SHA-256: `0a0a739e8f8eca85c0268d46027c060b57b185b2b8ec4464b3ebb72289181447`. Package gate, integration and deployed artifact verification pending.
+- The 0.7.17 archive is retained for regression evidence, not recommended installation. 0.7.12 remains the usable fallback.
+
 ## 0.7.17 — 2026-09-27
+
+**Failed device acceptance:** user reports Kodi crashes immediately after installation and on subsequent Kodi launches, without entering Appi. Empty language-list option text is a native settings-parser crash trigger; superseded by the 0.7.18 correction.
 
 - Committed scope: HLS-7, HLS-6, LANG-2, UI-2, UI-3. Base: `6d36d9a52733fbe6f3ded3ba5ee335cb779883e3`; candidate branch: `release/0.7.17`.
 - Buffered Look Ahead now prepares asynchronously with cancellable progress before Kodi receives the URL. Recovery waits occur for missing media, and failure/cancel/retry/replacement cleanup is isolated by session token. VOD playlists remain stable across repeated access; opaque proxy URLs keep media extensions and byte-range requests are honored.

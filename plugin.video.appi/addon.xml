@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <addon id="plugin.video.appi"
        name="Appi"
-       version="0.7.17"
+       version="0.7.18"
        provider-name="Eyecon">
   <requires>
     <import addon="xbmc.python" version="3.0.1"/>
@@ -19,6 +19,6 @@
     <platform>all</platform>
     <license>GPL-3.0-or-later</license>
     <source>https://github.com/ihabmmali/appi</source>
-    <news>0.7.17 - Repair buffered startup, seeking and retry cleanup; add configurable buffer size, quality selection and status display, language lists, About and Appi artwork.</news>
+    <news>0.7.18 - Fix the 0.7.17 native Kodi settings crash caused by empty language-choice values; preserve language preferences and playback behavior.</news>
   </extension>
 </addon>
