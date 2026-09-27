@@ -1,9 +1,9 @@
 ---
 id: HLS-5
 role: implementation
-status: active
+status: review
 delivery: unreleased
-verification: pending
+verification: partial
 owner: ChatGPT release worker 2026-09-27
 base_commit: 9dfd6a2802dc03bf5acd1d4806a76185849eac72
 artifact: none
@@ -66,5 +66,13 @@ On 2026-09-27 the user explicitly instructed the release worker to inspect the 0
 ## Evidence
 The 0.7.15 source audit above establishes that Kodi Default is already native and therefore requires no corrective change. HLS-5 begins from the published 0.7.15 `main` head `9dfd6a2802dc03bf5acd1d4806a76185849eac72`.
 
+Implementation/review evidence on 2026-09-27:
+- Self-review was performed against release-artifact commit `6e71ad93276c993724a5973cb8814e603653f4d0` and the published 0.7.15 base. The mode 0 branch still returns before any InputStream Adaptive property assignment; mode 1 still uses the original master URL plus `ask-quality`; mode 2 still uses `adaptive` plus the optional bandwidth ceiling. Mode 3 is the only branch that requests and substitutes the localhost buffered URL.
+- During pre-package self-review an `EXT-X-MAP` byte-range defect was found: the proxy already stored the exact requested byte slice while the rewritten tag could still retain `BYTERANGE`. Commit `16dffd73fbe84599b4eaf733ea4fe1a03030f890` corrected the double-range risk and `ebee56cc004e90726c4842fea3e7bd5281209ade` added regression coverage before the release gate.
+- The first package attempt, run 36296858373, was blocked by test-harness module pollution in the new buffered test; it did not identify a production playback failure. Commit `56e0c2477c7227f2af9834cb995ef67d7211af5b` isolates the test modules.
+- Release/package run 36296897848 passed: 54 unit/smoke tests, workflow tracker validation, deterministic repository build, ZIP/hash/index inspection, and the packaging job all succeeded.
+- The successful gate produced branch artifact commit `6e71ad93276c993724a5973cb8814e603653f4d0`; `plugin.video.appi-0.7.16.zip` SHA-256 is `ecb310e42b016cf968b27e2af4d25ed6f1b106b888a9c0da387bde4bde595138`.
+- Automated tests explicitly cover all four HLS branches and buffered startup reserve, depletion/recovery, seek re-centering, cleanup, master/rendition/key/map rewriting, discontinuities, byte ranges, representation metadata and sanitized proxy telemetry.
+
 ## Outcome and next action
-Implement the isolated service-backed buffered path, self-review it against the acceptance criteria, run the release/package gate, and publish only if the existing three playback-mode regressions and new buffered-mode tests pass.
+Implementation and automated release verification pass. HLS-5 remains in review/partial verification because only target-device playback can establish whether the 30-second look-ahead eliminates the reported provider stalls. Publication is authorized by the user and may proceed; after integration, record the published commit and post-merge/Pages evidence without treating publication as target-device acceptance.

@@ -1,6 +1,6 @@
 # Next Appi release
 
-Planning status: committed / active implementation. Version: 0.7.16. Current baseline and fallback: [PROJECT_STATE.md](PROJECT_STATE.md).
+Planning status: release candidate / automated gate passed. Version: 0.7.16. Current baseline and fallback: [PROJECT_STATE.md](PROJECT_STATE.md).
 
 Version 0.7.15 was published on 2026-09-26. HLS-5 is explicitly committed as the sole new 0.7.16 release scope: add an isolated disk-backed Buffered Look Ahead Playback mode while preserving the three existing 0.7.15 HLS modes unchanged. 0.7.12 remains the usable manual-playback fallback until HLS-4 device acceptance is recorded.
 
@@ -22,6 +22,9 @@ Version 0.7.15 was published on 2026-09-26. HLS-5 is explicitly committed as the
 6. Copy shipped task IDs and scope changes into RELEASE_NOTES, then reset this planning file for the next cycle.
 
 ## Scope decisions
+
+2026-09-27: 0.7.16 release/package run 36296897848 passed after correcting isolated test-harness pollution caught by the first gate attempt. All four playback branches are covered; the deterministic 0.7.16 artifact was generated at commit `6e71ad93276c993724a5973cb8814e603653f4d0`. Proceed to authorized integration/publication while retaining target-device verification as HLS-5's remaining review item.
+
 
 2026-09-27: user explicitly committed HLS-5 for the next release and authorized implementation, integration and publication. Source audit of 0.7.15 confirmed Native Kodi automatic does not set InputStream Adaptive properties, so modes 0–2 are frozen for compatibility and Buffered Look Ahead Playback will be a new isolated mode 3. Version 0.7.16 is assigned to this release.
 
@@ -61,4 +64,4 @@ Version 0.7.15 was published on 2026-09-26. HLS-5 is explicitly committed as the
 
 ## Readiness
 
-0.7.16 is committed and active with HLS-5 as the sole new release blocker. The implementation must preserve the three existing 0.7.15 HLS modes and add a separate disk-backed buffered proxy path. Publication is authorized after the documented automated regression/package gate passes; target-device buffering effectiveness remains a post-publication verification item.
+0.7.16 release/package run 36296897848 passed the full 54-test unit/smoke suite, workflow validation, deterministic build, artifact inspection and packaging. The generated branch artifact commit is `6e71ad93276c993724a5973cb8814e603653f4d0`; ZIP SHA-256 is `ecb310e42b016cf968b27e2af4d25ed6f1b106b888a9c0da387bde4bde595138`. HLS-5 is in review/partial verification: automated acceptance passed and publication is authorized, while target-device buffering effectiveness remains a post-publication verification item.
