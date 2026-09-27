@@ -149,6 +149,7 @@ def prepare_playback(catalog, ref, media_url, stream_kind, engine, options=None)
     now = time.time()
     session_id = hashlib.sha1('{}|{}|{}|{}'.format(now, catalog, ref, media_url).encode('utf-8')).hexdigest()[:16]
     options = dict(options or {})
+    buffered_proxy = bool(options.get('buffered_proxy'))
     payload = {
         'schema': 2,
         'session_id': session_id,
@@ -174,8 +175,9 @@ def prepare_playback(catalog, ref, media_url, stream_kind, engine, options=None)
             'audio_language_info_label': True,
             'subtitle_language_info_label': True,
             'cache_read_ahead_info_labels': 'runtime-dependent',
-            'per_segment_http_timing': False,
-            'playlist_refresh_history': False,
+            'per_segment_http_timing': buffered_proxy,
+            'playlist_refresh_history': buffered_proxy,
+            'proxy_buffer_depth': buffered_proxy,
             'inputstream_buffer_level': False,
             'representation_bitrate_history': 'derived-from-info-labels',
             'raw_authenticated_url': False,
@@ -188,8 +190,21 @@ def prepare_playback(catalog, ref, media_url, stream_kind, engine, options=None)
             'video_resolution': 'Kodi InfoLabel VideoPlayer.VideoResolution',
             'video_bitrate': 'Kodi InfoLabel VideoPlayer.VideoBitrate',
             'cache_read_ahead': 'Kodi Player.Cache* InfoLabels when exposed',
-            'per_segment_http_timing': 'not exposed by supported Kodi Python player API',
-            'playlist_refresh_history': 'not exposed by supported Kodi Python player API',
+            'per_segment_http_timing': (
+                'Appi Buffered Look Ahead proxy request/download measurements'
+                if buffered_proxy
+                else 'not exposed by supported Kodi Python player API'
+            ),
+            'playlist_refresh_history': (
+                'Appi Buffered Look Ahead proxy playlist requests'
+                if buffered_proxy
+                else 'not exposed by supported Kodi Python player API'
+            ),
+            'proxy_buffer_depth': (
+                'Appi Buffered Look Ahead disk queue'
+                if buffered_proxy
+                else 'not applicable'
+            ),
             'inputstream_exact_buffer_queue': 'not exposed by supported Kodi Python player API',
             'representation_history': 'derived from sampled Kodi resolution/bitrate InfoLabels',
         },
@@ -210,6 +225,9 @@ def prepare_playback(catalog, ref, media_url, stream_kind, engine, options=None)
         'manual_variant_bandwidth': options.get('manual_variant_bandwidth'),
         'manual_variant_peak_bandwidth': options.get('manual_variant_peak_bandwidth'),
         'manual_variant_codecs': options.get('manual_variant_codecs'),
+        'buffered_proxy': buffered_proxy,
+        'buffer_target_seconds': options.get('buffer_target_seconds'),
+        'buffer_startup_seconds': options.get('buffer_startup_seconds'),
     })
     _write(ACTIVE, payload)
     return session_id
