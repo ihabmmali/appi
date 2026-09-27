@@ -2,6 +2,16 @@
 
 Each entry records the package shipped, its main user-visible changes, and verification at release time. For the current baseline and next tasks read [PROJECT_STATE.md](PROJECT_STATE.md) and [KNOWN_ISSUES.md](KNOWN_ISSUES.md); the [CHANGELOG.md](CHANGELOG.md) is the implemented feature history.
 
+## 0.7.16 — release candidate, 2026-09-27
+
+- Included committed task: HLS-5.
+- Pre-change source audit of the published 0.7.15 baseline confirmed that Native Kodi automatic returns before Appi assigns any `inputstream` property; no correction to that mode was required.
+- Modes 0–2 remain the same playback paths: native Kodi on the original provider URL, InputStream Adaptive `ask-quality` on the original master URL, and InputStream Adaptive `adaptive` with its optional bitrate ceiling.
+- New mode 3, **Buffered Look Ahead Playback**, is isolated behind a localhost HLS proxy owned by Appi's persistent service. It uses a temporary disk-backed rolling buffer with a 30-second target, 18-second startup reserve and 15-second recovery reserve and does not transcode media.
+- The proxy rewrites variant and rendition playlists plus key/map URIs to opaque localhost resources, preserves discontinuities and representation metadata, handles byte ranges without double-ranging local resources, re-centres after seeks, and removes temporary session data on stop/error/abort.
+- DIAG-2 now receives direct buffered-mode segment latency/throughput, actual buffered seconds, queued/downloaded segment counts, depletion/recovery and observed representation information; upstream authenticated URLs remain excluded.
+- Release publication remains conditional on the repository's full automated release/package gate. Target-device verification remains required to determine whether 30+ seconds of actual buffered media eliminates the reported intermittent stalls.
+
 ## 0.7.15 — 2026-09-26
 
 - Included committed task: HLS-4.

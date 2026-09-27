@@ -18,6 +18,15 @@ Appi is a Kodi video add-on for user-configured movie and TV-show M3U catalogues
 
 Add `https://ihabmmali.github.io/appi/` in Kodi File Manager, then install the current `plugin.video.appi-<version>.zip`.
 
+## 0.7.16
+
+- Add **Buffered Look Ahead Playback** as a fourth HLS choice. It runs through Appi's isolated localhost HLS proxy, stores prefetched media in Kodi's temporary storage and targets about 30 seconds of playable media ahead of Kodi.
+- Wait for about 18 seconds of startup reserve before releasing the selected media playlist; after depletion, rebuild a larger reserve rather than resuming as soon as only one segment arrives.
+- Proxy HLS variants, audio/subtitle rendition playlists, encryption keys and initialization maps while preserving discontinuities and stream metadata. Media is passed through unchanged; Appi does not transcode or re-encode it.
+- Keep the three 0.7.15 modes functionally unchanged: Native Kodi remains truly native, manual quality remains InputStream Adaptive `ask-quality` on the original master URL, and adaptive bitrate remains InputStream Adaptive `adaptive` with its optional ceiling.
+- Add buffered-path diagnostics for actual segment download latency/throughput, buffered seconds, queued/downloaded segment counts, depletion/recovery and selected representation.
+- Automated verification covers the four playback branches and deterministic proxy behavior. Real Fire TV/provider testing remains required to establish whether the deeper buffer removes the intermittent stalls.
+
 ## 0.7.15
 
 - Restore manual HLS selection to the working 0.7.12 mechanism after the Appi-side chooser introduced in 0.7.13 remained broken in 0.7.14.
