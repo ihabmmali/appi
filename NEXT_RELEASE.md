@@ -8,7 +8,7 @@ Version 0.7.16 was published on 2026-09-27. No new release scope is committed. H
 
 | Task | Selection | Priority | Reason |
 | --- | --- | --- | --- |
-| [HLS-6](docs/tasks/HLS-6.md) | candidate | requested playback improvement | Add user-configurable buffered storage size plus Highest available bitrate or Prompt for quality behavior |
+| [HLS-6](docs/tasks/HLS-6.md) | candidate | requested playback improvement | Add configurable buffered storage size, Highest available bitrate / Prompt for quality, and optional live buffer-state overlay |
 | [HLS-1](docs/tasks/HLS-1.md) | backlog | investigation | Use DIAG-2/HLS-5 target-device evidence to diagnose any repeated stalls that remain |
 | [UI-1](docs/tasks/UI-1.md) | backlog | investigation | Skin comparison needed |
 
@@ -22,6 +22,8 @@ Version 0.7.16 was published on 2026-09-27. No new release scope is committed. H
 6. Copy shipped task IDs and scope changes into RELEASE_NOTES, then reset this planning file for the next cycle.
 
 ## Scope decisions
+
+2026-09-27: HLS-6 expanded with an optional buffer-state debug overlay. The user requires a user-configurable visibility setting and considers a simple live text overlay sufficient, provided it shows the current buffer state. This remains part of the HLS-6 candidate and is not committed release scope yet.
 
 2026-09-27: HLS-6 quality requirements corrected by the user. Buffered Look Ahead should not have the previously inferred maximum-bitrate ceiling. It must provide user-configurable buffer size plus a choice between automatically using the highest available bitrate and prompting the user to select an available bitrate/resolution. The task remains a candidate because this request was logged but not explicitly committed to release scope.
 
