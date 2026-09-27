@@ -56,17 +56,17 @@ class RepositoryTests(unittest.TestCase):
             html,
         )
         self.assertIn(
-            'href="plugin.video.appi-0.7.13.zip">plugin.video.appi-0.7.13.zip</a>',
+            'href="plugin.video.appi-0.7.14.zip">plugin.video.appi-0.7.14.zip</a>',
             html,
         )
         self.assertIn(
             'href="plugin.video.appi-0.7.8.zip">plugin.video.appi-0.7.8.zip</a>',
             html,
         )
-        self.assertLess(html.index('plugin.video.appi-0.7.13.zip'), html.index('plugin.video.appi-0.7.12.zip'))
+        self.assertLess(html.index('plugin.video.appi-0.7.14.zip'), html.index('plugin.video.appi-0.7.12.zip'))
         self.assertLess(html.index('plugin.video.appi-0.7.12.zip'), html.index('plugin.video.appi-0.7.8.zip'))
         self.assertEqual(html.count('plugin.video.appi-'), 8)
-        for version in ('0.7.11', '0.7.10', '0.7.9', '0.7.7', '0.7.6', '0.7.5', '0.7.4', '0.7.3', '0.7.2', '0.7.0', '0.6.3'):
+        for version in ('0.7.13', '0.7.11', '0.7.10', '0.7.9', '0.7.7', '0.7.6', '0.7.5', '0.7.4', '0.7.3', '0.7.2', '0.7.0', '0.6.3'):
             self.assertNotIn('plugin.video.appi-{}.zip</a>'.format(version), html)
         self.assertNotIn('plugin.video.appi-0.8.0.zip</a>', html)
         self.assertNotIn('plugin.video.appi-0.7.1.zip</a>', html)
