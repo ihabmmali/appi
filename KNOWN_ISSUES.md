@@ -10,11 +10,11 @@ Updated: 2026-09-26. Each linked task is the canonical requirements/status/evide
 | REFRESH-2 | review | review | [Optional automatic catalogue refresh](docs/tasks/REFRESH-2.md) |
 | LANG-1 | review | review | [Default audio and subtitle languages](docs/tasks/LANG-1.md) |
 | DIAG-1 | review | review | [Export bounded playback diagnostics](docs/tasks/DIAG-1.md) |
-| DIAG-2 | ready | research | [Causal HLS playback telemetry](docs/tasks/DIAG-2.md) |
+| DIAG-2 | review | review | [Causal HLS playback telemetry](docs/tasks/DIAG-2.md) |
 | HLS-1 | proposed | research | [Investigate repeated HLS stalls](docs/tasks/HLS-1.md) |
 | HLS-2 | review | review | [Explicit adaptive bitrate HLS mode](docs/tasks/HLS-2.md) |
 | HLS-3 | review | review | [Cancel quality selection without starting playback](docs/tasks/HLS-3.md) |
-| HLS-4 | ready | implementation | [Repair 0.7.13 manual HLS playback regression](docs/tasks/HLS-4.md) |
+| HLS-4 | review | review | [Repair 0.7.13 manual HLS playback regression](docs/tasks/HLS-4.md) |
 | SUB-1 | review | review | [Restore downloaded subtitle persistence across playback sessions](docs/tasks/SUB-1.md) |
 | UI-1 | proposed | research | [Playback Program Settings visibility](docs/tasks/UI-1.md) |
 | FRAMEWORK-1 | done | implementation | [Lifecycle pilot setup](docs/tasks/FRAMEWORK-1.md) |
