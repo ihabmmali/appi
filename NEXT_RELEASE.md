@@ -8,7 +8,7 @@ Version 0.7.16 was published on 2026-09-27. No new release scope is committed. H
 
 | Task | Selection | Priority | Reason |
 | --- | --- | --- | --- |
-| [HLS-6](docs/tasks/HLS-6.md) | candidate | requested playback improvement | Make Buffered Look Ahead capacity user-configurable and add maximum-bitrate / selectable rendition controls for multi-variant HLS |
+| [HLS-6](docs/tasks/HLS-6.md) | candidate | requested playback improvement | Add user-configurable buffered storage size plus Highest available bitrate or Prompt for quality behavior |
 | [HLS-1](docs/tasks/HLS-1.md) | backlog | investigation | Use DIAG-2/HLS-5 target-device evidence to diagnose any repeated stalls that remain |
 | [UI-1](docs/tasks/UI-1.md) | backlog | investigation | Skin comparison needed |
 
@@ -23,7 +23,7 @@ Version 0.7.16 was published on 2026-09-27. No new release scope is committed. H
 
 ## Scope decisions
 
-2026-09-27: HLS-6 expanded to include Buffered Look Ahead quality control. In addition to configurable storage/look-ahead depth, the user requires a highest-bitrate limit or explicit bitrate/resolution selection when a multi-variant HLS master exposes those choices. The task remains a candidate because this request was logged but not explicitly committed to release scope.
+2026-09-27: HLS-6 quality requirements corrected by the user. Buffered Look Ahead should not have the previously inferred maximum-bitrate ceiling. It must provide user-configurable buffer size plus a choice between automatically using the highest available bitrate and prompting the user to select an available bitrate/resolution. The task remains a candidate because this request was logged but not explicitly committed to release scope.
 
 2026-09-27: HLS-6 added as a candidate after the user required Buffered Look Ahead Playback to have user-configurable buffer capacity, at minimum in storage units. The released 0.7.16 path has a fixed ~30-second target and hardcoded 384 MB disk ceiling, so the follow-up must make the configured storage value affect actual prefetch depth rather than merely exposing the existing safety cap. This request was logged but not explicitly committed to release scope.
 

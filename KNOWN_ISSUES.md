@@ -16,7 +16,7 @@ Updated: 2026-09-27. Each linked task is the canonical requirements/status/evide
 | HLS-3 | review | review | [Cancel quality selection without starting playback](docs/tasks/HLS-3.md) |
 | HLS-4 | review | review | [Repair 0.7.13/0.7.14 manual HLS playback regression](docs/tasks/HLS-4.md) |
 | HLS-5 | review | implementation | [Buffered Look Ahead Playback](docs/tasks/HLS-5.md) |
-| HLS-6 | ready | implementation | [Configurable Buffered Look Ahead capacity and quality](docs/tasks/HLS-6.md) |
+| HLS-6 | ready | implementation | [Configurable Buffered Look Ahead buffer and quality choice](docs/tasks/HLS-6.md) |
 | SUB-1 | review | review | [Restore downloaded subtitle persistence across playback sessions](docs/tasks/SUB-1.md) |
 | UI-1 | proposed | research | [Playback Program Settings visibility](docs/tasks/UI-1.md) |
 | FRAMEWORK-1 | done | implementation | [Lifecycle pilot setup](docs/tasks/FRAMEWORK-1.md) |
