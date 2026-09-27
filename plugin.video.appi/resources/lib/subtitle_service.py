@@ -147,8 +147,7 @@ def run():
     monitor = xbmc.Monitor()
     buffered_manager = buffered_hls.BufferedHlsManager()
     player = AppiPlayer(buffered_manager)
-    overlay = BufferOverlay()
-    languages.migrate_preferences(ADDON)
+    overlay = None
     next_metadata_poll = 0.0
     next_diagnostic_sample = 0.0
     next_auto_refresh_check = 0.0
@@ -165,8 +164,12 @@ def run():
             status = session.status() if session else None
             if status and playing:
                 status['recovering'] = status['recovering'] or xbmc.getCondVisibility('Player.Caching')
-            overlay.update(status if session and session.ready else None,
-                           _enabled('buffered_debug_overlay', False), playing)
+            if session and session.ready:
+                if overlay is None:
+                    overlay = BufferOverlay()
+                overlay.update(status, _enabled('buffered_debug_overlay', False), playing)
+            elif overlay is not None:
+                overlay.close()
             if session and playing:
                 diagnostics.event('buffer_status', **{k: v for k, v in status.items()
                                   if k in {'cached_ahead_bytes', 'buffered_seconds',
@@ -226,5 +229,6 @@ def run():
             next_metadata_poll = now + 2.0
         if monitor.waitForAbort(2.0):
             break
-    overlay.close()
+    if overlay is not None:
+        overlay.close()
     buffered_manager.shutdown(diagnostics.event)
