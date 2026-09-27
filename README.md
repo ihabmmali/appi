@@ -18,6 +18,13 @@ Appi is a Kodi video add-on for user-configured movie and TV-show M3U catalogues
 
 Add `https://ihabmmali.github.io/appi/` in Kodi File Manager, then install the current `plugin.video.appi-<version>.zip`.
 
+## 0.7.15
+
+- Restore manual HLS selection to the working 0.7.12 mechanism after the Appi-side chooser introduced in 0.7.13 remained broken in 0.7.14.
+- Keep the original HLS master URL intact and let InputStream Adaptive display/select the rendition through `ask-quality`; Appi no longer resolves and substitutes a child playlist for manual mode.
+- Preserve Native Kodi automatic and Adaptive bitrate modes plus the current diagnostics/subtitle/history behavior.
+- Keep 0.7.12 directly available until 0.7.15 is confirmed on the target Fire TV/provider stream.
+
 ## 0.7.14
 
 - Repair manual fixed-quality HLS child-URL resolution so same-origin relative renditions inherit an authenticated master URL query when the child supplies no query, while preserving Kodi URL request options.

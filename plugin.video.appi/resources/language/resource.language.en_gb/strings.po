@@ -110,7 +110,7 @@ msgid "HLS quality selection"
 msgstr "HLS quality selection"
 
 msgctxt "#32311"
-msgid "Native leaves HLS handling to Kodi. Manual fixed quality uses an Appi chooser before playback. Adaptive bitrate explicitly uses InputStream Adaptive."
+msgid "Native leaves HLS handling to Kodi. Ask quality uses the original HLS master URL and InputStream Adaptive, matching the proven 0.7.12 playback path. Adaptive bitrate uses InputStream Adaptive automatically."
 msgstr "Native leaves HLS handling to Kodi. Manual fixed quality uses an Appi chooser before playback. Adaptive bitrate explicitly uses InputStream Adaptive."
 
 msgctxt "#32312"
@@ -126,7 +126,7 @@ msgid "Native Kodi automatic"
 msgstr "Native Kodi automatic"
 
 msgctxt "#32321"
-msgid "Manual fixed quality"
+msgid "Ask quality before playback (InputStream Adaptive)"
 msgstr "Manual fixed quality"
 
 msgctxt "#32322"

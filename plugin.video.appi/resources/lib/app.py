@@ -14,7 +14,6 @@ import xbmcplugin
 from . import cache
 from . import diagnostics
 from . import favorites
-from . import hls
 from . import kodi_cache
 from . import kodi_status
 from . import metadata
@@ -1450,32 +1449,6 @@ def _effective_hls_mode(preferences=None):
         return 1
 
 
-def _manual_hls_selection(media_url):
-    try:
-        manifest = fetch_text(media_url, timeout=min(20, _int_setting('request_timeout', 20)))
-        variants = hls.parse_master(manifest, media_url)
-    except Exception as exc:
-        xbmc.log('Appi could not read HLS master playlist: {}'.format(exc), xbmc.LOGERROR)
-        xbmcgui.Dialog().ok(
-            'Appi HLS quality',
-            'Could not read the HLS master playlist. Playback was not started.\n\n{}: {}'.format(
-                type(exc).__name__, exc
-            ),
-        )
-        return None, None
-    if not variants:
-        return media_url, None
-    choice = _dialog_select(
-        'Select HLS quality',
-        [hls.variant_label(variant) for variant in variants],
-        0,
-    )
-    if choice < 0:
-        return None, None
-    selected = variants[choice]
-    return selected['url'], selected
-
-
 def _configure_hls(list_item, preferences=None):
     preferences = preferences or {}
     list_item.setMimeType('application/vnd.apple.mpegurl')
@@ -1483,16 +1456,22 @@ def _configure_hls(list_item, preferences=None):
     mode = _effective_hls_mode(preferences)
     if mode == 0:
         return 'native-kodi'
-    if mode == 1:
-        # Appi resolves a single rendition before playback, so no ISA chooser
-        # is needed and Cancel can abort before setResolvedUrl().
-        return 'manual-fixed'
 
     if not xbmc.getCondVisibility('System.HasAddon(inputstream.adaptive)'):
         _notify('InputStream Adaptive is not installed; using Kodi HLS playback', error=True)
         return 'native-fallback'
 
+    # Restore the proven 0.7.12 playback architecture: keep ListItem.path on
+    # the provider's original HLS master URL and let InputStream Adaptive own
+    # rendition discovery, selection and child-playlist resolution.
     list_item.setProperty('inputstream', 'inputstream.adaptive')
+    if mode == 1:
+        list_item.setProperty(
+            'inputstream.adaptive.stream_selection_type',
+            'ask-quality',
+        )
+        return 'inputstream.adaptive-ask-quality'
+
     list_item.setProperty('inputstream.adaptive.stream_selection_type', 'adaptive')
     max_kbps = preferences.get('hls_max_kbps')
     if max_kbps is None:
@@ -1551,14 +1530,7 @@ def play_ref(params):
 
     preferences = playback_prefs.effective(catalog_name, ref, key or '')
     stream = _probe_kind(catalog_name, ref, media_url)
-    play_url = media_url
-    manual_variant = None
     hls_mode = _effective_hls_mode(preferences)
-    if stream.get('kind') == 'hls' and hls_mode == 1:
-        play_url, manual_variant = _manual_hls_selection(media_url)
-        if not play_url:
-            xbmcplugin.setResolvedUrl(HANDLE, False, xbmcgui.ListItem())
-            return
 
     lookup = _metadata_payload(item)
     enriched = metadata.get(lookup)
@@ -1567,7 +1539,7 @@ def play_ref(params):
     list_item = xbmcgui.ListItem(
         label=_episode_label(item, enriched) if item.get('kind') == 'episode'
         else item.get('display_title') or item.get('title') or '',
-        path=play_url,
+        path=media_url,
         offscreen=True,
     )
     _set_playback_metadata(list_item, item, enriched)
@@ -1588,13 +1560,14 @@ def play_ref(params):
         {
             'hls_mode': hls_mode if stream.get('kind') == 'hls' else None,
             'hls_max_kbps': preferences.get('hls_max_kbps', _int_setting('hls_max_bitrate_kbps', 8000)),
-            'manual_variant_selected': bool(manual_variant),
-            'manual_variant_identity': (manual_variant or {}).get('identity'),
-            'manual_variant_width': (manual_variant or {}).get('width'),
-            'manual_variant_height': (manual_variant or {}).get('height'),
-            'manual_variant_bandwidth': (manual_variant or {}).get('bandwidth'),
-            'manual_variant_peak_bandwidth': (manual_variant or {}).get('peak_bandwidth'),
-            'manual_variant_codecs': (manual_variant or {}).get('codecs'),
+            'manual_selection_owner': (
+                'inputstream.adaptive'
+                if stream.get('kind') == 'hls' and hls_mode == 1
+                else None
+            ),
+            'manual_master_url_preserved': bool(
+                stream.get('kind') == 'hls' and hls_mode == 1
+            ),
         },
     )
 
@@ -1963,7 +1936,7 @@ def configure_playback(params):
     hls_choices = [
         'Use global HLS setting',
         'Native Kodi automatic',
-        'Manual fixed quality',
+        'Ask quality before playback (InputStream Adaptive)',
         'Adaptive bitrate (InputStream Adaptive)',
     ]
     hls_preselect = 0 if current_hls is None else min(3, max(1, int(current_hls) + 1))
