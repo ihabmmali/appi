@@ -1,6 +1,6 @@
 # Appi architecture
 
-Updated for the 0.7.14 repair/diagnostics release candidate (2026-09-26). Source describes implemented behavior; accepted requirements and decisions describe intended behavior.
+Updated for the 0.7.15 HLS rollback-style repair candidate (2026-09-26). Source describes implemented behavior; accepted requirements and decisions describe intended behavior.
 
 ## Project goals and binding rules
 
@@ -25,7 +25,7 @@ These goals bind the portable [lifecycle](LIFECYCLE.md) to Appi. Accepted change
 | Playback state | `resources/lib/kodi_status.py`, `playback_history.py`, `playback_prefs.py` | Kodi watched/resume integration, recent order and preferences |
 | Metadata service | `service.py`, `resources/lib/metadata.py` | Background TMDb Helper requests and bounded SQLite cache |
 | Other user data | `resources/lib/favorites.py`, `search_history.py`, `subtitle_store.py`, `subtitle_service.py`, `languages.py` | Favorites, search history, saved subtitles and playback language preferences |
-| HLS / diagnostics | `resources/lib/hls.py`, `diagnostics.py` | Master-playlist rendition parsing, explicit HLS mode support and bounded privacy-safe playback evidence |\n| External downloads | `resources/lib/downloads.py` | Produce scripts for an external FFmpeg watcher |
+| HLS / diagnostics | `resources/lib/app.py`, `resources/lib/hls.py`, `diagnostics.py` | HLS mode configuration, legacy parser utilities, and bounded privacy-safe playback evidence |\n| External downloads | `resources/lib/downloads.py` | Produce scripts for an external FFmpeg watcher |
 | Build and distribution | `tools/build_repository.py`, `repository.appi/`, `addons.xml`, `index.html` | Kodi ZIPs, checksums, repository feed and Pages install index |
 
 ## Catalogue flow
@@ -38,7 +38,7 @@ These goals bind the portable [lifecycle](LIFECYCLE.md) to Appi. Accepted change
 
 ## Playback and data ownership
 
-- Playback uses `app.py` for MP4 buffering and three distinct HLS modes: native Kodi handling, Appi-selected fixed rendition, and explicit InputStream Adaptive `adaptive` mode with an optional maximum bitrate ceiling. Manual rendition selection happens before playback is resolved, making Cancel an abort rather than a playback choice.
+- Playback uses `app.py` for MP4 buffering and three distinct HLS modes: native Kodi handling, InputStream Adaptive `ask-quality` manual selection, and InputStream Adaptive `adaptive` mode with an optional maximum bitrate ceiling. In 0.7.15 manual mode deliberately restores the 0.7.12 architecture: Appi keeps the original provider master URL on the ListItem and does not parse/substitute a child rendition before playback; Kodi/InputStream Adaptive owns rendition discovery, selection and child-playlist resolution.
 - As of 0.7.8, Kodi's native video database owns watched state and resume bookmarks. Appi's Recently Played cache records identity/order, not duplicate playback status.
 - Favorites, metadata and subtitle data have distinct storage. A catalogue refresh must preserve user data and should not silently clear favorites or Kodi playback status.
 - Preferred audio and internal-subtitle labels are normalized and applied once at AV start when a matching Kodi stream is exposed. Per-title subtitle modes and saved external subtitles take precedence over the global internal-subtitle preference.\n- Saved-subtitle capture normally waits for a stable temporary-file fingerprint; playback stop performs a final capture pass so a subtitle downloaded immediately before exit is not lost between polling intervals.\n- Optional diagnostics retain only a bounded number of sanitized sessions and events. Schema 2 records playback position, stall intervals, resolution/bitrate transitions and Kodi Player.Cache* InfoLabels when exposed, excludes raw authenticated URLs/credentials/subtitle contents, and explicitly records unsupported per-segment timing and exact InputStream Adaptive queue/representation internals rather than inferring them.\n- Optional automatic catalogue refresh is serialized by a profile lock, only launched by the service while video is idle, and uses bounded retry backoff after failures.
