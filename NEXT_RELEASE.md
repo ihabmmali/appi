@@ -10,7 +10,7 @@ Version 0.7.16 was published on 2026-09-27. No new release scope is committed. H
 | --- | --- | --- | --- |
 | [HLS-6](docs/tasks/HLS-6.md) | candidate | requested playback improvement | Add configurable buffered storage size, Highest available bitrate / Prompt for quality, and optional live buffer-state overlay |
 | [UI-2](docs/tasks/UI-2.md) | candidate | requested usability improvement | Add a simple About entry that reports the actually installed Appi version |
-| [UI-3](docs/tasks/UI-3.md) | candidate | requested branding improvement | Add user-supplied Appi icon artwork once the graphic is provided |
+| [UI-3](docs/tasks/UI-3.md) | candidate | requested branding improvement | Integrate the user-selected Appi icon now stored at `artwork/appi-icon-selected.png` |
 | [HLS-1](docs/tasks/HLS-1.md) | backlog | investigation | Use DIAG-2/HLS-5 target-device evidence to diagnose any repeated stalls that remain |
 | [UI-1](docs/tasks/UI-1.md) | backlog | investigation | Skin comparison needed |
 
@@ -25,7 +25,9 @@ Version 0.7.16 was published on 2026-09-27. No new release scope is committed. H
 
 ## Scope decisions
 
-2026-09-27: UI-2 and UI-3 added as candidates. UI-2 adds a settings About entry that reads the installed Appi version from runtime metadata. UI-3 tracks Kodi add-on icon artwork and depends on the user supplying the graphic. Neither request was explicitly committed to release scope.
+2026-09-27: UI-3 artwork dependency satisfied. The user selected the first generated Appi design and requested that it be stored in the repository for a future dev worker. The approved 512×512 PNG handoff asset is `artwork/appi-icon-selected.png`. UI-3 remains candidate scope; this request stores the artwork but does not explicitly commit UI-3 to the next release.
+
+2026-09-27: UI-2 and UI-3 added as candidates. UI-2 adds a settings About entry that reads the installed Appi version from runtime metadata. UI-3 tracks Kodi add-on icon artwork and originally depended on the user supplying the graphic. Neither request was explicitly committed to release scope.
 
 2026-09-27: HLS-6 expanded with an optional buffer-state debug overlay. The user requires a user-configurable visibility setting and considers a simple live text overlay sufficient, provided it shows the current buffer state. This remains part of the HLS-6 candidate and is not committed release scope yet.
 

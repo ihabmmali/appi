@@ -6,7 +6,7 @@ delivery: unreleased
 verification: pending
 owner: unassigned
 base_commit: unset
-artifact: none
+artifact: artwork/appi-icon-selected.png
 ---
 # UI-3 — Appi add-on artwork / icon
 
@@ -16,7 +16,7 @@ Give Appi proper graphical add-on artwork so Kodi can display a recognizable App
 ## Scope
 Integrate user-supplied artwork into the packaged Kodi add-on using Kodi-compatible asset paths and manifest metadata.
 
-The user will supply the graphic. Do not generate or substitute permanent artwork without that asset unless the user explicitly requests it.
+The user selected the first generated Appi design on 2026-09-27. The selected handoff asset is stored at `artwork/appi-icon-selected.png`. Do not substitute a different permanent design unless the user explicitly requests it.
 
 When the asset is supplied:
 - preserve the source artwork as appropriate for packaging;
@@ -39,7 +39,7 @@ A fanart/background asset is outside current scope unless the supplied graphics 
 Requested by the user on 2026-09-27. The user stated that Appi needs a graphical icon and that they will supply the graphics. This task is recorded for planning, but implementation depends on receipt of the artwork and is not committed release scope unless the user explicitly commits/includes it in the next release under AGENTS.md.
 
 ## Evidence
-The current `plugin.video.appi/addon.xml` contains add-on metadata but does not declare Appi artwork assets. No user-supplied artwork is present in this request.
+The current `plugin.video.appi/addon.xml` contains add-on metadata but does not declare Appi artwork assets. On 2026-09-27 the user selected the first generated Appi design; a 512×512 PNG handoff copy is now stored at `artwork/appi-icon-selected.png`. It is repository artwork only at this stage and has not yet been wired into the packaged add-on.
 
 ## Outcome and next action
-Wait for the user-supplied graphic, then integrate and package it according to Kodi add-on artwork conventions.
+Artwork dependency is satisfied. A future UI-3 implementation worker should use `artwork/appi-icon-selected.png` as the approved design, integrate it into the standard Kodi add-on artwork path/metadata, validate packaging, and preserve the design without unintended cropping or distortion.
