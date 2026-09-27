@@ -9,7 +9,8 @@ Each entry records the package shipped, its main user-visible changes, and verif
 - Source comparison against working 0.7.12 commit `a099e521cfa767bc8cdee9a72988dcd8a92b9c73` showed that 0.7.12 passed the original HLS master URL to InputStream Adaptive with `stream_selection_type=ask-quality`; Appi did not resolve/play a child rendition itself.
 - 0.7.15 restores that architecture: the original master URL remains the ListItem path and InputStream Adaptive owns rendition discovery, manual quality selection and child-playlist playback.
 - Native Kodi HLS, automatic adaptive mode, diagnostics, subtitles and playback history remain in place.
-- Automated release gate: pending.
+- Automated release/package gate: GitHub Actions run 36291375057 passed unit/smoke tests, workflow tracker validation, deterministic build, ZIP/hash/index inspection and packaging.
+- Candidate package SHA-256: `d8952fcd9b2a30dbcf4e113c28ec8f3ba316c44498218cbb437beaefd65f7bba`.
 - Target-device acceptance: pending. 0.7.12 remains the usable playback fallback until 0.7.15 manual selection is verified.
 
 ## 0.7.14 — 2026-09-26
