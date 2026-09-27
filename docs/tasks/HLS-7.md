@@ -1,11 +1,11 @@
 ---
 id: HLS-7
 role: implementation
-status: ready
+status: review
 delivery: unreleased
-verification: failed
-owner: unassigned
-base_commit: unset
+verification: partial
+owner: Codex release/0.7.17
+base_commit: 6d36d9a52733fbe6f3ded3ba5ee335cb779883e3
 artifact: none
 ---
 # HLS-7 — Stabilize Buffered Look Ahead startup, seeking and failure handling
@@ -42,6 +42,11 @@ Coordinate with HLS-6 so the simple startup/buffering indicator reflects filling
 Reported by the user on 2026-09-27 after testing 0.7.16. The user explicitly instructed that all tracked changes be committed for the next release. HLS-7 is committed release scope.
 
 ## Evidence
+
+2026-09-27 implementation/self-review (0.7.17 candidate): Source review found unbounded/stacked startup and recovery delays, repeated VOD playlist rebuilds, no HTTP range handling, and unconditional player-stop cleanup that could terminate a replacement session. Repair adds asynchronous startup preparation, explicit cancel/error responses, unique expiring control mailboxes, token-bound player cleanup, stable VOD playlists and segment identities, media URL extensions, HTTP range handling and bounded demand recovery. Tests exercise repeated failures then a good stream, replacement plus a stale stop, cancelled preparation plus a good retry, cached-segment immediate return, missing seek failure, repeated forward/backward seeks, and real TS/fMP4 decode/seek. Exact Fire TV symptoms were not reproduced on the user's device; these are code-level failure mechanisms and local verification, not a confirmed provider/device root cause.
+
+73 unit/smoke/integration tests passed with Python 3.12, including real FFmpeg MPEG-TS and fMP4 decode at start, forward seek and backward seek; workflow validation and diff whitespace checks passed. `_effective_hls_mode`, `_configure_hls` and `_configure_mp4` are AST-identical to base 6d36d9a52733fbe6f3ded3ba5ee335cb779883e3. This is self-review, not independent review.
+
 Observed on the target device:
 - very long startup on one stream;
 - unreliable fast-forward/seek;
@@ -50,4 +55,7 @@ Observed on the target device:
 - leaving Recently Played and re-entering it changed the same stream back to spinning/no playback.
 
 ## Outcome and next action
-Committed for the next release. Harden Buffered Look Ahead startup, seeking/re-centering, error propagation, repeated-attempt state reset, navigation/session lifecycle handling and cleanup, then verify it together with HLS-6.
+Implementation and automated self-review complete for the 0.7.17 candidate. Authorized integration/publication is next; target-device acceptance remains pending, so this task stays in review/partial verification. Retest the task's device/UI scenarios after installing 0.7.17; do not mark done from package availability alone.
+
+## Implementation session — 2026-09-27
+User authorized implementation, testing, integration and publication in this session. Base 6d36d9a52733fbe6f3ded3ba5ee335cb779883e3. One worker owns the scoped source/settings/tests and shared release records; no concurrent worker changes observed. Target 0.7.17. Modes 0–2 must remain unchanged.

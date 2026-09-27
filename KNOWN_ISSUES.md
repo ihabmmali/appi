@@ -9,7 +9,7 @@ Updated: 2026-09-27. Each linked task is the canonical requirements/status/evide
 | REFRESH-1 | review | review | [Fast leading-window catalogue refresh](docs/tasks/REFRESH-1.md) |
 | REFRESH-2 | review | review | [Optional automatic catalogue refresh](docs/tasks/REFRESH-2.md) |
 | LANG-1 | review | review | [Default audio and subtitle languages](docs/tasks/LANG-1.md) |
-| LANG-2 | ready | implementation | [Common-language selection lists for audio and subtitles](docs/tasks/LANG-2.md) |
+| LANG-2 | review | implementation | [Common-language selection lists for audio and subtitles](docs/tasks/LANG-2.md) |
 | DIAG-1 | review | review | [Export bounded playback diagnostics](docs/tasks/DIAG-1.md) |
 | DIAG-2 | review | review | [Causal HLS playback telemetry](docs/tasks/DIAG-2.md) |
 | HLS-1 | proposed | research | [Investigate repeated HLS stalls](docs/tasks/HLS-1.md) |
@@ -17,12 +17,12 @@ Updated: 2026-09-27. Each linked task is the canonical requirements/status/evide
 | HLS-3 | review | review | [Cancel quality selection without starting playback](docs/tasks/HLS-3.md) |
 | HLS-4 | review | review | [Repair 0.7.13/0.7.14 manual HLS playback regression](docs/tasks/HLS-4.md) |
 | HLS-5 | review | implementation | [Buffered Look Ahead Playback](docs/tasks/HLS-5.md) |
-| HLS-6 | ready | implementation | [Configurable Buffered Look Ahead buffer, quality choice and debug overlay](docs/tasks/HLS-6.md) |
-| HLS-7 | ready | implementation | [Stabilize Buffered Look Ahead startup, seeking and failure handling](docs/tasks/HLS-7.md) |
+| HLS-6 | review | implementation | [Configurable Buffered Look Ahead buffer, quality choice and debug overlay](docs/tasks/HLS-6.md) |
+| HLS-7 | review | implementation | [Stabilize Buffered Look Ahead startup, seeking and failure handling](docs/tasks/HLS-7.md) |
 | SUB-1 | review | review | [Restore downloaded subtitle persistence across playback sessions](docs/tasks/SUB-1.md) |
 | UI-1 | proposed | research | [Playback Program Settings visibility](docs/tasks/UI-1.md) |
-| UI-2 | ready | implementation | [About / installed Appi version](docs/tasks/UI-2.md) |
-| UI-3 | ready | implementation | [Appi add-on artwork / icon](docs/tasks/UI-3.md) |
+| UI-2 | review | implementation | [About / installed Appi version](docs/tasks/UI-2.md) |
+| UI-3 | review | implementation | [Appi add-on artwork / icon](docs/tasks/UI-3.md) |
 | FRAMEWORK-1 | done | implementation | [Lifecycle pilot setup](docs/tasks/FRAMEWORK-1.md) |
 
 Use [NEXT_RELEASE.md](NEXT_RELEASE.md) to select release scope. A candidate is not an implementation commitment. Follow [triage](docs/workflows/triage.md) to add/change a task.

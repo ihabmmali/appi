@@ -1,6 +1,6 @@
 # Next Appi release
 
-Planning status: committed. Version: not assigned. Current baseline and fallback: [PROJECT_STATE.md](PROJECT_STATE.md).
+Planning status: committed; implementation reviewed, release candidate prepared. Version: 0.7.17. Current baseline and fallback: [PROJECT_STATE.md](PROJECT_STATE.md).
 
 Version 0.7.16 was published on 2026-09-27, but Buffered Look Ahead has now failed target-device acceptance. The user explicitly committed all currently tracked next-release candidates plus the newly reported Buffered Look Ahead stability repair. 0.7.12 remains the usable manual-playback fallback until the newer playback line is accepted on the target device.
 
@@ -86,5 +86,7 @@ Version 0.7.16 was published on 2026-09-27, but Buffered Look Ahead has now fail
 2026-09-26: SUB-1 added as a current-baseline regression candidate after the user reported that downloaded subtitles are forgotten after exiting and resuming/restarting the same media. Existing persistence code must be reproduced end-to-end before repair.
 
 ## Readiness
+
+2026-09-27: 0.7.17 implements all five committed tasks. Local verification passed 73 tests plus tracker/package/source/icon/fallback inspection. Proceed to the authorized package gate and publication; device acceptance stays pending in task records.
 
 The next release scope is committed. HLS-7 is the Buffered Look Ahead release blocker and should be resolved together with HLS-6 before release. LANG-2, UI-2 and UI-3 are also committed. Appi 0.7.16 is published from merge commit `af6791128009e5e9afd408221d8427c2baed65e1`; post-merge verification run 36297143439 and Pages deployment run 36297143062 passed. HLS-5 remains in review/partial verification until target-device buffering effectiveness is tested.

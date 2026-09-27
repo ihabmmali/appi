@@ -12,7 +12,7 @@ STRINGS = PLUGIN / 'resources' / 'language' / 'resource.language.en_gb' / 'strin
 class SettingsLocalizationTests(unittest.TestCase):
     def test_stable_browser_and_download_batch_features_are_packaged(self):
         addon = ET.parse(PLUGIN / 'addon.xml').getroot()
-        self.assertEqual(addon.attrib.get('version'), '0.7.16')
+        self.assertEqual(addon.attrib.get('version'), '0.7.17')
         helper = addon.find("./requires/import[@addon='plugin.video.themoviedb.helper']")
         self.assertIsNotNone(helper)
         self.assertNotEqual(helper.attrib.get('optional'), 'true')
@@ -123,7 +123,7 @@ class SettingsLocalizationTests(unittest.TestCase):
                 'clear_movie_cache', 'clear_tv_cache', 'clear_catalog_caches',
                 'clear_saved_subtitles', 'clear_recent_media',
                 'metadata_status', 'clear_metadata_queue', 'clear_metadata_cache',
-                'download_status', 'export_diagnostics',
+                'download_status', 'export_diagnostics', 'about',
             },
         )
         for scope in ('movies', 'tv', 'catalogs', 'subtitles', 'recent', 'metadata'):

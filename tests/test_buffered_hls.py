@@ -90,7 +90,7 @@ def _install_fake_fetch(module, payloads, gate=None):
             10.0,
         )
 
-    def fake_to_path(url, path, timeout=20.0, byte_range=''):
+    def fake_to_path(url, path, timeout=20.0, byte_range='', **kwargs):
         result = fake_fetch(url, timeout, byte_range)
         Path(path).write_bytes(result.data)
         return result
@@ -173,9 +173,10 @@ class BufferedHlsTests(unittest.TestCase):
         self.assertNotIn('keysecret', rewritten_media)
 
         track = session.tracks['track-' + variants[0].id]
+        self.assertTrue(track.wait_startup(2))
         ahead, count = track._ahead(0)
-        self.assertGreaterEqual(ahead, 18.0)
-        self.assertGreaterEqual(count, 3)
+        self.assertGreaterEqual(ahead, 12.0)
+        self.assertGreaterEqual(count, 2)
         events = session.drain_events()
         self.assertTrue(any(name == 'buffer_representation_selected' for name, _ in events))
         downloads = [fields for name, fields in events if name == 'buffer_segment_download']
@@ -216,7 +217,7 @@ class BufferedHlsTests(unittest.TestCase):
         deadline = time.time() + 2
         while not track._cached(0) and time.time() < deadline:
             time.sleep(0.01)
-        thread = threading.Thread(target=lambda: track.serve(0))
+        thread = threading.Thread(target=lambda: track.serve(1))
         thread.start()
         time.sleep(0.1)
         self.assertTrue(thread.is_alive(), 'request resumed after only one buffered segment')

@@ -73,6 +73,21 @@
           <control type="edit" format="integer"><heading>32312</heading></control>
         </setting>
       </group>
+      <group id="5" label="32323">
+        <setting id="buffered_buffer_mb" type="integer" label="32900" help="32901">
+          <level>0</level><default>128</default>
+          <constraints><minimum>32</minimum><maximum>1024</maximum></constraints>
+          <control type="edit" format="integer"><heading>32900</heading></control>
+        </setting>
+        <setting id="buffered_quality" type="integer" label="32902" help="32903">
+          <level>0</level><default>0</default>
+          <constraints><options><option label="32904">0</option><option label="32905">1</option></options></constraints>
+          <control type="list" format="string"><heading>32902</heading></control>
+        </setting>
+        <setting id="buffered_debug_overlay" type="boolean" label="32906" help="32907">
+          <level>0</level><default>false</default><control type="toggle"/>
+        </setting>
+      </group>
       <group id="2" label="32330">
         <setting id="manage_mp4_buffer" type="boolean" label="32331" help="32332">
           <level>0</level><default>true</default><control type="toggle"/>
@@ -94,15 +109,88 @@
         </setting>
       </group>
       <group id="4" label="32350">
-        <setting id="preferred_audio_language" type="string" label="32351" help="32352">
-          <level>0</level><default/>
-          <constraints><allowempty>true</allowempty></constraints>
-          <control type="edit" format="string"><heading>32351</heading></control>
+        <setting id="language_choices_migrated" type="boolean" label="32350">
+          <level>4</level><default>false</default><control type="toggle"/>
         </setting>
-        <setting id="preferred_subtitle_language" type="string" label="32353" help="32354">
+        <setting id="preferred_audio_language" type="string" label="32351">
+          <level>4</level><default/><constraints><allowempty>true</allowempty></constraints>
+          <control type="edit" format="string"/>
+        </setting>
+        <setting id="preferred_audio_language_choice" type="string" label="32351" help="32352">
           <level>0</level><default/>
-          <constraints><allowempty>true</allowempty></constraints>
-          <control type="edit" format="string"><heading>32353</heading></control>
+          <constraints><allowempty>true</allowempty><options>
+              <option label="32920"></option>
+              <option label="32921">en</option>
+              <option label="32922">ar</option>
+              <option label="32923">zh</option>
+              <option label="32924">da</option>
+              <option label="32925">nl</option>
+              <option label="32926">fi</option>
+              <option label="32927">fr</option>
+              <option label="32928">de</option>
+              <option label="32929">el</option>
+              <option label="32930">he</option>
+              <option label="32931">hi</option>
+              <option label="32932">it</option>
+              <option label="32933">ja</option>
+              <option label="32934">ko</option>
+              <option label="32935">no</option>
+              <option label="32936">fa</option>
+              <option label="32937">pl</option>
+              <option label="32938">pt</option>
+              <option label="32939">ro</option>
+              <option label="32940">ru</option>
+              <option label="32941">es</option>
+              <option label="32942">sv</option>
+              <option label="32943">ta</option>
+              <option label="32944">te</option>
+              <option label="32945">th</option>
+              <option label="32946">tr</option>
+              <option label="32947">uk</option>
+              <option label="32948">ur</option>
+              <option label="32949">vi</option>
+          </options></constraints>
+          <control type="list" format="string"><heading>32351</heading></control>
+        </setting>
+        <setting id="preferred_subtitle_language" type="string" label="32353">
+          <level>4</level><default/><constraints><allowempty>true</allowempty></constraints>
+          <control type="edit" format="string"/>
+        </setting>
+        <setting id="preferred_subtitle_language_choice" type="string" label="32353" help="32354">
+          <level>0</level><default/>
+          <constraints><allowempty>true</allowempty><options>
+              <option label="32920"></option>
+              <option label="32921">en</option>
+              <option label="32922">ar</option>
+              <option label="32923">zh</option>
+              <option label="32924">da</option>
+              <option label="32925">nl</option>
+              <option label="32926">fi</option>
+              <option label="32927">fr</option>
+              <option label="32928">de</option>
+              <option label="32929">el</option>
+              <option label="32930">he</option>
+              <option label="32931">hi</option>
+              <option label="32932">it</option>
+              <option label="32933">ja</option>
+              <option label="32934">ko</option>
+              <option label="32935">no</option>
+              <option label="32936">fa</option>
+              <option label="32937">pl</option>
+              <option label="32938">pt</option>
+              <option label="32939">ro</option>
+              <option label="32940">ru</option>
+              <option label="32941">es</option>
+              <option label="32942">sv</option>
+              <option label="32943">ta</option>
+              <option label="32944">te</option>
+              <option label="32945">th</option>
+              <option label="32946">tr</option>
+              <option label="32947">uk</option>
+              <option label="32948">ur</option>
+              <option label="32949">vi</option>
+          </options></constraints>
+          <control type="list" format="string"><heading>32353</heading></control>
         </setting>
       </group>
     </category>
@@ -296,6 +384,14 @@
           <level>1</level><default>20</default>
           <constraints><minimum>5</minimum><maximum>120</maximum></constraints>
           <control type="edit" format="integer"><heading>32110</heading></control>
+        </setting>
+      </group>
+    </category>
+    <category id="about" label="32908">
+      <group id="1" label="32908">
+        <setting id="about" type="action" label="32908" help="32909">
+          <level>0</level><data>RunPlugin(plugin://$ID/?action=about)</data>
+          <control type="button" format="action"><close>false</close></control>
         </setting>
       </group>
     </category>

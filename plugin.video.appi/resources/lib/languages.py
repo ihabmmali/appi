@@ -22,6 +22,8 @@ _ALIASES = {
     'zh': 'zh', 'zho': 'zh', 'chi': 'zh', 'chinese': 'zh',
 }
 
+_ALIASES.update({'el': 'el', 'gre': 'el', 'ell': 'el', 'greek': 'el', 'he': 'he', 'heb': 'he', 'hebrew': 'he', 'hi': 'hi', 'hin': 'hi', 'hindi': 'hi', 'fa': 'fa', 'per': 'fa', 'fas': 'fa', 'persian': 'fa', 'ro': 'ro', 'rum': 'ro', 'ron': 'ro', 'romanian': 'ro', 'ru': 'ru', 'rus': 'ru', 'russian': 'ru', 'ta': 'ta', 'tam': 'ta', 'tamil': 'ta', 'te': 'te', 'tel': 'te', 'telugu': 'te', 'th': 'th', 'tha': 'th', 'thai': 'th', 'tr': 'tr', 'tur': 'tr', 'turkish': 'tr', 'uk': 'uk', 'ukr': 'uk', 'ukrainian': 'uk', 'ur': 'ur', 'urd': 'ur', 'urdu': 'ur', 'vi': 'vi', 'vie': 'vi', 'vietnamese': 'vi'})
+
 
 def normalize(value):
     value = (value or '').strip()
@@ -55,3 +57,24 @@ def match_index(preferred, streams):
         if normalize(label) == target:
             return index
     return None
+
+
+COMMON_CODES = ('', 'en', 'ar', 'zh', 'da', 'nl', 'fi', 'fr', 'de', 'el', 'he', 'hi', 'it', 'ja', 'ko', 'no', 'fa', 'pl', 'pt', 'ro', 'ru', 'es', 'sv', 'ta', 'te', 'th', 'tr', 'uk', 'ur', 'vi')
+
+
+def migrate_preferences(addon):
+    if addon.getSetting('language_choices_migrated') == 'true':
+        return
+    for kind in ('audio', 'subtitle'):
+        key = 'preferred_' + kind + '_language'
+        current = addon.getSetting(key + '_choice')
+        value = normalize(current or addon.getSetting(key))
+        addon.setSetting(key + '_choice', value if value in COMMON_CODES else '')
+    addon.setSetting('language_choices_migrated', 'true')
+
+
+def preference(addon, kind):
+    key = 'preferred_' + kind + '_language'
+    if addon.getSetting('language_choices_migrated') == 'true':
+        return normalize(addon.getSetting(key + '_choice'))
+    return normalize(addon.getSetting(key + '_choice') or addon.getSetting(key))
