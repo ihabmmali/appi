@@ -14,9 +14,9 @@ Updated: 2026-09-26. Short current summary; start with [AGENTS.md](AGENTS.md) fo
 
 ## Current work
 
-- **HLS-4 is a release-blocking regression:** repair 0.7.13 manual fixed-rate HLS playback using 0.7.12 behavior as the working comparison.
+- **Next release is committed:** HLS-4 (release-blocking manual HLS repair) and DIAG-2 (causal playback diagnostics). HLS-4 should be repaired using 0.7.12 behavior as the working comparison.
 - **0.7.13 remains published** from merge commit `0d708565e4bccb0abe03c7a0ae004ccb3dc0a72a`; automated release verification passed, but subsequent target-device playback testing failed for the manual HLS path.
-- [NEXT_RELEASE.md](NEXT_RELEASE.md): HLS-4 and DIAG-2 are current candidates; HLS-1 and UI-1 remain backlog investigations.
+- [NEXT_RELEASE.md](NEXT_RELEASE.md): **HLS-4 and DIAG-2 are committed scope for the next release**; HLS-1 and UI-1 remain backlog investigations.
 - [KNOWN_ISSUES.md](KNOWN_ISSUES.md): full task index.
 - Lifecycle pilot 0.1 is established in [LIFECYCLE.md](LIFECYCLE.md). [Pilot evaluation](docs/workflows/PILOT.md) records what still needs real-world validation.
 

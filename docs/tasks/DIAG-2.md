@@ -1,7 +1,7 @@
 ---
 id: DIAG-2
 role: research
-status: proposed
+status: ready
 delivery: unreleased
 verification: pending
 owner: unassigned
@@ -56,14 +56,16 @@ Preserve DIAG-1 privacy requirements: redact credentials, signed query parameter
 - Existing DIAG-1 sanitization/privacy guarantees remain covered by regression tests.
 
 ## Authorization
-Requested by the user on 2026-09-26 as an improvement to Appi playback diagnostics after reviewing a diagnostic package that detected stalls but lacked enough causal evidence. This thread is authorized to record and commit the planning changes; implementation, integration and publication remain separate assignments.
+Requested by the user on 2026-09-26 as an improvement to Appi playback diagnostics after reviewing a diagnostic package that detected stalls but lacked enough causal evidence.
+
+On 2026-09-26 the user explicitly clarified that DIAG-2 is intended for the next release and must be recorded as committed release scope so the downstream release/build worker can act on it. This triage thread remains limited to planning/record maintenance; implementation, integration and publication are performed by the separately assigned worker under that worker's authorization.
 
 ## Evidence
 The released DIAG-1 record states that per-segment HTTP timing, inputstream buffer level and representation-bitrate history were unavailable in the initial implementation. The user's 2026-09-26 diagnostic review confirmed this gap in practice: a stall was detected, but the package could not establish whether the cause was CDN/server delay, throughput, cache/read-ahead depth, ABR behavior or Appi playback-engine behavior.
 
 The user specifically requires diagnostics to determine whether large configured Kodi cache capacity corresponds to actual playable media buffered before a stall, or whether HLS playback maintains only a shallow read-ahead queue that can drain to zero.
 
-No implementation or target-device verification has yet been performed for DIAG-2.
+No implementation or target-device verification has yet been performed for DIAG-2. The task is now actionable and committed to the next release; research may be performed as the first implementation step where Kodi/InputStream Adaptive observability must be established before coding.
 
 ## Outcome and next action
-Assign a research/architecture worker to map the exact observability available from Kodi and InputStream Adaptive, then define the capture points and schema before implementation. The implementation should extend the existing DIAG-1 session/export pipeline and preserve a single timeline across mode changes.
+Committed for the next release. The assigned worker should first map the exact observability available from Kodi and InputStream Adaptive, then implement the feasible capture points by extending the existing DIAG-1 session/export pipeline and preserving a single timeline across mode changes.

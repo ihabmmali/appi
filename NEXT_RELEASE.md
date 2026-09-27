@@ -1,15 +1,15 @@
 # Next Appi release
 
-Planning status: draft. Version: not assigned. Current baseline and fallback: [PROJECT_STATE.md](PROJECT_STATE.md).
+Planning status: committed. Version: not assigned. Current baseline and fallback: [PROJECT_STATE.md](PROJECT_STATE.md).
 
-No new release scope is committed. Version 0.7.13 was published on 2026-09-26 but has failed target-device acceptance for manual HLS playback; the user has reverted to 0.7.12 for usable playback.
+The next release scope is committed by explicit user direction on 2026-09-26. Version 0.7.13 remains published but failed target-device acceptance for manual HLS playback; the user has reverted to 0.7.12 for usable playback.
 
 ## Proposed scope
 
 | Task | Selection | Priority | Reason |
 | --- | --- | --- | --- |
-| [HLS-4](docs/tasks/HLS-4.md) | candidate | release blocker | 0.7.13 manual HLS chooser shows wrong rendition data and every selection fails playback |
-| [DIAG-2](docs/tasks/DIAG-2.md) | candidate | requested diagnostic improvement | Add full-session segment/network/representation/buffer telemetry so stalls can be causally diagnosed |
+| [HLS-4](docs/tasks/HLS-4.md) | committed | release blocker | 0.7.13 manual HLS chooser shows wrong rendition data and every selection fails playback |
+| [DIAG-2](docs/tasks/DIAG-2.md) | committed | requested diagnostic improvement | Add full-session segment/network/representation/buffer telemetry so stalls can be causally diagnosed |
 | [HLS-1](docs/tasks/HLS-1.md) | backlog | investigation | Diagnose repeated stalls using DIAG-2 evidence and distinguish configured cache size from actual playable read-ahead |
 | [UI-1](docs/tasks/UI-1.md) | backlog | investigation | Skin comparison needed |
 
@@ -23,6 +23,8 @@ No new release scope is committed. Version 0.7.13 was published on 2026-09-26 bu
 6. Copy shipped task IDs and scope changes into RELEASE_NOTES, then reset this planning file for the next cycle.
 
 ## Scope decisions
+
+2026-09-26: user explicitly corrected the release plan and confirmed that HLS-4 and DIAG-2 are changes for the next release. Both are now committed scope. The prior candidate-only state was a planning error that caused the release worker to find no committed work.
 
 2026-09-26: HLS-4 added as a release-blocking regression after target-device testing showed that 0.7.13 manual HLS selection displays incorrect rendition information and every selected stream fails playback. The user reverted to 0.7.12. Repair should precede additional HLS feature work.
 
