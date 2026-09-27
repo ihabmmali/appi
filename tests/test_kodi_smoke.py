@@ -236,34 +236,28 @@ assert 3 in state['sort']
 app.set_season_watched({'show_key':shows[0]['show_key'],'season':'1'})
 assert native_status[app._play_ref_url('tv',app.item_ref(eps[0]),shows[0]['show_key'])]['playcount']==1
 
-li=ListItem(); assert app._configure_hls(li)=='manual-fixed'; assert 'inputstream' not in li.props
+li=ListItem(); assert app._configure_hls(li)=='inputstream.adaptive-ask-quality'; assert li.props.get('inputstream')=='inputstream.adaptive'; assert li.props.get('inputstream.adaptive.stream_selection_type')=='ask-quality'
 settings['hls_quality_mode']='2'; settings['hls_max_bitrate_kbps']='5000'; li2=ListItem(); assert app._configure_hls(li2)=='inputstream.adaptive'; assert li2.props.get('inputstream.adaptive.stream_selection_type')=='adaptive'; assert li2.props.get('inputstream.adaptive.chooser_bandwidth_max')=='5000000'
 Dialog.select_answers=[2,3]
 app.configure_playback({'target':'movie','catalog':'movies','ref':'m:tt000'})
 pref=playback_prefs.get_target('movie',ref='m:tt000')
 assert pref.get('hls_mode')==1
 assert pref.get('subtitle_mode')=='search'
-li3=ListItem(); assert app._configure_hls(li3, pref)=='manual-fixed'; assert 'inputstream' not in li3.props
+li3=ListItem(); assert app._configure_hls(li3, pref)=='inputstream.adaptive-ask-quality'; assert li3.props.get('inputstream')=='inputstream.adaptive'; assert li3.props.get('inputstream.adaptive.stream_selection_type')=='ask-quality'
 
-# Manual HLS quality is chosen by Appi before playback. Cancel therefore
-# resolves False and creates no Recently Played session.
-master_hls="""#EXTM3U
-#EXT-X-STREAM-INF:BANDWIDTH=2500000,RESOLUTION=1280x720
-720.m3u8
-#EXT-X-STREAM-INF:BANDWIDTH=6000000,RESOLUTION=1920x1080
-1080.m3u8
-"""
+# Manual HLS quality is owned by InputStream Adaptive exactly as in 0.7.12.
+# Appi must preserve the original master URL and must not fetch/parse/select a
+# child rendition before resolving playback.
 app._probe_kind=lambda *a,**k: {'kind':'hls'}
-app.fetch_text=lambda *a,**k: master_hls
+app.fetch_text=lambda *a,**k: (_ for _ in ()).throw(AssertionError('manual mode must not fetch the HLS master in Appi'))
 recent_before=playback_history.recent_movies()
-Dialog.select_answers=[-1]
-app.play_ref({'catalog':'movies','ref':'m:tt000'})
-assert state['resolved'][-1][0][1] is False
-assert playback_history.recent_movies()==recent_before
-Dialog.select_answers=[1]
 app.play_ref({'catalog':'movies','ref':'m:tt000'})
 assert state['resolved'][-1][0][1] is True
-assert state['resolved'][-1][0][2].path == 'https://x/1080.m3u8'
+resolved_hls=state['resolved'][-1][0][2]
+assert resolved_hls.path == 'https://x/m0'
+assert resolved_hls.props.get('inputstream') == 'inputstream.adaptive'
+assert resolved_hls.props.get('inputstream.adaptive.stream_selection_type') == 'ask-quality'
+assert len(playback_history.recent_movies()) >= len(recent_before)
 
 favorites.set_favorite('movie','m:tt000',movies[0],True)
 state['items'].clear(); app.show_favorite_movies()
