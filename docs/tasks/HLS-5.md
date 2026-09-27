@@ -2,11 +2,11 @@
 id: HLS-5
 role: implementation
 status: review
-delivery: unreleased
+delivery: released
 verification: partial
 owner: ChatGPT release worker 2026-09-27
 base_commit: 9dfd6a2802dc03bf5acd1d4806a76185849eac72
-artifact: none
+artifact: plugin.video.appi-0.7.16.zip
 ---
 # HLS-5 — Buffered Look Ahead Playback
 
@@ -75,4 +75,4 @@ Implementation/review evidence on 2026-09-27:
 - Automated tests explicitly cover all four HLS branches and buffered startup reserve, depletion/recovery, seek re-centering, cleanup, master/rendition/key/map rewriting, discontinuities, byte ranges, representation metadata and sanitized proxy telemetry.
 
 ## Outcome and next action
-Implementation and automated release verification pass. HLS-5 remains in review/partial verification because only target-device playback can establish whether the 30-second look-ahead eliminates the reported provider stalls. Publication is authorized by the user and may proceed; after integration, record the published commit and post-merge/Pages evidence without treating publication as target-device acceptance.
+Implementation, automated release verification, integration and publication pass. HLS-5 remains in review/partial verification because only target-device playback can establish whether the 30-second look-ahead eliminates the reported provider stalls. Published merge commit: `af6791128009e5e9afd408221d8427c2baed65e1`; post-merge verification run 36297143439 and Pages deployment run 36297143062 both passed. Next action: test all four modes on the target Fire TV/provider stream, especially the previously stalling stream in Buffered Look Ahead Playback, and retain/export diagnostics if a stall remains.

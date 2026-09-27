@@ -1,15 +1,14 @@
 # Next Appi release
 
-Planning status: release candidate / automated gate passed. Version: 0.7.16. Current baseline and fallback: [PROJECT_STATE.md](PROJECT_STATE.md).
+Planning status: draft. Version: not assigned. Current baseline and fallback: [PROJECT_STATE.md](PROJECT_STATE.md).
 
-Version 0.7.15 was published on 2026-09-26. HLS-5 is explicitly committed as the sole new 0.7.16 release scope: add an isolated disk-backed Buffered Look Ahead Playback mode while preserving the three existing 0.7.15 HLS modes unchanged. 0.7.12 remains the usable manual-playback fallback until HLS-4 device acceptance is recorded.
+Version 0.7.16 was published on 2026-09-27. No new release scope is committed. HLS-5 is delivered in 0.7.16 but remains in review/partial verification pending target-device evidence on the buffered playback path. 0.7.12 remains the usable manual-playback fallback until the newer playback line is accepted on the target device.
 
 ## Proposed scope
 
 | Task | Selection | Priority | Reason |
 | --- | --- | --- | --- |
-| [HLS-5](docs/tasks/HLS-5.md) | committed | release blocker | Add isolated disk-backed Buffered Look Ahead Playback with ~30 s target look-ahead and proxy diagnostics; do not alter modes 0–2 |
-| [HLS-1](docs/tasks/HLS-1.md) | backlog | investigation | Diagnose repeated stalls using DIAG-2 evidence; HLS-5 is an experimental remedy whose target-device result will feed this investigation |
+| [HLS-1](docs/tasks/HLS-1.md) | backlog | investigation | Use DIAG-2/HLS-5 target-device evidence to diagnose any repeated stalls that remain |
 | [UI-1](docs/tasks/UI-1.md) | backlog | investigation | Skin comparison needed |
 
 ## How to plan the release
@@ -22,6 +21,9 @@ Version 0.7.15 was published on 2026-09-26. HLS-5 is explicitly committed as the
 6. Copy shipped task IDs and scope changes into RELEASE_NOTES, then reset this planning file for the next cycle.
 
 ## Scope decisions
+
+2026-09-27: Appi 0.7.16 was published from merge commit `af6791128009e5e9afd408221d8427c2baed65e1`. Shipped scope: HLS-5. Post-merge verification run 36297143439 and Pages deployment run 36297143062 passed. HLS-5 remains in review/partial verification because publication and automated tests do not establish target-device buffering effectiveness.
+
 
 2026-09-27: 0.7.16 release/package run 36296897848 passed after correcting isolated test-harness pollution caught by the first gate attempt. All four playback branches are covered; the deterministic 0.7.16 artifact was generated at commit `6e71ad93276c993724a5973cb8814e603653f4d0`. Proceed to authorized integration/publication while retaining target-device verification as HLS-5's remaining review item.
 
@@ -64,4 +66,4 @@ Version 0.7.15 was published on 2026-09-26. HLS-5 is explicitly committed as the
 
 ## Readiness
 
-0.7.16 release/package run 36296897848 passed the full 54-test unit/smoke suite, workflow validation, deterministic build, artifact inspection and packaging. The generated branch artifact commit is `6e71ad93276c993724a5973cb8814e603653f4d0`; ZIP SHA-256 is `ecb310e42b016cf968b27e2af4d25ed6f1b106b888a9c0da387bde4bde595138`. HLS-5 is in review/partial verification: automated acceptance passed and publication is authorized, while target-device buffering effectiveness remains a post-publication verification item.
+No new release is committed. Appi 0.7.16 is published from merge commit `af6791128009e5e9afd408221d8427c2baed65e1`; post-merge verification run 36297143439 and Pages deployment run 36297143062 passed. HLS-5 remains in review/partial verification until target-device buffering effectiveness is tested.

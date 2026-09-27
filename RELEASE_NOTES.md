@@ -2,7 +2,7 @@
 
 Each entry records the package shipped, its main user-visible changes, and verification at release time. For the current baseline and next tasks read [PROJECT_STATE.md](PROJECT_STATE.md) and [KNOWN_ISSUES.md](KNOWN_ISSUES.md); the [CHANGELOG.md](CHANGELOG.md) is the implemented feature history.
 
-## 0.7.16 — release candidate, 2026-09-27
+## 0.7.16 — 2026-09-27
 
 - Included committed task: HLS-5.
 - Pre-change source audit of the published 0.7.15 baseline confirmed that Native Kodi automatic returns before Appi assigns any `inputstream` property; no correction to that mode was required.
@@ -12,7 +12,10 @@ Each entry records the package shipped, its main user-visible changes, and verif
 - DIAG-2 now receives direct buffered-mode segment latency/throughput, actual buffered seconds, queued/downloaded segment counts, depletion/recovery and observed representation information; upstream authenticated URLs remain excluded.
 - Automated verification: the first package attempt (run 36296858373) was correctly blocked by isolation pollution in the new test harness; after that test-only defect was corrected, release/package run 36296897848 passed all 54 unit/smoke tests, workflow tracker validation, deterministic build, ZIP/hash/index inspection and packaging.
 - Release artifact commit: `6e71ad93276c993724a5973cb8814e603653f4d0`; `plugin.video.appi-0.7.16.zip` SHA-256: `ecb310e42b016cf968b27e2af4d25ed6f1b106b888a9c0da387bde4bde595138`.
-- Publication is authorized and the automated gate is satisfied. Target-device verification remains required to determine whether 30+ seconds of actual buffered media eliminates the reported intermittent stalls.
+- Final candidate lifecycle gate run 36297078894 passed after the review/tracker evidence was recorded.
+- Published merge commit: [af6791128009e5e9afd408221d8427c2baed65e1](https://github.com/ihabmmali/appi/commit/af6791128009e5e9afd408221d8427c2baed65e1). Post-merge main verification run 36297143439 passed and Pages deployment run 36297143062 succeeded.
+- Package: [plugin.video.appi-0.7.16.zip](https://github.com/ihabmmali/appi/blob/main/plugin.video.appi-0.7.16.zip); SHA-256: `ecb310e42b016cf968b27e2af4d25ed6f1b106b888a9c0da387bde4bde595138`.
+- Target-device verification remains required to determine whether 30+ seconds of actual buffered media eliminates the reported intermittent stalls; HLS-5 therefore remains in review/partial verification.
 
 ## 0.7.15 — 2026-09-26
 
