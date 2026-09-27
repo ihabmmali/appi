@@ -4,10 +4,14 @@ on:
   push:
     branches:
       - main
+      - 'release/**'
   pull_request:
     branches:
       - main
   workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   verify:
@@ -17,11 +21,13 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+      - name: Synchronize generated package with manifest
+        run: python3 tools/build_repository.py
       - name: Unit and smoke tests
         run: python3 -m unittest discover -s tests
       - name: Workflow tracker validation
         run: python3 tools/check_workflow.py
-      - name: Build repository artifacts
+      - name: Rebuild repository artifacts
         run: python3 tools/build_repository.py
       - name: Inspect package and repository output
         run: |
@@ -50,6 +56,36 @@ jobs:
           assert (root / 'addons.xml.sha256').read_text().strip() == hashlib.sha256(addons).hexdigest()
           index = (root / 'index.html').read_text()
           assert package.name in index
+          assert 'plugin.video.appi-0.7.12.zip' in index
+          assert 'plugin.video.appi-0.7.11.zip' in index
           assert 'plugin.video.appi-0.7.8.zip' in index
+          assert index.count('plugin.video.appi-') == 8
           print('artifact inspection passed:', package.name, actual)
           PY
+
+  package:
+    if: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/heads/release/') && contains(github.event.head_commit.message, '[package]') }}
+    needs: verify
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Build release artifacts
+        run: python3 tools/build_repository.py
+      - name: Commit deterministic release artifacts
+        run: |
+          git config user.name "appi-release-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add -A -- addons.xml addons.xml.sha256 index.html plugin.video.appi repository.appi plugin.video.appi-*.zip
+          if git diff --cached --quiet; then
+            echo "No generated artifact changes to commit"
+          else
+            git commit -m "Build Appi release artifacts"
+            git push origin "HEAD:${GITHUB_REF_NAME}"
+          fi

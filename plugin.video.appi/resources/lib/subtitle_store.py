@@ -132,7 +132,7 @@ def _unique_destination(folder, source):
     return destination
 
 
-def capture_temp_changes():
+def capture_temp_changes(finalize=False):
     session = load_session()
     if not session:
         return []
@@ -150,7 +150,7 @@ def capture_temp_changes():
         # Wait for one unchanged polling interval before copying so subtitle
         # add-ons have time to finish writing/extracting the file.
         previous = pending.get(path)
-        if previous != fingerprint:
+        if previous != fingerprint and not finalize:
             pending[path] = fingerprint
             continue
 

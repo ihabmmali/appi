@@ -4,8 +4,11 @@ from urllib.parse import urlencode
 import xbmc
 import xbmcaddon
 
+from . import diagnostics
+from . import languages
 from . import playback_history
 from . import metadata
+from . import refresh_state
 from . import subtitle_store
 
 ADDON = xbmcaddon.Addon()
@@ -14,6 +17,14 @@ ADDON = xbmcaddon.Addon()
 def _enabled(setting, default=True):
     value = ADDON.getSetting(setting)
     return default if value == '' else value.lower() == 'true'
+
+
+def _integer(setting, default):
+    try:
+        value = ADDON.getSetting(setting)
+        return int(value) if value != '' else int(default)
+    except (TypeError, ValueError):
+        return int(default)
 
 
 class AppiPlayer(xbmc.Player):
@@ -53,7 +64,31 @@ class AppiPlayer(xbmc.Player):
             except Exception as exc:
                 xbmc.log('Appi could not restore saved subtitles: {}'.format(exc), xbmc.LOGWARNING)
 
+    def _apply_preferred_languages(self):
+        audio = (ADDON.getSetting('preferred_audio_language') or '').strip()
+        if audio:
+            try:
+                index = languages.match_index(audio, self.getAvailableAudioStreams())
+                if index is not None:
+                    self.setAudioStream(index)
+            except Exception as exc:
+                xbmc.log('Appi audio-language selection failed: {}'.format(exc), xbmc.LOGWARNING)
+
+        session = self._subtitle_session()
+        mode = session.get('subtitle_mode') or 'global'
+        subtitle = (ADDON.getSetting('preferred_subtitle_language') or '').strip()
+        if subtitle and mode == 'global':
+            try:
+                index = languages.match_index(subtitle, self.getAvailableSubtitleStreams())
+                if index is not None:
+                    self.setSubtitleStream(index)
+                    self.showSubtitles(True)
+            except Exception as exc:
+                xbmc.log('Appi subtitle-language selection failed: {}'.format(exc), xbmc.LOGWARNING)
+
     def onAVStarted(self):
+        self._apply_preferred_languages()
+        diagnostics.player_started(self)
         self._apply_session_subtitles()
 
     def onAVChange(self):
@@ -63,22 +98,23 @@ class AppiPlayer(xbmc.Player):
             except Exception as exc:
                 xbmc.log('Appi subtitle capture failed: {}'.format(exc), xbmc.LOGWARNING)
 
-    def _finish(self):
+    def _finish(self, result='stopped'):
         if _enabled('persist_subtitles', True):
             try:
-                subtitle_store.capture_temp_changes()
+                subtitle_store.capture_temp_changes(finalize=True)
             except Exception:
                 pass
         subtitle_store.clear_session()
+        diagnostics.finish(result)
         session = playback_history.finish_session()
         self._search_opened_key = None
         return session
 
     def onPlayBackStopped(self):
-        self._finish()
+        self._finish('stopped')
 
     def onPlayBackEnded(self):
-        session = self._finish() or {}
+        session = self._finish('ended') or {}
         if session.get('catalog') != 'tv' or not session.get('show_key'):
             return
         if not _enabled('auto_next_episode', False):
@@ -94,13 +130,16 @@ class AppiPlayer(xbmc.Player):
         )
 
     def onPlayBackError(self):
-        self._finish()
+        self._finish('error')
 
 
 def run():
     monitor = xbmc.Monitor()
     player = AppiPlayer()
     next_metadata_poll = 0.0
+    next_diagnostic_sample = 0.0
+    next_auto_refresh_check = 0.0
+    startup_refresh_pending = _enabled('auto_refresh_on_startup', False)
     focused_value = ''
     focused_since = 0.0
     queued_focus = ''
@@ -112,6 +151,13 @@ def run():
             except Exception as exc:
                 xbmc.log('Appi subtitle polling failed: {}'.format(exc), xbmc.LOGWARNING)
         now = time.monotonic()
+        if playing and diagnostics.enabled() and now >= next_diagnostic_sample:
+            try:
+                diagnostics.sample(player)
+            except Exception as exc:
+                xbmc.log('Appi diagnostic sample failed: {}'.format(exc), xbmc.LOGWARNING)
+            next_diagnostic_sample = now + 2.0
+
         if not playing:
             try:
                 value = xbmc.getInfoLabel('ListItem.Property(Appi.MetadataLookup)') or ''
@@ -126,9 +172,25 @@ def run():
                 if payload:
                     metadata.queue(payload)
                 queued_focus = value
+
+        if not playing and _enabled('auto_refresh_enabled', False) and now >= next_auto_refresh_check:
+            state = refresh_state.load()
+            failures = max(0, int(state.get('failures') or 0))
+            interval = max(1, _integer('auto_refresh_interval_hours', 6)) * 3600
+            retry_delay = interval if failures == 0 else min(
+                interval, 900 * (2 ** min(failures - 1, 4))
+            )
+            last_attempt = float(state.get('last_attempt') or 0)
+            due = time.time() - last_attempt >= retry_delay
+            if startup_refresh_pending or due:
+                try:
+                    xbmc.executebuiltin('RunPlugin(plugin://plugin.video.appi/?action=auto_refresh)')
+                except Exception as exc:
+                    xbmc.log('Appi automatic refresh launch failed: {}'.format(exc), xbmc.LOGWARNING)
+                startup_refresh_pending = False
+            next_auto_refresh_check = now + 60.0
+
         if now >= next_metadata_poll:
-            # One lookup at a time avoids blocking directory navigation.
-            # Playback pausing is controlled independently in metadata settings.
             try:
                 metadata.process_one()
             except Exception as exc:

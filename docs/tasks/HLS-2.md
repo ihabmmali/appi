@@ -1,11 +1,11 @@
 ---
 id: HLS-2
-role: research
-status: proposed
+role: review
+status: review
 delivery: unreleased
-verification: pending
-owner: unassigned
-base_commit: unset
+verification: partial
+owner: ChatGPT build session 2026-09-26
+base_commit: 8a9b1ad21b3944d8045e1d1abff2a2556c3035cc
 artifact: none
 ---
 # HLS-2 — Explicit adaptive bitrate HLS mode
@@ -59,6 +59,18 @@ Current Appi source in `resources/lib/app.py` shows `hls_mode == 0` returns with
 User device observation on 2026-09-24: "Limit maximum bitrate" appears to select the highest stream quality lower than the configured maximum limit and then use that rendition. This suggests the current user-visible behavior may be ceiling-based rendition selection rather than true runtime ABR, but direct instrumentation/controlled testing is still required.
 
 Kodi/InputStream Adaptive runtime representation-switch behavior on the target device remains to be verified directly.
+
+## Build session — 2026-09-26
+- User authorization: all candidates committed to the next release; implementation, integration and publication explicitly authorized.
+- Release branch: `release/0.7.13`; base: `8a9b1ad21b3944d8045e1d1abff2a2556c3035cc`.
+- Planned paths: plugin.video.appi/resources/lib/hls.py; app.py; settings/tests.
+- This worker owns the committed release sequence; review will be recorded as self-review unless independent evidence is added.
+
+## Review evidence — 2026-09-26
+- The settings model now separates Native Kodi automatic, Manual fixed quality and Adaptive bitrate (InputStream Adaptive).
+- Explicit ABR config sets InputStream Adaptive with stream_selection_type=adaptive; maximum bitrate is optional and 0 means no Appi ceiling. Manual fixed quality no longer delegates its chooser to InputStream Adaptive.
+- Unit/smoke coverage verifies master-playlist parsing, manual-mode isolation and the adaptive property/cap path.
+- No target-device representation-switch evidence has been produced. Verification therefore remains partial, and this release must not claim that runtime switching was observed on the user's Fire TV/provider stream.
 
 ## Outcome and next action
 Do not assume the current maximum-bitrate path already satisfies the ABR requirement. A research worker should reproduce the user's observation, determine whether runtime representation switching occurs, and then recommend the smallest source/UI change needed to expose genuinely adaptive playback if supported.

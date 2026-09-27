@@ -1,11 +1,11 @@
 ---
 id: DIAG-1
-role: research
-status: proposed
+role: review
+status: review
 delivery: unreleased
-verification: pending
-owner: unassigned
-base_commit: unset
+verification: partial
+owner: ChatGPT build session 2026-09-26
+base_commit: 8a9b1ad21b3944d8045e1d1abff2a2556c3035cc
 artifact: none
 ---
 # DIAG-1 — Export bounded playback diagnostics
@@ -49,6 +49,19 @@ Requested by the user on 2026-09-24 as a proposed next-release change for troubl
 User report: some streams can begin buffering frequently despite no apparent bandwidth constraint and despite substantially increasing Kodi cache size. Existing [HLS-1](HLS-1.md) already requires manifest, segment-timing and Kodi/inputstream evidence, but collection is currently manual/not yet specified.
 
 No implementation or device verification has been performed for DIAG-1.
+
+## Build session — 2026-09-26
+- User authorization: all candidates committed to the next release; implementation, integration and publication explicitly authorized.
+- Release branch: `release/0.7.13`; base: `8a9b1ad21b3944d8045e1d1abff2a2556c3035cc`.
+- Planned paths: plugin.video.appi/resources/lib/diagnostics.py; app.py; subtitle_service.py; settings/tests.
+- This worker owns the committed release sequence; review will be recorded as self-review unless independent evidence is added.
+
+## Review evidence — 2026-09-26
+- Added opt-in bounded playback-session capture with a maximum event/session retention policy and ZIP export through Kodi VFS.
+- Stream identity stores scheme/host/extension plus hashes, not raw paths/query strings; credentials, cookies and subtitle contents are excluded.
+- The exported availability map explicitly marks per-segment HTTP timing, inputstream buffer level and representation-bitrate history unavailable when Kodi Python does not expose them.
+- Automated privacy regression verifies an authenticated signed URL does not leak credentials, query secrets or raw media path into the bundle.
+- Verification is partial pending export/capture from one working and one repeatedly stalling stream on the target device.
 
 ## Outcome and next action
 Keep DIAG-1 separate from HLS-1: DIAG-1 should establish a reusable diagnostic export facility; HLS-1 should use its evidence to diagnose the specific repeated-stall problem. Assign a research worker to map Kodi observability and finalize the capture schema before implementation.

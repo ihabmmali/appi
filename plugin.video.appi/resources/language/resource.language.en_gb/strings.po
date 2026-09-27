@@ -110,28 +110,28 @@ msgid "HLS quality selection"
 msgstr "HLS quality selection"
 
 msgctxt "#32311"
-msgid "Ask before playback uses InputStream Adaptive to show available HLS qualities before the stream starts."
-msgstr "Ask before playback uses InputStream Adaptive to show available HLS qualities before the stream starts."
+msgid "Native leaves HLS handling to Kodi. Manual fixed quality uses an Appi chooser before playback. Adaptive bitrate explicitly uses InputStream Adaptive."
+msgstr "Native leaves HLS handling to Kodi. Manual fixed quality uses an Appi chooser before playback. Adaptive bitrate explicitly uses InputStream Adaptive."
 
 msgctxt "#32312"
-msgid "Maximum HLS bitrate (Kbit/s)"
-msgstr "Maximum HLS bitrate (Kbit/s)"
+msgid "Maximum adaptive bitrate (Kbit/s)"
+msgstr "Maximum adaptive bitrate (Kbit/s)"
 
 msgctxt "#32313"
-msgid "Used only when HLS quality selection is Limit maximum bitrate. Example: 8000 = 8 Mbit/s."
-msgstr "Used only when HLS quality selection is Limit maximum bitrate. Example: 8000 = 8 Mbit/s."
+msgid "Used by Adaptive Bitrate mode as an optional ceiling. Set 0 for no Appi bitrate ceiling."
+msgstr "Used by Adaptive Bitrate mode as an optional ceiling. Set 0 for no Appi bitrate ceiling."
 
 msgctxt "#32320"
-msgid "Automatic - Kodi default"
-msgstr "Automatic - Kodi default"
+msgid "Native Kodi automatic"
+msgstr "Native Kodi automatic"
 
 msgctxt "#32321"
-msgid "Ask quality before playback"
-msgstr "Ask quality before playback"
+msgid "Manual fixed quality"
+msgstr "Manual fixed quality"
 
 msgctxt "#32322"
-msgid "Limit maximum bitrate"
-msgstr "Limit maximum bitrate"
+msgid "Adaptive bitrate (InputStream Adaptive)"
+msgstr "Adaptive bitrate (InputStream Adaptive)"
 
 msgctxt "#32330"
 msgid "Plain MP4 buffering"
@@ -420,3 +420,136 @@ msgstr "Download Script Status"
 msgctxt "#32713"
 msgid "Shows the script/output folder and how many completed shell scripts are waiting there. Generated MP4 files are written beside their scripts."
 msgstr "Shows the script/output folder and how many completed shell scripts are waiting there. Generated MP4 files are written beside their scripts."
+
+
+msgctxt "#32350"
+msgid "Preferred stream languages"
+msgstr "Preferred stream languages"
+
+msgctxt "#32351"
+msgid "Preferred audio language"
+msgstr "Preferred audio language"
+
+msgctxt "#32352"
+msgid "Optional language name/code selected once when playback starts. English, eng and en are treated as the same language. Leave blank to keep Kodi's choice."
+msgstr "Optional language name/code selected once when playback starts. English, eng and en are treated as the same language. Leave blank to keep Kodi's choice."
+
+msgctxt "#32353"
+msgid "Preferred internal subtitle language"
+msgstr "Preferred internal subtitle language"
+
+msgctxt "#32354"
+msgid "Optional internal subtitle language selected at playback start. Per-title saved/off/search subtitle modes take priority; saved external subtitles can override it."
+msgstr "Optional internal subtitle language selected at playback start. Per-title saved/off/search subtitle modes take priority; saved external subtitles can override it."
+
+msgctxt "#32530"
+msgid "Fast TV refresh pages"
+msgstr "Fast TV refresh pages"
+
+msgctxt "#32531"
+msgid "Maximum leading TV pages checked for overlap with the cached provider-order feed before Appi falls back to a full refresh."
+msgstr "Maximum leading TV pages checked for overlap with the cached provider-order feed before Appi falls back to a full refresh."
+
+msgctxt "#32532"
+msgid "Fast Refresh TV Show List"
+msgstr "Fast Refresh TV Show List"
+
+msgctxt "#32533"
+msgid "Checks only the configured leading page window when a reliable overlap with cached episodes is found; otherwise automatically performs a full refresh."
+msgstr "Checks only the configured leading page window when a reliable overlap with cached episodes is found; otherwise automatically performs a full refresh."
+
+msgctxt "#32534"
+msgid "Fast Refresh All Lists"
+msgstr "Fast Refresh All Lists"
+
+msgctxt "#32535"
+msgid "Refreshes the movie list normally and uses the fast overlap algorithm for TV, falling back to a full TV refresh when needed."
+msgstr "Refreshes the movie list normally and uses the fast overlap algorithm for TV, falling back to a full TV refresh when needed."
+
+msgctxt "#32540"
+msgid "Automatic catalogue refresh"
+msgstr "Automatic catalogue refresh"
+
+msgctxt "#32541"
+msgid "Enable automatic refresh"
+msgstr "Enable automatic refresh"
+
+msgctxt "#32542"
+msgid "Runs refreshes only while video is not playing. Failed attempts use bounded exponential retry delay and existing caches are preserved on failed catalogue downloads."
+msgstr "Runs refreshes only while video is not playing. Failed attempts use bounded exponential retry delay and existing caches are preserved on failed catalogue downloads."
+
+msgctxt "#32543"
+msgid "Refresh on Kodi/Appi service startup"
+msgstr "Refresh on Kodi/Appi service startup"
+
+msgctxt "#32544"
+msgid "Requests one automatic refresh after the Appi background service starts, waiting until video playback is idle."
+msgstr "Requests one automatic refresh after the Appi background service starts, waiting until video playback is idle."
+
+msgctxt "#32545"
+msgid "Automatic refresh interval"
+msgstr "Automatic refresh interval"
+
+msgctxt "#32546"
+msgid "Minimum time between successful scheduled refresh checks. Failures retry sooner with backoff."
+msgstr "Minimum time between successful scheduled refresh checks. Failures retry sooner with backoff."
+
+msgctxt "#32547"
+msgid "Use fast TV refresh automatically"
+msgstr "Use fast TV refresh automatically"
+
+msgctxt "#32548"
+msgid "Uses the leading-window overlap algorithm for scheduled TV refreshes, with automatic full-refresh fallback when overlap cannot be proven."
+msgstr "Uses the leading-window overlap algorithm for scheduled TV refreshes, with automatic full-refresh fallback when overlap cannot be proven."
+
+msgctxt "#32550"
+msgid "1 hour"
+msgstr "1 hour"
+
+msgctxt "#32551"
+msgid "3 hours"
+msgstr "3 hours"
+
+msgctxt "#32552"
+msgid "6 hours"
+msgstr "6 hours"
+
+msgctxt "#32553"
+msgid "12 hours"
+msgstr "12 hours"
+
+msgctxt "#32554"
+msgid "24 hours"
+msgstr "24 hours"
+
+msgctxt "#32800"
+msgid "Diagnostics"
+msgstr "Diagnostics"
+
+msgctxt "#32801"
+msgid "Playback diagnostics"
+msgstr "Playback diagnostics"
+
+msgctxt "#32810"
+msgid "Enable bounded playback diagnostics"
+msgstr "Enable bounded playback diagnostics"
+
+msgctxt "#32811"
+msgid "Captures sanitized Appi/Kodi playback events, position and available player InfoLabels. It does not store credentials, query strings, full URLs, cookies or subtitle contents."
+msgstr "Captures sanitized Appi/Kodi playback events, position and available player InfoLabels. It does not store credentials, query strings, full URLs, cookies or subtitle contents."
+
+msgctxt "#32812"
+msgid "Diagnostic export folder"
+msgstr "Diagnostic export folder"
+
+msgctxt "#32813"
+msgid "Writable Kodi/VFS destination for compressed diagnostic bundles, including configured network sources where Kodi permits writing."
+msgstr "Writable Kodi/VFS destination for compressed diagnostic bundles, including configured network sources where Kodi permits writing."
+
+msgctxt "#32814"
+msgid "Export Latest Diagnostic Bundle"
+msgstr "Export Latest Diagnostic Bundle"
+
+msgctxt "#32815"
+msgid "Exports the active or most recent bounded diagnostic session as a ZIP containing a machine-readable summary and field-availability notes."
+msgstr "Exports the active or most recent bounded diagnostic session as a ZIP containing a machine-readable summary and field-availability notes."

@@ -12,12 +12,17 @@ import xbmcgui
 import xbmcplugin
 
 from . import cache
+from . import diagnostics
 from . import favorites
+from . import hls
 from . import kodi_cache
 from . import kodi_status
 from . import metadata
 from . import playback_history
 from . import playback_prefs
+from . import refresh_logic
+from . import refresh_state
+from . import search_history
 from . import subtitle_store
 from .catalog import build_tv_groups, item_ref, show_cache_name, sort_movies, sort_shows
 from .http import fetch_text, probe_stream
@@ -148,6 +153,7 @@ def _write_tv_index(episodes):
         keep.add(cache_name)
         cache.save(cache_name, groups[summary['show_key']])
     cache.save('tv_shows', summaries)
+    cache.save('tv_feed', episodes)
     cache.remove_prefix('tv_show_', keep=keep)
     cache.remove('tv')
     return summaries
@@ -169,7 +175,7 @@ def _migrate_legacy_tv_cache():
         return None
 
 
-def refresh_movies(show_notification=True):
+def refresh_movies(show_notification=True, show_errors=True):
     movie_url = _require_setting('movie_m3u_url', 'Movie M3U URL')
     if not movie_url:
         return None
@@ -185,16 +191,17 @@ def refresh_movies(show_notification=True):
         return items
     except Exception as exc:
         xbmc.log('Appi movie refresh failed: {}'.format(exc), xbmc.LOGERROR)
-        xbmcgui.Dialog().ok(
-            'Appi',
-            'Movie refresh failed. The previous cached movie list was kept.\n\n{}: {}'.format(
-                type(exc).__name__, exc
-            ),
-        )
+        if show_errors:
+            xbmcgui.Dialog().ok(
+                'Appi',
+                'Movie refresh failed. The previous cached movie list was kept.\n\n{}: {}'.format(
+                    type(exc).__name__, exc
+                ),
+            )
         return None
 
 
-def refresh_tv(show_notification=True):
+def refresh_tv(show_notification=True, show_errors=True):
     base = _require_setting('tv_m3u_base_url', 'TV Show M3U base URL')
     if not base:
         return None
@@ -265,24 +272,167 @@ def refresh_tv(show_notification=True):
         return summaries
     except Exception as exc:
         xbmc.log('Appi TV refresh failed: {}'.format(exc), xbmc.LOGERROR)
-        xbmcgui.Dialog().ok(
-            'Appi',
-            'TV refresh failed. The previous indexed catalogue was kept where possible.\n\n{}: {}'.format(
-                type(exc).__name__, exc
-            ),
-        )
+        if show_errors:
+            xbmcgui.Dialog().ok(
+                'Appi',
+                'TV refresh failed. The previous indexed catalogue was kept where possible.\n\n{}: {}'.format(
+                    type(exc).__name__, exc
+                ),
+            )
         return None
     finally:
         progress.close()
 
 
-def refresh_all():
-    movies = refresh_movies(show_notification=False)
-    tv = refresh_tv(show_notification=False)
-    if movies is not None and tv is not None:
-        _notify('All lists refreshed')
-    else:
-        _notify('Refresh completed with an error', error=True)
+def refresh_tv_fast(show_notification=True, show_errors=True):
+    cached = cache.load('tv_feed')
+    old_items = cached['items'] if cached is not None else None
+    if not old_items:
+        xbmc.log('Appi fast TV refresh has no provider-order cache; falling back to full refresh', xbmc.LOGINFO)
+        return refresh_tv(
+            show_notification=show_notification, show_errors=show_errors
+        )
+
+    base = _require_setting('tv_m3u_base_url', 'TV Show M3U base URL')
+    if not base:
+        return None
+    timeout = _int_setting('request_timeout', 20)
+    page_limit = min(20, max(1, _int_setting('fast_refresh_tv_pages', 2)))
+    progress = xbmcgui.DialogProgress()
+    progress.create('Appi', 'Fast-refreshing TV show catalogue...')
+    leading = []
+    seen_urls = set()
+    seen_pages = set()
+    completed_pages = 0
+    fallback = False
+    try:
+        for page in range(1, page_limit + 1):
+            if progress.iscanceled():
+                _notify('TV fast refresh cancelled')
+                return None
+            progress.update(
+                int(((page - 1) * 90) / page_limit),
+                'Checking TV page {} of {} ({} leading episodes)'.format(
+                    page, page_limit, len(leading)
+                ),
+            )
+            page_url = _build_tv_page_url(base, page)
+            try:
+                text = fetch_text(page_url, timeout=timeout)
+            except HTTPError as exc:
+                if completed_pages and exc.code in TV_END_HTTP_CODES:
+                    summaries = _write_tv_index(leading)
+                    _clear_stream_cache('tv')
+                    if show_notification:
+                        _notify(
+                            'Fast TV refresh reached end of feed: {} shows / {} episodes'.format(
+                                len(summaries), len(leading)
+                            )
+                        )
+                    return summaries
+                raise
+
+            fingerprint = hashlib.sha1((text or '').encode('utf-8')).hexdigest()
+            if fingerprint in seen_pages:
+                fallback = True
+                break
+            seen_pages.add(fingerprint)
+            page_items = [
+                item for item in parse_m3u(text)
+                if item.get('kind') == 'episode' and item.get('media_url')
+            ]
+            if not page_items:
+                if not completed_pages:
+                    raise ValueError('TV catalogue page 1 contained no episodes')
+                summaries = _write_tv_index(leading)
+                _clear_stream_cache('tv')
+                return summaries
+            for item in page_items:
+                media_url = item.get('media_url')
+                if media_url in seen_urls:
+                    continue
+                seen_urls.add(media_url)
+                leading.append(item)
+            completed_pages = page
+
+            merged, evidence = refresh_logic.merge_leading(old_items, leading)
+            if merged is not None:
+                progress.update(96, 'Overlap found; rebuilding TV index...')
+                summaries = _write_tv_index(merged)
+                _clear_stream_cache('tv')
+                xbmc.log(
+                    'Appi fast TV refresh overlap: {}'.format(evidence),
+                    xbmc.LOGINFO,
+                )
+                if show_notification:
+                    _notify(
+                        'Fast TV refresh: {} new episodes; {} shows / {} episodes'.format(
+                            evidence.get('added', 0), len(summaries), len(merged)
+                        )
+                    )
+                return summaries
+        fallback = True
+    except Exception as exc:
+        xbmc.log('Appi fast TV refresh failed: {}'.format(exc), xbmc.LOGERROR)
+        if show_errors:
+            xbmcgui.Dialog().ok(
+                'Appi',
+                'Fast TV refresh failed. The previous indexed catalogue was kept.\n\n{}: {}'.format(
+                    type(exc).__name__, exc
+                ),
+            )
+        return None
+    finally:
+        progress.close()
+
+    if fallback:
+        xbmc.log(
+            'Appi fast TV refresh found no reliable overlap in {} page(s); falling back to full refresh'.format(
+                page_limit
+            ),
+            xbmc.LOGINFO,
+        )
+        return refresh_tv(show_notification=show_notification, show_errors=show_errors)
+    return None
+
+
+def _guarded_refresh(callback):
+    if not refresh_state.acquire():
+        _notify('A catalogue refresh is already in progress')
+        return False
+    try:
+        return callback()
+    finally:
+        refresh_state.release()
+
+
+def refresh_all(fast=False, show_notification=True, show_errors=True):
+    movies = refresh_movies(show_notification=False, show_errors=show_errors)
+    tv = (
+        refresh_tv_fast(show_notification=False, show_errors=show_errors)
+        if fast else refresh_tv(show_notification=False, show_errors=show_errors)
+    )
+    success = movies is not None and tv is not None
+    if show_notification:
+        _notify('All lists refreshed' if success else 'Refresh completed with an error', error=not success)
+    return success
+
+
+def auto_refresh():
+    if not refresh_state.acquire():
+        xbmc.log('Appi automatic refresh skipped because another refresh is active', xbmc.LOGINFO)
+        return False
+    success = False
+    try:
+        success = refresh_all(
+            fast=_bool_setting('auto_refresh_fast', True),
+            show_notification=False,
+            show_errors=False,
+        )
+        refresh_state.record(success)
+        return success
+    finally:
+        refresh_state.release()
 
 
 def clear_data(scope):
@@ -323,6 +473,7 @@ def clear_data(scope):
         _clear_stream_cache('movies')
     if scope in {'tv', 'catalogs'}:
         cache.remove('tv_shows')
+        cache.remove('tv_feed')
         cache.remove('tv')
         cache.remove_prefix('tv_show_')
         _clear_stream_cache('tv')
@@ -783,7 +934,7 @@ def show_root():
                 _metadata_batch_context(scope='tv', mode='all')
             ],
         ),
-        _folder_tuple('Search', _url('search', session=_new_search_session())),
+        _folder_tuple('Search', _url('search', session=_new_search_session(), return_to='root')),
         _folder_tuple(
             'Recently Played Movies', _url('recent_movies', page=1),
             context_items=[_metadata_batch_context(
@@ -1161,7 +1312,54 @@ def show_episodes(key, season):
     _finish()
 
 
-def search(scope=None, query=None, session=None):
+def _cancel_search(return_session=None, return_to=None):
+    if return_session:
+        target = _url('search', session=return_session)
+    else:
+        target = BASE_URL
+    xbmc.executebuiltin('Container.Update({})'.format(target))
+    xbmcplugin.endOfDirectory(HANDLE, succeeded=False, cacheToDisc=False)
+
+
+def _choose_search_query():
+    while True:
+        history = search_history.entries()
+        if not history:
+            value = xbmcgui.Dialog().input('Search', type=xbmcgui.INPUT_ALPHANUM).strip()
+            return value or None
+
+        choices = ['New search...'] + history + ['Clear search history']
+        selected = xbmcgui.Dialog().select('Search history', choices)
+        if selected < 0:
+            return None
+        if selected == 0:
+            value = xbmcgui.Dialog().input('Search', type=xbmcgui.INPUT_ALPHANUM).strip()
+            return value or None
+        if selected == len(choices) - 1:
+            if xbmcgui.Dialog().yesno('Clear Search History?', 'Delete all saved search keywords?'):
+                search_history.clear()
+                _notify('Search history cleared')
+            continue
+
+        term = history[selected - 1]
+        action = xbmcgui.Dialog().select(
+            'Search: {}'.format(term),
+            ['Search again', 'Edit before search', 'Delete from history'],
+        )
+        if action < 0:
+            continue
+        if action == 0:
+            return term
+        if action == 1:
+            value = xbmcgui.Dialog().input(
+                'Search', defaultt=term, type=xbmcgui.INPUT_ALPHANUM
+            ).strip()
+            return value or None
+        search_history.delete(term)
+        _notify('Removed from search history')
+
+
+def search(scope=None, query=None, session=None, return_session=None, return_to=None):
     stored = _search_session(session)
     if query is None and stored:
         scope = stored['scope']
@@ -1172,22 +1370,25 @@ def search(scope=None, query=None, session=None):
             'Search category', ['Movies and TV Shows', 'Movies', 'TV Shows']
         )
         if choice < 0:
-            xbmcplugin.endOfDirectory(HANDLE, succeeded=False, cacheToDisc=False)
+            _cancel_search(return_session, return_to)
             return
         scope = ('both', 'movies', 'tv')[choice]
     if query is None:
-        query = xbmcgui.Dialog().input('Search', type=xbmcgui.INPUT_ALPHANUM).strip()
+        query = _choose_search_query()
     else:
         query = query.strip()
     if not query:
-        xbmcplugin.endOfDirectory(HANDLE, succeeded=False, cacheToDisc=False)
+        _cancel_search(return_session, return_to)
         return
+
+    search_history.add(query)
     _save_search_session(session, scope, query)
     needle = query.casefold()
     prefix = []
     if session:
         prefix.append(_folder_tuple(
-            'New Search...', _url('search', session=_new_search_session())
+            'New Search...',
+            _url('search', session=_new_search_session(), return_session=session),
         ))
 
     if scope == 'movies':
@@ -1219,7 +1420,6 @@ def search(scope=None, query=None, session=None):
     combined.sort(key=lambda pair: _item_title(pair[0], pair[1]).casefold())
     _show_mixed(combined, prefix_items=prefix)
 
-
 def _probe_kind(catalog_name, ref, media_url):
     data = _stream_cache()
     key = _stream_key(catalog_name, ref)
@@ -1239,38 +1439,73 @@ def _probe_kind(catalog_name, ref, media_url):
     return data[key]
 
 
-def _configure_hls(list_item, preferences=None):
+def _effective_hls_mode(preferences=None):
     preferences = preferences or {}
-    list_item.setMimeType('application/vnd.apple.mpegurl')
-    list_item.setContentLookup(False)
     mode = preferences.get('hls_mode')
     if mode is None:
         mode = _int_setting('hls_quality_mode', 1)
     try:
-        mode = int(mode)
+        return min(2, max(0, int(mode)))
     except (TypeError, ValueError):
-        mode = 1
+        return 1
+
+
+def _manual_hls_url(media_url):
+    try:
+        manifest = fetch_text(media_url, timeout=min(20, _int_setting('request_timeout', 20)))
+        variants = hls.parse_master(manifest, media_url)
+    except Exception as exc:
+        xbmc.log('Appi could not read HLS master playlist: {}'.format(exc), xbmc.LOGERROR)
+        xbmcgui.Dialog().ok(
+            'Appi HLS quality',
+            'Could not read the HLS master playlist. Playback was not started.\n\n{}: {}'.format(
+                type(exc).__name__, exc
+            ),
+        )
+        return None
+    if not variants:
+        return media_url
+    choice = _dialog_select(
+        'Select HLS quality',
+        [hls.variant_label(variant) for variant in variants],
+        0,
+    )
+    if choice < 0:
+        return None
+    return variants[choice]['url']
+
+
+def _configure_hls(list_item, preferences=None):
+    preferences = preferences or {}
+    list_item.setMimeType('application/vnd.apple.mpegurl')
+    list_item.setContentLookup(False)
+    mode = _effective_hls_mode(preferences)
     if mode == 0:
-        return
+        return 'native-kodi'
+    if mode == 1:
+        # Appi resolves a single rendition before playback, so no ISA chooser
+        # is needed and Cancel can abort before setResolvedUrl().
+        return 'manual-fixed'
 
     if not xbmc.getCondVisibility('System.HasAddon(inputstream.adaptive)'):
         _notify('InputStream Adaptive is not installed; using Kodi HLS playback', error=True)
-        return
+        return 'native-fallback'
 
     list_item.setProperty('inputstream', 'inputstream.adaptive')
-    if mode == 1:
-        list_item.setProperty('inputstream.adaptive.stream_selection_type', 'ask-quality')
-    elif mode == 2:
-        max_kbps = preferences.get('hls_max_kbps')
-        if max_kbps is None:
-            max_kbps = _int_setting('hls_max_bitrate_kbps', 8000)
-        try:
-            max_kbps = max(250, int(max_kbps))
-        except (TypeError, ValueError):
-            max_kbps = 8000
-        list_item.setProperty('inputstream.adaptive.stream_selection_type', 'adaptive')
-        list_item.setProperty('inputstream.adaptive.chooser_bandwidth_max', str(max_kbps * 1000))
-
+    list_item.setProperty('inputstream.adaptive.stream_selection_type', 'adaptive')
+    max_kbps = preferences.get('hls_max_kbps')
+    if max_kbps is None:
+        max_kbps = _int_setting('hls_max_bitrate_kbps', 8000)
+    try:
+        max_kbps = max(0, int(max_kbps))
+    except (TypeError, ValueError):
+        max_kbps = 8000
+    if max_kbps:
+        list_item.setProperty(
+            'inputstream.adaptive.chooser_bandwidth_max',
+            str(max_kbps * 1000),
+        )
+    return 'inputstream.adaptive'
 
 def _configure_mp4(list_item):
     list_item.setMimeType('video/mp4')
@@ -1306,9 +1541,6 @@ def play_ref(params):
         xbmcplugin.setResolvedUrl(HANDLE, False, xbmcgui.ListItem())
         return
 
-    # Kodi uses this side-effect-free existence probe before reading status for
-    # plugin URLs through Files.GetFileDetails. Do not create a recent session,
-    # probe the provider, or queue metadata for this internal request.
     if params.get('kodi_action') == 'check_exists':
         list_item = xbmcgui.ListItem(path=media_url, offscreen=True)
         _set_playback_metadata(list_item, item)
@@ -1317,25 +1549,46 @@ def play_ref(params):
         return
 
     preferences = playback_prefs.effective(catalog_name, ref, key or '')
+    stream = _probe_kind(catalog_name, ref, media_url)
+    play_url = media_url
+    hls_mode = _effective_hls_mode(preferences)
+    if stream.get('kind') == 'hls' and hls_mode == 1:
+        play_url = _manual_hls_url(media_url)
+        if not play_url:
+            xbmcplugin.setResolvedUrl(HANDLE, False, xbmcgui.ListItem())
+            return
+
     lookup = _metadata_payload(item)
     enriched = metadata.get(lookup)
-    # Queue a cache miss without waiting for network access. Whether the service
-    # pauses metadata processing during playback is user-configurable.
     if not enriched:
         metadata.queue(lookup)
     list_item = xbmcgui.ListItem(
         label=_episode_label(item, enriched) if item.get('kind') == 'episode'
         else item.get('display_title') or item.get('title') or '',
-        path=media_url,
+        path=play_url,
         offscreen=True,
     )
     _set_playback_metadata(list_item, item, enriched)
     list_item.setProperty('IsPlayable', 'true')
-    stream = _probe_kind(catalog_name, ref, media_url)
+    engine = 'native-kodi'
     if stream.get('kind') == 'hls':
-        _configure_hls(list_item, preferences)
+        engine = _configure_hls(list_item, preferences)
     elif stream.get('kind') == 'mp4':
         _configure_mp4(list_item)
+        engine = 'kodi-mp4'
+
+    diagnostics.prepare_playback(
+        catalog_name,
+        ref,
+        media_url,
+        stream.get('kind'),
+        engine,
+        {
+            'hls_mode': hls_mode if stream.get('kind') == 'hls' else None,
+            'hls_max_kbps': preferences.get('hls_max_kbps', _int_setting('hls_max_bitrate_kbps', 8000)),
+            'manual_variant_selected': bool(stream.get('kind') == 'hls' and hls_mode == 1),
+        },
+    )
 
     subtitle_mode = _subtitle_mode(preferences)
     persist = _bool_setting('persist_subtitles', True)
@@ -1359,7 +1612,6 @@ def play_ref(params):
 
     playback_history.start_session(catalog_name, ref, item, key or '')
     xbmcplugin.setResolvedUrl(HANDLE, True, list_item)
-
 
 def _dialog_select(heading, choices, preselect=0):
     try:
@@ -1702,9 +1954,9 @@ def configure_playback(params):
     current_hls = current.get('hls_mode')
     hls_choices = [
         'Use global HLS setting',
-        'Automatic - Kodi default',
-        'Ask quality before playback',
-        'Limit maximum bitrate',
+        'Native Kodi automatic',
+        'Manual fixed quality',
+        'Adaptive bitrate (InputStream Adaptive)',
     ]
     hls_preselect = 0 if current_hls is None else min(3, max(1, int(current_hls) + 1))
     hls_choice = _dialog_select('HLS quality for this {}'.format('show' if target == 'show' else 'title'), hls_choices, hls_preselect)
@@ -1715,7 +1967,7 @@ def configure_playback(params):
     if hls_choice > 0:
         updated['hls_mode'] = hls_choice - 1
         if updated['hls_mode'] == 2:
-            default_cap = str(current.get('hls_max_kbps') or _int_setting('hls_max_bitrate_kbps', 8000))
+            default_cap = str(current.get('hls_max_kbps', _int_setting('hls_max_bitrate_kbps', 8000)))
             entered = xbmcgui.Dialog().input(
                 'Maximum HLS bitrate (Kbit/s)',
                 defaultt=default_cap,
@@ -1724,7 +1976,7 @@ def configure_playback(params):
             if not entered:
                 return
             try:
-                updated['hls_max_kbps'] = max(250, int(entered))
+                updated['hls_max_kbps'] = max(0, int(entered))
             except ValueError:
                 xbmcgui.Dialog().ok('Appi', 'Maximum bitrate must be a number in Kbit/s.')
                 return
@@ -1791,7 +2043,10 @@ def _run_action(params):
     elif action == 'episodes':
         show_episodes(params.get('show_key', ''), params.get('season'))
     elif action == 'search':
-        search(params.get('scope'), params.get('query'), params.get('session'))
+        search(
+            params.get('scope'), params.get('query'), params.get('session'),
+            params.get('return_session'), params.get('return_to'),
+        )
     elif action == 'play_ref':
         play_ref(params)
     elif action == 'play_next':
@@ -1817,14 +2072,28 @@ def _run_action(params):
     elif action == 'set_favorite':
         set_favorite(params)
     elif action == 'refresh_movies':
-        refresh_movies()
+        _guarded_refresh(lambda: refresh_movies())
         xbmc.executebuiltin('Container.Update({})'.format(BASE_URL))
     elif action == 'refresh_tv':
-        refresh_tv()
+        _guarded_refresh(lambda: refresh_tv())
+        xbmc.executebuiltin('Container.Update({})'.format(BASE_URL))
+    elif action == 'refresh_tv_fast':
+        _guarded_refresh(lambda: refresh_tv_fast())
         xbmc.executebuiltin('Container.Update({})'.format(BASE_URL))
     elif action == 'refresh_all':
-        refresh_all()
+        _guarded_refresh(lambda: refresh_all())
         xbmc.executebuiltin('Container.Update({})'.format(BASE_URL))
+    elif action == 'refresh_all_fast':
+        _guarded_refresh(lambda: refresh_all(fast=True))
+        xbmc.executebuiltin('Container.Update({})'.format(BASE_URL))
+    elif action == 'auto_refresh':
+        auto_refresh()
+    elif action == 'export_diagnostics':
+        try:
+            target = diagnostics.export_latest(_setting('diagnostics_export_folder'))
+            _notify('Diagnostic bundle exported: {}'.format(target))
+        except Exception as exc:
+            xbmcgui.Dialog().ok('Appi diagnostics', str(exc))
     elif action == 'clear_data':
         clear_data(params.get('scope', ''))
     elif action == 'settings':

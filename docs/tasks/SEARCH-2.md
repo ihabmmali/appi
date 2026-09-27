@@ -1,11 +1,11 @@
 ---
 id: SEARCH-2
-role: triage
-status: proposed
+role: review
+status: review
 delivery: unreleased
-verification: pending
-owner: unassigned
-base_commit: unset
+verification: partial
+owner: ChatGPT build session 2026-09-26
+base_commit: 8a9b1ad21b3944d8045e1d1abff2a2556c3035cc
 artifact: none
 ---
 # SEARCH-2 — User-manageable search history
@@ -41,6 +41,18 @@ Requested by the user on 2026-09-24 as a proposed Appi feature. This authorizes 
 User requirement: provide a manageable list of prior keywords that can be quickly selected, edited and used for another search.
 
 No implementation or device verification has been performed.
+
+## Build session — 2026-09-26
+- User authorization: all candidates committed to the next release; implementation, integration and publication explicitly authorized.
+- Release branch: `release/0.7.13`; base: `8a9b1ad21b3944d8045e1d1abff2a2556c3035cc`.
+- Planned paths: plugin.video.appi/resources/lib/search_history.py; app.py; settings/tests.
+- This worker owns the committed release sequence; review will be recorded as self-review unless independent evidence is added.
+
+## Review evidence — 2026-09-26
+- Added a separate persistent search-history store bounded to 20 normalized entries with case-insensitive deduplication, reuse, edit-before-search, single-entry delete and clear-all actions.
+- Corrupt/malformed history falls back to an empty list without affecting catalogue/search-session caches.
+- Search-history persistence/bounds/corruption regression coverage was added for the final candidate, in addition to the existing navigation smoke coverage.
+- Verification remains partial until the history UI and keyboard/back behavior are exercised on the target device.
 
 ## Outcome and next action
 Keep SEARCH-2 separate from SEARCH-1 so history UX can be implemented without obscuring navigation defects. Before implementation, choose the smallest remote-friendly UI flow and bounded persistence policy consistent with the acceptance criteria.

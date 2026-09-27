@@ -1,11 +1,11 @@
 ---
 id: REFRESH-1
-role: research
-status: proposed
+role: review
+status: review
 delivery: unreleased
-verification: pending
-owner: unassigned
-base_commit: unset
+verification: partial
+owner: ChatGPT build session 2026-09-26
+base_commit: 8a9b1ad21b3944d8045e1d1abff2a2556c3035cc
 artifact: none
 ---
 # REFRESH-1 — Fast leading-window catalogue refresh
@@ -29,6 +29,18 @@ Migrated from the existing Appi tracker and user reports on 2026-09-24. The curr
 
 ## Evidence
 Existing KNOWN_ISSUES entry preserved. No new experiment, implementation or device verification has been performed in this documentation task.
+
+## Build session — 2026-09-26
+- User authorization: all candidates committed to the next release; implementation, integration and publication explicitly authorized.
+- Release branch: `release/0.7.13`; base: `8a9b1ad21b3944d8045e1d1abff2a2556c3035cc`.
+- Planned paths: plugin.video.appi/resources/lib/app.py; refresh helpers/settings/tests.
+- This worker owns the committed release sequence; review will be recorded as self-review unless independent evidence is added.
+
+## Review evidence — 2026-09-26
+- Added a cached provider-order episode feed plus a leading-window fast-refresh path that requires a contiguous overlap before merging new head entries with the cached tail.
+- No reliable overlap, repeated-page ambiguity or missing provider-order cache falls back to the existing full refresh; fetch/parse exceptions leave the prior cache intact.
+- Automated coverage includes unchanged feed, prepended entries and no-overlap fallback logic; final candidate adds direct overlap regression tests.
+- Provider assumptions and real page-boundary behavior remain pending on the configured production feed, so verification is partial.
 
 ## Outcome and next action
 Specify the algorithm and test cases; use synthetic feeds before implementing.

@@ -193,13 +193,15 @@ state['items'].clear()
 # A UI search stores its query against the route session. Re-entering the
 # same route (Kodi Back from a show or Container.Refresh after Favorite)
 # must reconstruct the results without reopening either dialog.
-Dialog.select_answers=[2]; Dialog.input_answers=['000']
+Dialog.select_answers=[2,0]; Dialog.input_answers=['000']
 app.search(session='stable-search')
 assert [row[1].label for row in state['items']] == [
     'New Search...', 'Show 000 (2025)'
 ]
 new_search_url=state['items'][0][0]
-assert 'session=' in new_search_url and 'stable-search' not in new_search_url
+assert 'session=' in new_search_url
+assert 'return_session=stable-search' in new_search_url
+assert 'session=stable-search' not in new_search_url.split('return_session=', 1)[0]
 state['items'].clear()
 select_count=len(state['selects'])
 input_count=len(Dialog.input_answers)
@@ -211,13 +213,20 @@ assert len(state['selects']) == select_count
 assert len(Dialog.input_answers) == input_count
 state['items'].clear()
 
-# Cancelling a fresh search route fails that child cleanly, allowing Kodi to
-# return to the prior results container instead of displaying an empty list.
+# Cancelling a fresh root search explicitly restores the Appi root instead
+# of relying on Kodi's failed-child behavior (which could exit to Add-ons).
 Dialog.select_answers=[-1]
-app.search(session='cancelled-search')
+app.search(session='cancelled-search', return_to='root')
 assert state['ended'][-1][1].get('succeeded') is False
 assert state['ended'][-1][1].get('cacheToDisc') is False
+assert state['builtins'][-1] == 'Container.Update(plugin://plugin.video.appi)'
 assert not state['items']
+
+# Cancelling New Search from active results restores that exact session.
+Dialog.select_answers=[-1]
+app.search(session='cancelled-child', return_session='stable-search')
+assert 'action=search' in state['builtins'][-1]
+assert 'session=stable-search' in state['builtins'][-1]
 
 app.show_seasons(shows[0]['show_key']); assert len(state['items'])==1 and state['content'][-1]=='seasons'
 assert state['items'][0][1].context[0][0]=='Mark season as watched'
@@ -227,14 +236,34 @@ assert 3 in state['sort']
 app.set_season_watched({'show_key':shows[0]['show_key'],'season':'1'})
 assert native_status[app._play_ref_url('tv',app.item_ref(eps[0]),shows[0]['show_key'])]['playcount']==1
 
-li=ListItem(); app._configure_hls(li); assert li.props.get('inputstream')=='inputstream.adaptive'; assert li.props.get('inputstream.adaptive.stream_selection_type')=='ask-quality'
-settings['hls_quality_mode']='2'; settings['hls_max_bitrate_kbps']='5000'; li2=ListItem(); app._configure_hls(li2); assert li2.props.get('inputstream.adaptive.chooser_bandwidth_max')=='5000000'
+li=ListItem(); assert app._configure_hls(li)=='manual-fixed'; assert 'inputstream' not in li.props
+settings['hls_quality_mode']='2'; settings['hls_max_bitrate_kbps']='5000'; li2=ListItem(); assert app._configure_hls(li2)=='inputstream.adaptive'; assert li2.props.get('inputstream.adaptive.stream_selection_type')=='adaptive'; assert li2.props.get('inputstream.adaptive.chooser_bandwidth_max')=='5000000'
 Dialog.select_answers=[2,3]
 app.configure_playback({'target':'movie','catalog':'movies','ref':'m:tt000'})
 pref=playback_prefs.get_target('movie',ref='m:tt000')
 assert pref.get('hls_mode')==1
 assert pref.get('subtitle_mode')=='search'
-li3=ListItem(); app._configure_hls(li3, pref); assert li3.props.get('inputstream.adaptive.stream_selection_type')=='ask-quality'
+li3=ListItem(); assert app._configure_hls(li3, pref)=='manual-fixed'; assert 'inputstream' not in li3.props
+
+# Manual HLS quality is chosen by Appi before playback. Cancel therefore
+# resolves False and creates no Recently Played session.
+master_hls="""#EXTM3U
+#EXT-X-STREAM-INF:BANDWIDTH=2500000,RESOLUTION=1280x720
+720.m3u8
+#EXT-X-STREAM-INF:BANDWIDTH=6000000,RESOLUTION=1920x1080
+1080.m3u8
+"""
+app._probe_kind=lambda *a,**k: {'kind':'hls'}
+app.fetch_text=lambda *a,**k: master_hls
+recent_before=playback_history.recent_movies()
+Dialog.select_answers=[-1]
+app.play_ref({'catalog':'movies','ref':'m:tt000'})
+assert state['resolved'][-1][0][1] is False
+assert playback_history.recent_movies()==recent_before
+Dialog.select_answers=[1]
+app.play_ref({'catalog':'movies','ref':'m:tt000'})
+assert state['resolved'][-1][0][1] is True
+assert state['resolved'][-1][0][2].path == 'https://x/1080.m3u8'
 
 favorites.set_favorite('movie','m:tt000',movies[0],True)
 state['items'].clear(); app.show_favorite_movies()
@@ -287,6 +316,11 @@ assert requested == [
     'https://provider.invalid/tv/2',
     'https://provider.invalid/tv/3'
 ]
+requested.clear()
+settings['fast_refresh_tv_pages']='2'
+summaries=app.refresh_tv_fast(show_notification=False)
+assert summaries is not None and len(summaries)==2
+assert requested == ['https://provider.invalid/tv/1'], requested
 '''
         result = subprocess.run(
             [sys.executable, '-c', textwrap.dedent(code), str(PLUGIN)],

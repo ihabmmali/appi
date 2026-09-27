@@ -1,11 +1,11 @@
 ---
 id: SEARCH-1
 role: review
-status: ready
+status: review
 delivery: released
 verification: partial
-owner: unassigned
-base_commit: unset
+owner: ChatGPT build session 2026-09-26
+base_commit: 8a9b1ad21b3944d8045e1d1abff2a2556c3035cc
 artifact: https://github.com/ihabmmali/appi/blob/main/plugin.video.appi-0.7.12.zip
 ---
 # SEARCH-1 — Search navigation regression investigation
@@ -47,6 +47,18 @@ This triage thread is authorized to maintain the canonical records and release p
 Source manifest, README and package index were previously inspected at 0.7.12; no target-device acceptance is recorded. The user has reiterated two concrete historical failure paths: cancelling search can leave Appi, and favoriting a search result can return to category selection rather than results.
 
 No new device reproduction has been performed in this triage update.
+
+## Build session — 2026-09-26
+- User authorization: all candidates committed to the next release; implementation, integration and publication explicitly authorized.
+- Release branch: `release/0.7.13`; base: `8a9b1ad21b3944d8045e1d1abff2a2556c3035cc`.
+- Planned paths: plugin.video.appi/resources/lib/app.py; search navigation tests.
+- This worker owns the committed release sequence; review will be recorded as self-review unless independent evidence is added.
+
+## Review evidence — 2026-09-26
+- Implementation explicitly routes fresh-search cancellation back to Appi root and New Search cancellation back to the originating search session.
+- Search session reconstruction remains synchronous; Favorite-triggered refresh reuses the stored session.
+- Automated smoke coverage passed in Actions run 36277010649 after correcting stale test expectations.
+- Verification remains partial until the target Fire TV/Kodi/skin back, cancel and favorite-refresh flows are exercised repeatedly on-device.
 
 ## Outcome and next action
 Treat SEARCH-1 as the canonical navigation-regression task. A review worker should reproduce the explicit flows above on the current baseline. Any confirmed failure should move this same task into implementation with targeted regression tests; do not close it based only on the existence of the 0.7.12 session-retention code.

@@ -15,14 +15,18 @@ import os, sys, tempfile, types
 from pathlib import Path
 PLUGIN=Path(sys.argv[1]); sys.path.insert(0,str(PLUGIN))
 profile=tempfile.mkdtemp(prefix='appi-sub-'); temp=tempfile.mkdtemp(prefix='appi-temp-')
-settings={'persist_subtitles':'true','auto_saved_subtitles':'true'}
-state={'builtins':[], 'set':[], 'show':[]}
+settings={'persist_subtitles':'true','auto_saved_subtitles':'true','preferred_audio_language':'English','preferred_subtitle_language':'eng'}
+state={'builtins':[], 'set':[], 'show':[], 'audio':[], 'subtitle_stream':[]}
 xbmc=types.ModuleType('xbmc'); xbmc.LOGWARNING=2
 class Player:
     def __init__(self): pass
     def setSubtitles(self,p): state['set'].append(p)
     def showSubtitles(self,v): state['show'].append(v)
     def isPlayingVideo(self): return False
+    def getAvailableAudioStreams(self): return ['spa','eng']
+    def setAudioStream(self,index): state['audio'].append(index)
+    def getAvailableSubtitleStreams(self): return ['fre','English']
+    def setSubtitleStream(self,index): state['subtitle_stream'].append(index)
 xbmc.Player=Player
 xbmc.executebuiltin=lambda v: state['builtins'].append(v)
 xbmc.log=lambda *a,**k: None
@@ -37,7 +41,7 @@ class Addon:
     def getSetting(self,n): return settings.get(n,'')
     def getAddonInfo(self,n): return profile if n=='profile' else ''
 xa.Addon=Addon; sys.modules['xbmcaddon']=xa
-xv=types.ModuleType('xbmcvfs'); xv.translatePath=lambda p: temp if p=='special://temp/' else p; xv.exists=os.path.exists; xv.mkdirs=lambda p: os.makedirs(p,exist_ok=True)
+xv=types.ModuleType('xbmcvfs'); xv.translatePath=lambda p: temp if p=='special://temp/' else p; xv.exists=os.path.exists; xv.mkdirs=lambda p: os.makedirs(p,exist_ok=True); xv.copy=lambda a,b: True
 sys.modules['xbmcvfs']=xv
 from resources.lib import subtitle_store, subtitle_service
 from resources.lib import playback_history
@@ -48,8 +52,23 @@ open(source,'w').write('1\\n00:00:00,000 --> 00:00:01,000\\nHello\\n')
 subtitle_store.capture_temp_changes(); subtitle_store.capture_temp_changes()
 subtitle_store.clear_session()
 player=subtitle_service.AppiPlayer()
+
+# A newly downloaded subtitle must survive an immediate stop even if the
+# regular poller has only observed it once.
+subtitle_store.prepare_session('movies','m:fast')
+fast_source=os.path.join(temp,'fast.srt')
+open(fast_source,'w').write('1\n00:00:00,000 --> 00:00:01,000\nFast\n')
+subtitle_store.capture_temp_changes()
+player.onPlayBackStopped()
+assert subtitle_store.last_saved_subtitle('movies','m:fast'), 'final stop capture lost subtitle'
+
 subtitle_store.prepare_session('movies','m:tt1', subtitle_mode='saved')
 player.onAVStarted(); assert state['set'], state
+subtitle_store.clear_session(); state['set'].clear(); state['show'].clear()
+subtitle_store.prepare_session('movies','m:language', subtitle_mode='global')
+player.onAVStarted()
+assert state['audio'][-1] == 1, state
+assert state['subtitle_stream'][-1] == 1, state
 subtitle_store.clear_session(); state['set'].clear(); state['show'].clear()
 subtitle_store.prepare_session('movies','m:tt1', subtitle_mode='off')
 player.onAVStarted(); assert not state['set'], state

@@ -68,7 +68,7 @@
         <setting id="hls_max_bitrate_kbps" type="integer" label="32312" help="32313">
           <level>0</level>
           <default>8000</default>
-          <constraints><minimum>250</minimum><maximum>100000</maximum></constraints>
+          <constraints><minimum>0</minimum><maximum>100000</maximum></constraints>
           <control type="edit" format="integer"><heading>32312</heading></control>
         </setting>
       </group>
@@ -90,6 +90,18 @@
       <group id="3" label="32340">
         <setting id="auto_next_episode" type="boolean" label="32341" help="32342">
           <level>0</level><default>false</default><control type="toggle"/>
+        </setting>
+      </group>
+      <group id="4" label="32350">
+        <setting id="preferred_audio_language" type="string" label="32351" help="32352">
+          <level>0</level><default/>
+          <constraints><allowempty>true</allowempty></constraints>
+          <control type="edit" format="string"><heading>32351</heading></control>
+        </setting>
+        <setting id="preferred_subtitle_language" type="string" label="32353" help="32354">
+          <level>0</level><default/>
+          <constraints><allowempty>true</allowempty></constraints>
+          <control type="edit" format="string"><heading>32353</heading></control>
         </setting>
       </group>
     </category>
@@ -186,6 +198,45 @@
           <data>RunPlugin(plugin://$ID/?action=refresh_all)</data>
           <control type="button" format="action"><close>true</close></control>
         </setting>
+        <setting id="fast_refresh_tv_pages" type="integer" label="32530" help="32531">
+          <level>0</level><default>2</default>
+          <constraints><minimum>1</minimum><maximum>20</maximum></constraints>
+          <control type="edit" format="integer"><heading>32530</heading></control>
+        </setting>
+        <setting id="fast_refresh_tv" type="action" label="32532" help="32533">
+          <level>0</level>
+          <data>RunPlugin(plugin://$ID/?action=refresh_tv_fast)</data>
+          <control type="button" format="action"><close>true</close></control>
+        </setting>
+        <setting id="fast_refresh_all" type="action" label="32534" help="32535">
+          <level>0</level>
+          <data>RunPlugin(plugin://$ID/?action=refresh_all_fast)</data>
+          <control type="button" format="action"><close>true</close></control>
+        </setting>
+      </group>
+      <group id="3" label="32540">
+        <setting id="auto_refresh_enabled" type="boolean" label="32541" help="32542">
+          <level>0</level><default>false</default><control type="toggle"/>
+        </setting>
+        <setting id="auto_refresh_on_startup" type="boolean" label="32543" help="32544">
+          <level>0</level><default>false</default><control type="toggle"/>
+        </setting>
+        <setting id="auto_refresh_interval_hours" type="integer" label="32545" help="32546">
+          <level>0</level><default>6</default>
+          <constraints>
+            <options>
+              <option label="32550">1</option>
+              <option label="32551">3</option>
+              <option label="32552">6</option>
+              <option label="32553">12</option>
+              <option label="32554">24</option>
+            </options>
+          </constraints>
+          <control type="list" format="string"><heading>32545</heading></control>
+        </setting>
+        <setting id="auto_refresh_fast" type="boolean" label="32547" help="32548">
+          <level>0</level><default>true</default><control type="toggle"/>
+        </setting>
       </group>
       <group id="2" label="32502">
         <setting id="clear_movie_cache" type="action" label="32520" help="32521">
@@ -212,6 +263,28 @@
           <level>0</level>
           <data>RunPlugin(plugin://$ID/?action=clear_data&amp;scope=recent)</data>
           <control type="button" format="action"><close>true</close></control>
+        </setting>
+      </group>
+    </category>
+
+    <category id="diagnostics" label="32800" help="">
+      <group id="1" label="32801">
+        <setting id="diagnostics_enabled" type="boolean" label="32810" help="32811">
+          <level>1</level><default>false</default><control type="toggle"/>
+        </setting>
+        <setting id="diagnostics_export_folder" type="path" label="32812" help="32813">
+          <level>1</level><default/>
+          <constraints>
+            <sources><source>files</source></sources>
+            <writable>true</writable>
+            <allowempty>true</allowempty>
+          </constraints>
+          <control type="button" format="path"><heading>32812</heading></control>
+        </setting>
+        <setting id="export_diagnostics" type="action" label="32814" help="32815">
+          <level>1</level>
+          <data>RunPlugin(plugin://$ID/?action=export_diagnostics)</data>
+          <control type="button" format="action"><close>false</close></control>
         </setting>
       </group>
     </category>

@@ -1,6 +1,6 @@
 # Next Appi release
 
-Planning status: committed. Version: not assigned. Current baseline and fallback: [PROJECT_STATE.md](PROJECT_STATE.md).
+Planning status: committed / release candidate. Version: 0.7.13. Current baseline and fallback: [PROJECT_STATE.md](PROJECT_STATE.md).
 
 This is the user-authorized committed scope for the next release. Implementation, integration and publication were explicitly authorized on 2026-09-26.
 
@@ -52,4 +52,4 @@ Selection values: candidate / committed / deferred / backlog. Task status remain
 
 ## Readiness
 
-No release is declared ready by this file. Task evidence, source checks, required device results and the [release procedure](docs/workflows/release.md) determine readiness. Keep the known-good fallback available.
+Automated implementation verification passed in GitHub Actions run 36277010649. The hardened 0.7.13 release-candidate gate then passed at source commit `469aebb4a040cf5c6a019c9e5e7a175568157b2b` in run 36277371842: synchronized build, full unit/smoke suite, tracker validation, deterministic rebuild, package/hash/index inspection and 0.7.8 fallback preservation. Packaging is authorized. Target-device checks remain pending and must stay identified as such rather than being treated as automated acceptance.
