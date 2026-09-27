@@ -26,7 +26,7 @@ https://cdn.example/high.m3u8
 """
         variants = hls.parse_master(text, 'https://provider.example/root/master.m3u8?token=secret')
         self.assertEqual(len(variants), 2)
-        self.assertEqual(variants[0]['url'], 'https://provider.example/root/low/playlist.m3u8')
+        self.assertEqual(variants[0]['url'], 'https://provider.example/root/low/playlist.m3u8?token=secret')
         self.assertEqual(variants[0]['height'], 720)
         self.assertEqual(variants[1]['bandwidth'], 6000000)
         self.assertIn('1080p', hls.variant_label(variants[1]))
@@ -141,7 +141,7 @@ class Addon:
     def getSetting(self,name): return settings.get(name,'')
     def getAddonInfo(self,name):
         if name=='profile': return profile
-        if name=='version': return '0.7.13'
+        if name=='version': return '0.7.14'
         if name=='id': return 'plugin.video.appi'
         return ''
 xa.Addon=Addon; sys.modules['xbmcaddon']=xa
