@@ -2,11 +2,11 @@
 id: HLS-2
 role: review
 status: review
-delivery: unreleased
+delivery: released
 verification: partial
 owner: ChatGPT build session 2026-09-26
 base_commit: 8a9b1ad21b3944d8045e1d1abff2a2556c3035cc
-artifact: none
+artifact: https://github.com/ihabmmali/appi/blob/main/plugin.video.appi-0.7.13.zip
 ---
 # HLS-2 — Explicit adaptive bitrate HLS mode
 
@@ -74,3 +74,9 @@ Kodi/InputStream Adaptive runtime representation-switch behavior on the target d
 
 ## Outcome and next action
 Do not assume the current maximum-bitrate path already satisfies the ABR requirement. A research worker should reproduce the user's observation, determine whether runtime representation switching occurs, and then recommend the smallest source/UI change needed to expose genuinely adaptive playback if supported.
+
+## Publication — 0.7.13
+- Published to `main` in merge commit `0d708565e4bccb0abe03c7a0ae004ccb3dc0a72a` on 2026-09-26/27.
+- Post-merge release verification: GitHub Actions run 36287058096 passed the full automated gate.
+- Artifact: `plugin.video.appi-0.7.13.zip`; 0.7.8 remains the known-good fallback.
+- Delivery is released; verification remains partial until the task's documented target-device checks are completed.

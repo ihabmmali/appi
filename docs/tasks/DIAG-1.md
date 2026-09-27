@@ -2,11 +2,11 @@
 id: DIAG-1
 role: review
 status: review
-delivery: unreleased
+delivery: released
 verification: partial
 owner: ChatGPT build session 2026-09-26
 base_commit: 8a9b1ad21b3944d8045e1d1abff2a2556c3035cc
-artifact: none
+artifact: https://github.com/ihabmmali/appi/blob/main/plugin.video.appi-0.7.13.zip
 ---
 # DIAG-1 — Export bounded playback diagnostics
 
@@ -65,3 +65,9 @@ No implementation or device verification has been performed for DIAG-1.
 
 ## Outcome and next action
 Keep DIAG-1 separate from HLS-1: DIAG-1 should establish a reusable diagnostic export facility; HLS-1 should use its evidence to diagnose the specific repeated-stall problem. Assign a research worker to map Kodi observability and finalize the capture schema before implementation.
+
+## Publication — 0.7.13
+- Published to `main` in merge commit `0d708565e4bccb0abe03c7a0ae004ccb3dc0a72a` on 2026-09-26/27.
+- Post-merge release verification: GitHub Actions run 36287058096 passed the full automated gate.
+- Artifact: `plugin.video.appi-0.7.13.zip`; 0.7.8 remains the known-good fallback.
+- Delivery is released; verification remains partial until the task's documented target-device checks are completed.
