@@ -1,9 +1,9 @@
 ---
 id: HLS-4
-role: implementation
-status: active
+role: review
+status: review
 delivery: released
-verification: failed
+verification: partial
 owner: ChatGPT release worker 2026-09-26
 base_commit: f00dc00a25c3531187ed2f83dc031e3037fdf8dc
 artifact: https://github.com/ihabmmali/appi/blob/main/plugin.video.appi-0.7.14.zip
@@ -94,5 +94,13 @@ The 0.7.13 HLS-2/HLS-3 review record states that automated smoke tests covered m
 - Automated tests must assert that manual mode does not call the Appi manifest parser/child resolver and that the resolved ListItem path remains the original master URL.
 - Target-device acceptance remains required after publication; 0.7.12 stays available as the usable fallback until confirmed.
 
+## 0.7.15 implementation evidence — 2026-09-26
+- Removed Appi's active `_manual_hls_selection()` pre-play path and its `hls.parse_master()` dependency from playback.
+- Manual HLS mode now keeps `ListItem.path=media_url`, where `media_url` is the original provider master URL.
+- Manual mode configures InputStream Adaptive and sets `inputstream.adaptive.stream_selection_type=ask-quality`, matching 0.7.12.
+- Diagnostics record that manual selection is owned by InputStream Adaptive and that the master URL was preserved; no authenticated URL is exported.
+- Regression checks assert that `app.py` no longer contains the Appi manual selector/parser call, still uses the original `media_url`, and contains the ISA `ask-quality` configuration.
+- Native and adaptive HLS branches were left intact. Target-device acceptance remains required after publication.
+
 ## Outcome and next action
-Review the 0.7.14 candidate with the automated gate, then target-device test at least one authenticated multi-variant provider stream. Keep 0.7.12 available until a manually selected rendition plays successfully and the chooser metadata is confirmed.
+Run the 0.7.15 automated release/package gates, publish under the user's explicit authorization, then target-device test manual rendition selection on the same provider stream. Keep 0.7.12 available until playback is confirmed.
