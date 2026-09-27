@@ -2,7 +2,7 @@
 
 Each entry records the package shipped, its main user-visible changes, and verification at release time. For the current baseline and next tasks read [PROJECT_STATE.md](PROJECT_STATE.md) and [KNOWN_ISSUES.md](KNOWN_ISSUES.md); the [CHANGELOG.md](CHANGELOG.md) is the implemented feature history.
 
-## 0.7.18 — candidate, 2026-09-27
+## 0.7.18 — 2026-09-27
 
 - Scoped crash hotfix: reopened LANG-2. Base `a0b9eacb23b4816df7ac4c0f60e9c51fb7d1eb79`; branch `release/0.7.18`.
 - Fix the 0.7.17 Kodi startup crash trigger: the No preference language options now have a non-empty `none` value, avoiding a null text child in Kodi's native settings parser.
@@ -10,7 +10,7 @@ Each entry records the package shipped, its main user-visible changes, and verif
 - Add checks against the actual archived 0.7.17 settings and validate every list option/default in both source and ZIP. Target Fire TV recovery still needs confirmation.
 
 - Local verification: 76 tests passed, including all prior regressions plus native-settings structural safety, archived 0.7.17 reproduction fixture and language migration across fresh/legacy/empty/explicit-None cases. This is self-review; no target-device crash dump or recovery observation is available yet.
-- Candidate ZIP SHA-256: `0a0a739e8f8eca85c0268d46027c060b57b185b2b8ec4464b3ebb72289181447`. Package gate, integration and deployed artifact verification pending.
+- ZIP SHA-256: `0a0a739e8f8eca85c0268d46027c060b57b185b2b8ec4464b3ebb72289181447`. Release/package run 36351377864 passed and produced artifact commit `052db2530469cd2582dcd8e4b8e197f48071db7d`. Published through [PR #6](https://github.com/ihabmmali/appi/pull/6), merge `22bf3ba0e59ee5cf045836aa3d8256be3cc684e0`; post-merge verification run 36352524841 and Pages deployment run 36352524365 passed. Delivery: [plugin.video.appi-0.7.18.zip](https://ihabmmali.github.io/appi/plugin.video.appi-0.7.18.zip).
 - The 0.7.17 archive is retained for regression evidence, not recommended installation. 0.7.12 remains the usable fallback.
 
 ## 0.7.17 — 2026-09-27

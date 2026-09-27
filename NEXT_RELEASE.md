@@ -1,16 +1,13 @@
 # Next Appi release
 
-Planning status: committed crash hotfix. Version: 0.7.18. Current baseline and fallback: [PROJECT_STATE.md](PROJECT_STATE.md).
+Planning status: open. Version: not assigned. Current baseline and fallback: [PROJECT_STATE.md](PROJECT_STATE.md).
 
-0.7.17 failed target-device startup acceptance. The sole 0.7.18 scope is the corrective LANG-2 fix under the existing release authorization.
+0.7.18 is published. No new implementation scope is committed.
 
 ## Proposed scope
 
-Emergency follow-up to the authorized 0.7.17 release: repair the reported install/startup crash in LANG-2. No feature expansion or playback changes.
-
 | Task | Selection | Priority | Reason |
 | --- | --- | --- | --- |
-| [LANG-2](docs/tasks/LANG-2.md) | committed | release blocker | Remove empty language option values that trigger a native Kodi settings-parser crash |
 | [HLS-1](docs/tasks/HLS-1.md) | backlog | investigation | Use DIAG-2/HLS-5 target-device evidence to diagnose any repeated stalls that remain |
 | [UI-1](docs/tasks/UI-1.md) | backlog | investigation | Skin comparison needed |
 
@@ -24,6 +21,8 @@ Emergency follow-up to the authorized 0.7.17 release: repair the reported instal
 6. Copy shipped task IDs and scope changes into RELEASE_NOTES, then reset this planning file for the next cycle.
 
 ## Scope decisions
+
+2026-09-27: Appi 0.7.18 was published through PR #6 / merge `22bf3ba0e59ee5cf045836aa3d8256be3cc684e0`. The release/package run 36351377864, post-merge verification run 36352524841 and Pages deployment run 36352524365 passed. Shipped scope: reopened LANG-2 native-settings crash correction only. Target-device startup confirmation remains pending; scope is reset for the next planning cycle.
 
 2026-09-27: 0.7.17 published all five committed tasks through PR #5 / merge `18ffae9349b2d225b575cee6a276ea8dcd59143b`. Release/package 36350783947, post-merge verification 36350856112 and Pages 36350855315 passed; deployed ZIP checksum verified. Scope reset for the next cycle; device acceptance stays open in the canonical task records.
 
@@ -87,4 +86,4 @@ Emergency follow-up to the authorized 0.7.17 release: repair the reported instal
 
 ## Readiness
 
-0.7.18 candidate corrects the empty language option that Kodi's native parser dereferences. Local 76-test suite and source/ZIP settings validation pass. Package/integrate/publish, then confirm target-device recovery. No playback changes.
+No new committed implementation scope. Appi 0.7.18 is published and automated/package/Pages verification passed. Next action is target-device startup confirmation and language-list smoke testing; 0.7.12 remains the usable fallback until that acceptance is recorded.
