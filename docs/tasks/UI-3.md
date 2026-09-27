@@ -42,7 +42,7 @@ Requested by the user on 2026-09-27. The user stated that Appi needs a graphical
 
 2026-09-27 implementation/self-review (0.7.17 candidate): The approved artwork is copied byte-for-byte to resources/icon.png and declared in addon.xml. Package inspection verifies the exact referenced path and byte equality with artwork/appi-icon-selected.png. No crop, distortion or design change. Kodi rendering/cache behavior still needs target-device observation.
 
-73 unit/smoke/integration tests passed with Python 3.12, including real FFmpeg MPEG-TS and fMP4 decode at start, forward seek and backward seek; workflow validation and diff whitespace checks passed. `_effective_hls_mode`, `_configure_hls` and `_configure_mp4` are AST-identical to base 6d36d9a52733fbe6f3ded3ba5ee335cb779883e3. This is self-review, not independent review.
+73 unit/smoke/integration tests passed with Python 3.12, including real FFmpeg MPEG-TS and fMP4 decode at start, forward seek and backward seek; workflow validation and diff whitespace checks passed. `_effective_hls_mode`, `_configure_hls` and `_configure_mp4` are AST-identical to base 6d36d9a52733fbe6f3ded3ba5ee335cb779883e3. Reviewed implementation commit: `842ef37c8deb6ce340946dbbafa29fbd8745ec0c`. This is self-review, not independent review.
 
 The current `plugin.video.appi/addon.xml` contains add-on metadata but does not declare Appi artwork assets. On 2026-09-27 the user selected the first generated Appi design; a 512×512 PNG handoff copy is now stored at `artwork/appi-icon-selected.png`. It is repository artwork only at this stage and has not yet been wired into the packaged add-on.
 

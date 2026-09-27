@@ -87,6 +87,6 @@ Version 0.7.16 was published on 2026-09-27, but Buffered Look Ahead has now fail
 
 ## Readiness
 
-2026-09-27: 0.7.17 implements all five committed tasks. Local verification passed 73 tests plus tracker/package/source/icon/fallback inspection. Proceed to the authorized package gate and publication; device acceptance stays pending in task records.
+2026-09-27: 0.7.17 implements all five committed tasks. Tested implementation commit `842ef37c8deb6ce340946dbbafa29fbd8745ec0c`. Local verification passed 73 tests plus tracker/package/source/icon/fallback inspection. Proceed to the authorized package gate and publication; device acceptance stays pending in task records.
 
 The next release scope is committed. HLS-7 is the Buffered Look Ahead release blocker and should be resolved together with HLS-6 before release. LANG-2, UI-2 and UI-3 are also committed. Appi 0.7.16 is published from merge commit `af6791128009e5e9afd408221d8427c2baed65e1`; post-merge verification run 36297143439 and Pages deployment run 36297143062 passed. HLS-5 remains in review/partial verification until target-device buffering effectiveness is tested.

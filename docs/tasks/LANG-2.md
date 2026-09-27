@@ -51,7 +51,7 @@ On 2026-09-27 the user explicitly instructed that all currently tracked changes 
 
 2026-09-27 implementation/self-review (0.7.17 candidate): Both visible controls are curated lists of 29 common languages plus No preference, storing canonical codes independently. Hidden legacy strings migrate once; recognized aliases survive, unknown strings safely become No preference, and later explicit None does not resurrect a legacy preference. Existing subtitle-mode precedence and saved-subtitle smoke tests remain passing.
 
-73 unit/smoke/integration tests passed with Python 3.12, including real FFmpeg MPEG-TS and fMP4 decode at start, forward seek and backward seek; workflow validation and diff whitespace checks passed. `_effective_hls_mode`, `_configure_hls` and `_configure_mp4` are AST-identical to base 6d36d9a52733fbe6f3ded3ba5ee335cb779883e3. This is self-review, not independent review.
+73 unit/smoke/integration tests passed with Python 3.12, including real FFmpeg MPEG-TS and fMP4 decode at start, forward seek and backward seek; workflow validation and diff whitespace checks passed. `_effective_hls_mode`, `_configure_hls` and `_configure_mp4` are AST-identical to base 6d36d9a52733fbe6f3ded3ba5ee335cb779883e3. Reviewed implementation commit: `842ef37c8deb6ce340946dbbafa29fbd8745ec0c`. This is self-review, not independent review.
 
 The released LANG-1 implementation added normalized preferred-language matching, but the current `plugin.video.appi/resources/settings.xml` still defines both `preferred_audio_language` and `preferred_subtitle_language` as string edit controls with free-text input.
 

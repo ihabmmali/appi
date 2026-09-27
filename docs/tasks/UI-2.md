@@ -39,7 +39,7 @@ Requested by the user on 2026-09-27 as a usability improvement. The user wants a
 
 2026-09-27 implementation/self-review (0.7.17 candidate): The settings About action obtains name/version from the installed Addon runtime metadata. Smoke coverage changes mocked installed metadata from 0.7.17 to 0.7.12 and verifies the displayed version changes accordingly. No second version constant is used.
 
-73 unit/smoke/integration tests passed with Python 3.12, including real FFmpeg MPEG-TS and fMP4 decode at start, forward seek and backward seek; workflow validation and diff whitespace checks passed. `_effective_hls_mode`, `_configure_hls` and `_configure_mp4` are AST-identical to base 6d36d9a52733fbe6f3ded3ba5ee335cb779883e3. This is self-review, not independent review.
+73 unit/smoke/integration tests passed with Python 3.12, including real FFmpeg MPEG-TS and fMP4 decode at start, forward seek and backward seek; workflow validation and diff whitespace checks passed. `_effective_hls_mode`, `_configure_hls` and `_configure_mp4` are AST-identical to base 6d36d9a52733fbe6f3ded3ba5ee335cb779883e3. Reviewed implementation commit: `842ef37c8deb6ce340946dbbafa29fbd8745ec0c`. This is self-review, not independent review.
 
 The current packaged manifest, `plugin.video.appi/addon.xml`, declares Appi version `0.7.16`, while the current settings definition has no About/version action.
 
