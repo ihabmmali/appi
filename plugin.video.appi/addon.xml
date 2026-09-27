@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <addon id="plugin.video.appi"
        name="Appi"
-       version="0.7.13"
+       version="0.7.14"
        provider-name="Eyecon">
   <requires>
     <import addon="xbmc.python" version="3.0.1"/>
@@ -18,6 +18,6 @@
     <platform>all</platform>
     <license>GPL-3.0-or-later</license>
     <source>https://github.com/ihabmmali/appi</source>
-    <news>0.7.13 - Add stable search history/navigation, subtitle persistence repair, fast/automatic refresh, language preferences, bounded diagnostics, and explicit native/manual/adaptive HLS modes with cancel-safe manual quality selection.</news>
+    <news>0.7.14 - Repair authenticated manual HLS rendition playback and add schema-2 causal playback diagnostics with stall, representation and cache/read-ahead timelines.</news>
   </extension>
 </addon>
