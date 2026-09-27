@@ -141,7 +141,7 @@ class Addon:
     def getSetting(self,name): return settings.get(name,'')
     def getAddonInfo(self,name):
         if name=='profile': return profile
-        if name=='version': return '0.7.14'
+        if name=='version': return '0.7.15'
         if name=='id': return 'plugin.video.appi'
         return ''
 xa.Addon=Addon; sys.modules['xbmcaddon']=xa
