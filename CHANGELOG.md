@@ -2,6 +2,13 @@
 
 Implemented features, grouped by add-on version. A version listed here means its source/package was published in the repository; it does not by itself certify device testing. For details and earlier 0.7.x entries, see [README.md](README.md). This file is the concise ongoing release history; [RELEASE_NOTES.md](RELEASE_NOTES.md) records what each package shipped and how it was verified.
 
+## 0.7.15 — 2026-09-26
+
+- Restore the proven 0.7.12 manual HLS playback architecture after 0.7.13 and 0.7.14 both failed target-device manual-selection playback.
+- Manual selection now keeps the original provider HLS master URL and delegates rendition discovery/selection/playback to InputStream Adaptive `ask-quality`.
+- Remove Appi's pre-play child-rendition substitution from the active playback path while preserving native HLS mode, adaptive ABR mode, diagnostics, subtitles and playback history.
+- Retain 0.7.12 as the usable fallback until target-device acceptance of 0.7.15.
+
 ## 0.7.14 — 2026-09-26
 
 - Repair authenticated manual HLS variant resolution by preserving the master query for same-origin relative child playlists and retaining Kodi request options.
