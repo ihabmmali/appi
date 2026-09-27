@@ -2,6 +2,16 @@
 
 Each entry records the package shipped, its main user-visible changes, and verification at release time. For the current baseline and next tasks read [PROJECT_STATE.md](PROJECT_STATE.md) and [KNOWN_ISSUES.md](KNOWN_ISSUES.md); the [CHANGELOG.md](CHANGELOG.md) is the implemented feature history.
 
+## 0.7.14 — release candidate, 2026-09-26
+
+- Included committed tasks: HLS-4 and DIAG-2.
+- HLS manual fixed-quality playback now resolves relative child playlists without dropping an authenticated master's query string, preserves Kodi URL request options, and keeps resolution/average bandwidth/peak bandwidth/codecs attached to the exact selected variant.
+- Diagnostics schema 2 adds timestamped stall intervals, representation changes, Kodi cache/read-ahead InfoLabels when available, bounded pre-stall history and evidence-qualified causal classifications.
+- Privacy is retained: raw authenticated URLs, queries, cookies/credentials and subtitle contents are not exported.
+- Known observability limit: supported Kodi add-on Python does not reliably expose per-segment InputStream Adaptive HTTP timing, exact internal queue depth or every internal ABR decision. Those fields are explicitly reported unavailable rather than fabricated.
+- Automated release gate: GitHub Actions PR run 36290602785 passed unit/smoke tests, workflow tracker validation, deterministic repository build, ZIP/hash/index inspection and fallback preservation.
+- Target-device acceptance: pending. 0.7.12 remains the usable playback fallback until manual selection and the new diagnostic bundle are verified on the user's Fire TV/provider stream.
+
 ## 0.7.13 — 2026-09-26
 
 - Published merge commit: [0d708565e4bccb0abe03c7a0ae004ccb3dc0a72a](https://github.com/ihabmmali/appi/commit/0d708565e4bccb0abe03c7a0ae004ccb3dc0a72a). The implementation checkpoint was `48c2af72df70ed3e6f3e82d805691c49bcbe6553`.

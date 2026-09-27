@@ -18,6 +18,14 @@ Appi is a Kodi video add-on for user-configured movie and TV-show M3U catalogues
 
 Add `https://ihabmmali.github.io/appi/` in Kodi File Manager, then install the current `plugin.video.appi-<version>.zip`.
 
+## 0.7.14
+
+- Repair manual fixed-quality HLS child-URL resolution so same-origin relative renditions inherit an authenticated master URL query when the child supplies no query, while preserving Kodi URL request options.
+- Show manual rendition labels from the same EXT-X-STREAM-INF entry that supplies the played URL, including resolution, average/peak bandwidth and codecs.
+- Upgrade playback diagnostics to schema 2 with explicit stall start/end intervals, sampled Kodi cache/read-ahead InfoLabels where exposed, resolution/bitrate representation transitions, bounded pre-stall history and causal classifications.
+- Keep unavailable evidence explicit: supported Kodi add-on Python does not reliably expose InputStream Adaptive per-segment HTTP timings, exact internal queue depth or every internal ABR decision, so the bundle does not fabricate those measurements.
+- Preserve 0.7.12 as the usable playback fallback until 0.7.14 manual HLS behavior is accepted on the target Fire TV/provider stream.
+
 ## 0.7.13
 
 - Stabilize Search cancellation/context and keep results stable across back/favorite refreshes; add a persistent bounded keyword history with reuse, edit, delete and clear actions.

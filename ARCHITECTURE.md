@@ -1,6 +1,6 @@
 # Appi architecture
 
-Updated for the 0.7.13 release candidate (2026-09-26). Source describes implemented behavior; accepted requirements and decisions describe intended behavior.
+Updated for the 0.7.14 repair/diagnostics release candidate (2026-09-26). Source describes implemented behavior; accepted requirements and decisions describe intended behavior.
 
 ## Project goals and binding rules
 
@@ -41,7 +41,7 @@ These goals bind the portable [lifecycle](LIFECYCLE.md) to Appi. Accepted change
 - Playback uses `app.py` for MP4 buffering and three distinct HLS modes: native Kodi handling, Appi-selected fixed rendition, and explicit InputStream Adaptive `adaptive` mode with an optional maximum bitrate ceiling. Manual rendition selection happens before playback is resolved, making Cancel an abort rather than a playback choice.
 - As of 0.7.8, Kodi's native video database owns watched state and resume bookmarks. Appi's Recently Played cache records identity/order, not duplicate playback status.
 - Favorites, metadata and subtitle data have distinct storage. A catalogue refresh must preserve user data and should not silently clear favorites or Kodi playback status.
-- Preferred audio and internal-subtitle labels are normalized and applied once at AV start when a matching Kodi stream is exposed. Per-title subtitle modes and saved external subtitles take precedence over the global internal-subtitle preference.\n- Saved-subtitle capture normally waits for a stable temporary-file fingerprint; playback stop performs a final capture pass so a subtitle downloaded immediately before exit is not lost between polling intervals.\n- Optional diagnostics retain only a bounded number of sanitized sessions and events. They record playback position and available Kodi InfoLabels, exclude raw authenticated URLs/credentials/subtitle contents, and explicitly mark per-segment timing, inputstream buffer level and representation history unavailable when Kodi Python does not expose them.\n- Optional automatic catalogue refresh is serialized by a profile lock, only launched by the service while video is idle, and uses bounded retry backoff after failures.
+- Preferred audio and internal-subtitle labels are normalized and applied once at AV start when a matching Kodi stream is exposed. Per-title subtitle modes and saved external subtitles take precedence over the global internal-subtitle preference.\n- Saved-subtitle capture normally waits for a stable temporary-file fingerprint; playback stop performs a final capture pass so a subtitle downloaded immediately before exit is not lost between polling intervals.\n- Optional diagnostics retain only a bounded number of sanitized sessions and events. Schema 2 records playback position, stall intervals, resolution/bitrate transitions and Kodi Player.Cache* InfoLabels when exposed, excludes raw authenticated URLs/credentials/subtitle contents, and explicitly records unsupported per-segment timing and exact InputStream Adaptive queue/representation internals rather than inferring them.\n- Optional automatic catalogue refresh is serialized by a profile lock, only launched by the service while video is idle, and uses bounded retry backoff after failures.
 
 ## Publishing
 

@@ -1,11 +1,11 @@
 ---
 id: HLS-4
-role: implementation
-status: ready
+role: review
+status: review
 delivery: unreleased
-verification: failed
-owner: unassigned
-base_commit: unset
+verification: partial
+owner: ChatGPT release worker 2026-09-26
+base_commit: 90b9561481a14d04765b0bd999ee47ddf232e6c5
 artifact: none
 ---
 # HLS-4 — Repair 0.7.13 manual HLS playback regression
@@ -60,5 +60,18 @@ User device evidence on 2026-09-26:
 
 The 0.7.13 HLS-2/HLS-3 review record states that automated smoke tests covered master-playlist parsing and selection, but target-device playback verification was still pending. This report is therefore a failed target-device acceptance result and demonstrates that the existing automated fixture did not represent the failing provider/runtime path adequately.
 
+## Build session — 2026-09-26
+- Assigned under the user's explicit build/integrate/publish instruction; NEXT_RELEASE lists HLS-4 as committed release-blocking scope.
+- Working base: `90b9561481a14d04765b0bd999ee47ddf232e6c5`; task branch: `release/0.7.14-hls4-diag2`.
+- Initial source inspection identified a concrete regression risk in 0.7.13 manual mode: Python `urljoin()` resolves a relative child URI but does not inherit a signed/query-bearing master URL's query string, unlike passing the working master URL to Kodi as in 0.7.12. The repair will preserve query/auth material for same-origin relative variants and retain Kodi URL options.
+- Target-device acceptance remains required after publishing a 0.7.13-derived repair build.
+
+## Implementation evidence — 2026-09-26
+- Manual rendition resolution now preserves the exact master query for same-origin relative child URIs when the child has no query, and carries Kodi URL request options across resolution.
+- EXT-X-STREAM-INF parsing retains peak and average bandwidth separately, resolution and codecs, and the chooser label is generated from the same variant object whose URL is played.
+- Appi passes sanitized selected-variant identity/metadata into diagnostics without exporting the authenticated URL.
+- Added regression tests for signed relative variants, child-query precedence, cross-origin isolation, Kodi URL options and metadata/URL association.
+- GitHub Actions PR run 36290602785 passed the unit/smoke suite, tracker validation, deterministic build, ZIP/hash/index inspection and fallback checks. Target-device playback remains required before HLS-4 can be marked done.
+
 ## Outcome and next action
-Treat HLS-4 as a release-blocking playback regression. Start from a direct 0.7.12-versus-0.7.13 comparison of the same media/master playlist, capture the exact failing resolved variant URL and Kodi error, then repair the smallest responsible layer before adding further HLS feature work.
+Review the 0.7.14 candidate with the automated gate, then target-device test at least one authenticated multi-variant provider stream. Keep 0.7.12 available until a manually selected rendition plays successfully and the chooser metadata is confirmed.

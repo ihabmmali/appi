@@ -1450,7 +1450,7 @@ def _effective_hls_mode(preferences=None):
         return 1
 
 
-def _manual_hls_url(media_url):
+def _manual_hls_selection(media_url):
     try:
         manifest = fetch_text(media_url, timeout=min(20, _int_setting('request_timeout', 20)))
         variants = hls.parse_master(manifest, media_url)
@@ -1462,17 +1462,18 @@ def _manual_hls_url(media_url):
                 type(exc).__name__, exc
             ),
         )
-        return None
+        return None, None
     if not variants:
-        return media_url
+        return media_url, None
     choice = _dialog_select(
         'Select HLS quality',
         [hls.variant_label(variant) for variant in variants],
         0,
     )
     if choice < 0:
-        return None
-    return variants[choice]['url']
+        return None, None
+    selected = variants[choice]
+    return selected['url'], selected
 
 
 def _configure_hls(list_item, preferences=None):
@@ -1551,9 +1552,10 @@ def play_ref(params):
     preferences = playback_prefs.effective(catalog_name, ref, key or '')
     stream = _probe_kind(catalog_name, ref, media_url)
     play_url = media_url
+    manual_variant = None
     hls_mode = _effective_hls_mode(preferences)
     if stream.get('kind') == 'hls' and hls_mode == 1:
-        play_url = _manual_hls_url(media_url)
+        play_url, manual_variant = _manual_hls_selection(media_url)
         if not play_url:
             xbmcplugin.setResolvedUrl(HANDLE, False, xbmcgui.ListItem())
             return
@@ -1586,7 +1588,13 @@ def play_ref(params):
         {
             'hls_mode': hls_mode if stream.get('kind') == 'hls' else None,
             'hls_max_kbps': preferences.get('hls_max_kbps', _int_setting('hls_max_bitrate_kbps', 8000)),
-            'manual_variant_selected': bool(stream.get('kind') == 'hls' and hls_mode == 1),
+            'manual_variant_selected': bool(manual_variant),
+            'manual_variant_identity': (manual_variant or {}).get('identity'),
+            'manual_variant_width': (manual_variant or {}).get('width'),
+            'manual_variant_height': (manual_variant or {}).get('height'),
+            'manual_variant_bandwidth': (manual_variant or {}).get('bandwidth'),
+            'manual_variant_peak_bandwidth': (manual_variant or {}).get('peak_bandwidth'),
+            'manual_variant_codecs': (manual_variant or {}).get('codecs'),
         },
     )
 
