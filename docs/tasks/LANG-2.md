@@ -45,10 +45,10 @@ The two settings remain independent. This task changes only the settings UX/data
 ## Authorization
 Requested by the user on 2026-09-27. The user explicitly requires the audio-language and subtitle-language settings to be selection lists of common languages rather than free-text inputs.
 
-This task is recorded as actionable work but is not committed release scope unless the user explicitly commits/includes it in the next release under AGENTS.md.
+On 2026-09-27 the user explicitly instructed that all currently tracked changes be committed for the next release. LANG-2 is therefore committed release scope.
 
 ## Evidence
 The released LANG-1 implementation added normalized preferred-language matching, but the current `plugin.video.appi/resources/settings.xml` still defines both `preferred_audio_language` and `preferred_subtitle_language` as string edit controls with free-text input.
 
 ## Outcome and next action
-Replace both free-text controls with curated language-selection lists while preserving LANG-1 normalization and backwards compatibility for existing stored values.
+Committed for the next release. Replace both free-text controls with curated language-selection lists while preserving LANG-1 normalization and backwards compatibility for existing stored values.

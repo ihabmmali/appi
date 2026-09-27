@@ -15,7 +15,7 @@ Make Buffered Look Ahead Playback configurable in three user-facing dimensions:
 
 1. **Buffer size:** the user can configure how much local storage Buffered Look Ahead may use for prefetched media.
 2. **Stream quality behavior:** the user chooses whether Buffered Look Ahead automatically uses the **highest bitrate available** from the HLS master playlist, or **prompts before playback** to select from the available bitrate/resolution variants.
-3. **Buffer-state overlay:** an optional debug overlay can display the current buffered state during playback, with user-configurable visibility.
+3. **Buffer status UI:** show a simple startup/buffering status indicator while Buffered Look Ahead is filling or recovering, plus an optional detailed debug overlay with user-configurable visibility.
 
 There is no requested maximum-bitrate ceiling mode for Buffered Look Ahead. The quality choices are automatic highest available or prompt/select.
 
@@ -46,12 +46,12 @@ For a single-rendition stream, proceed directly without an unnecessary prompt.
 
 The selected variant must be the one the buffered proxy fetches and serves. Variant URL handling must preserve relative/absolute URL resolution and provider query/auth semantics and must not repeat the manual child-playlist regression tracked by [HLS-4](HLS-4.md).
 
-### Optional buffer-state debug overlay
-Expose a user setting that controls whether a small text overlay is visible during Buffered Look Ahead playback.
+### Simple buffering indicator and optional detailed debug overlay
+Provide a simple, non-technical status indicator during initial buffer fill and any later buffering/recovery state so the user can tell that Buffered Look Ahead is actively preparing media rather than hanging. This simplified status does not need detailed metrics; concise text such as buffering/filling/recovering is sufficient.
 
-When enabled, the overlay should show the current live buffer state using information already available to the buffered proxy/diagnostics. A simple text element is sufficient. At minimum it should show the current cached-ahead amount in a meaningful form such as bytes/MB and known/estimated playable seconds; cached segment count may also be shown.
+Separately, expose a user setting that controls whether a more detailed debug overlay is visible during Buffered Look Ahead playback. When enabled, the detailed overlay should show live buffer metrics already available to the proxy/diagnostics, including cached-ahead storage and known/estimated playable seconds; cached segment count may also be shown.
 
-The overlay is a debug/diagnostic aid, not a required normal-playback UI. It must be possible for the user to turn it on or off without changing buffer behavior, quality selection or any of the other playback modes. It should not require a diagnostic export to be active merely to display the current buffer state.
+The simple startup/buffering indicator is normal buffered-mode feedback. The detailed overlay is an optional debug aid whose visibility is user-configurable. Neither should require diagnostic export to be enabled.
 
 ## Acceptance
 - Buffered Look Ahead exposes a clearly named user-configurable buffer-size setting in MB.
@@ -66,8 +66,10 @@ The overlay is a debug/diagnostic aid, not a required normal-playback UI. It mus
 - Single-rendition streams play without an unnecessary quality prompt.
 - If bitrate metadata is missing or malformed, fallback behavior is deterministic and documented rather than inventing a bitrate.
 - Relative/absolute variant URLs and signed/query-bearing master URLs retain required provider access semantics.
-- Buffered Look Ahead exposes a user-configurable **buffer-state debug overlay visibility** setting.
-- With the overlay enabled, playback displays a small live text indicator containing at least current cached-ahead storage and known/estimated playable buffered seconds.
+- Buffered Look Ahead shows a simple status indicator during initial fill and later buffering/recovery so the user can distinguish active work from a hang.
+- The simple indicator avoids detailed diagnostic metrics and remains readable during startup.
+- Buffered Look Ahead also exposes a user-configurable **detailed debug overlay visibility** setting.
+- With the detailed debug overlay enabled, playback displays live buffer metrics containing at least current cached-ahead storage and known/estimated playable buffered seconds.
 - With the overlay disabled, no Buffered Look Ahead debug text is shown.
 - Toggling overlay visibility does not change the configured buffer size, selected rendition, prefetch behavior or playback result.
 - Overlay updates are lightweight enough that enabling them does not materially affect playback or itself cause buffering.
@@ -81,7 +83,7 @@ The overlay is a debug/diagnostic aid, not a required normal-playback UI. It mus
 ## Authorization
 Requested by the user on 2026-09-27 while HLS-5 target-device testing is still pending. The user requires Buffered Look Ahead Playback to have a user-configurable buffer size; a quality behavior setting that either automatically uses the highest available bitrate or prompts the user to select from the available bitrate/resolution variants; and an optional user-visible debug overlay showing current buffer state.
 
-This task is recorded as actionable work but is not committed release scope unless the user explicitly commits/includes it in the next release under AGENTS.md.
+On 2026-09-27 the user explicitly instructed that all currently tracked changes be committed for the next release. HLS-6 is therefore committed release scope.
 
 ## Evidence
 Current 0.7.16 source in `resources/lib/buffered_hls.py` defines `DEFAULT_TARGET_SECONDS = 30.0` and `MAX_SESSION_BYTES = 384 * 1024 * 1024`. Current settings expose the playback-mode selector but no Buffered Look Ahead buffer-size, quality-behavior or overlay-visibility controls.
@@ -91,4 +93,4 @@ The buffered proxy already tracks values such as buffered seconds and cached seg
 The previous HLS-6 wording incorrectly introduced a maximum-bitrate ceiling. On 2026-09-27 the user corrected the quality requirement: Buffered Look Ahead should instead either automatically use the highest available bitrate or prompt the user to choose an available bitrate/resolution.
 
 ## Outcome and next action
-Implement the user-configurable Buffered Look Ahead buffer size, the two requested quality behaviors (automatic highest available bitrate or prompt/select), and the optional buffer-state debug overlay. Preserve modes 0–2 unchanged and retain the buffered proxy's isolated architecture.
+Committed for the next release. Implement the user-configurable buffer size, the two requested quality behaviors, the simple startup/buffering status indicator, and the optional detailed debug overlay. Preserve modes 0–2 unchanged and retain the buffered proxy's isolated architecture.

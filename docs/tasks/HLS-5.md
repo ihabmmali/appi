@@ -3,7 +3,7 @@ id: HLS-5
 role: implementation
 status: review
 delivery: released
-verification: partial
+verification: failed
 owner: ChatGPT release worker 2026-09-27
 base_commit: 9dfd6a2802dc03bf5acd1d4806a76185849eac72
 artifact: plugin.video.appi-0.7.16.zip
@@ -75,10 +75,23 @@ Implementation/review evidence on 2026-09-27:
 - Automated tests explicitly cover all four HLS branches and buffered startup reserve, depletion/recovery, seek re-centering, cleanup, master/rendition/key/map rewriting, discontinuities, byte ranges, representation metadata and sanitized proxy telemetry.
 
 ## Outcome and next action
-Implementation, automated release verification, integration and publication pass. HLS-5 remains in review/partial verification because only target-device playback can establish whether the 30-second look-ahead eliminates the reported provider stalls. Published merge commit: `af6791128009e5e9afd408221d8427c2baed65e1`; post-merge verification run 36297143439 and Pages deployment run 36297143062 both passed. Next action: test all four modes on the target Fire TV/provider stream, especially the previously stalling stream in Buffered Look Ahead Playback, and retain/export diagnostics if a stall remains.
+Implementation, automated release verification, integration and publication passed, but target-device acceptance has now failed because Buffered Look Ahead showed excessive startup delay, unreliable seeking and both silent and immediate playback failures. Published merge commit: `af6791128009e5e9afd408221d8427c2baed65e1`; post-merge verification run 36297143439 and Pages deployment run 36297143062 both passed. Next action: test all four modes on the target Fire TV/provider stream, especially the previously stalling stream in Buffered Look Ahead Playback, and retain/export diagnostics if a stall remains.
 
 
 ## Post-publication follow-up — 2026-09-27
 The user has not yet completed target-device validation of Buffered Look Ahead Playback, but identified an additional requirement before considering the feature complete: look-ahead capacity must be user-configurable, at minimum in storage terms.
 
 The released 0.7.16 implementation uses a fixed ~30-second target plus a hardcoded 384 MB session disk ceiling. Merely exposing the 384 MB ceiling would not make the actual look-ahead depth configurable because the 30-second target would still stop prefetching first. [HLS-6](HLS-6.md) therefore owns the follow-up requirement that a user-configured storage budget must influence the actual amount of media prefetched ahead, while retaining a bounded safety policy.
+
+
+## Target-device failure evidence — 2026-09-27
+Target-device testing of 0.7.16 failed acceptance for Buffered Look Ahead Playback:
+- one stream took a very long time to start;
+- fast-forward/seek behavior was unreliable;
+- another stream initially spun and then produced no playback and no error;
+- after several retries of that same stream, later attempts immediately produced a playback-failed error;
+- after leaving the Recently Played folder and re-entering it, the same stream returned to the spinning/no-playback behavior.
+
+This indicates that buffered failure behavior may depend on navigation/session lifecycle state rather than only the upstream stream itself.
+
+HLS-7 owns runtime robustness, bounded startup/failure handling, seek reliability, repeated-attempt state reset and navigation/session lifecycle cleanup. HLS-6 owns configurable buffer size, quality choice, a simple startup/buffering status indicator, and the optional detailed debug overlay.

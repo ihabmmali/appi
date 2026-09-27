@@ -1,7 +1,7 @@
 ---
 id: UI-3
 role: implementation
-status: proposed
+status: ready
 delivery: unreleased
 verification: pending
 owner: unassigned
@@ -36,10 +36,10 @@ A fanart/background asset is outside current scope unless the supplied graphics 
 - Package/repository validation confirms there are no missing asset references.
 
 ## Authorization
-Requested by the user on 2026-09-27. The user stated that Appi needs a graphical icon and that they will supply the graphics. This task is recorded for planning, but implementation depends on receipt of the artwork and is not committed release scope unless the user explicitly commits/includes it in the next release under AGENTS.md.
+Requested by the user on 2026-09-27. The user stated that Appi needs a graphical icon and that they will supply the graphics. The artwork dependency is satisfied. On 2026-09-27 the user explicitly instructed that all currently tracked changes be committed for the next release. UI-3 is therefore ready and committed release scope.
 
 ## Evidence
 The current `plugin.video.appi/addon.xml` contains add-on metadata but does not declare Appi artwork assets. On 2026-09-27 the user selected the first generated Appi design; a 512×512 PNG handoff copy is now stored at `artwork/appi-icon-selected.png`. It is repository artwork only at this stage and has not yet been wired into the packaged add-on.
 
 ## Outcome and next action
-Artwork dependency is satisfied. A future UI-3 implementation worker should use `artwork/appi-icon-selected.png` as the approved design, integrate it into the standard Kodi add-on artwork path/metadata, validate packaging, and preserve the design without unintended cropping or distortion.
+Committed for the next release. The UI-3 implementation worker should use `artwork/appi-icon-selected.png` as the approved design, integrate it into the standard Kodi add-on artwork path/metadata, validate packaging, and preserve the design without unintended cropping or distortion.

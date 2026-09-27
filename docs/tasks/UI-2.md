@@ -33,10 +33,10 @@ The value shown must reflect the actually installed package, including after upg
 - Automated/smoke coverage verifies that the About action obtains the version from add-on metadata where practical.
 
 ## Authorization
-Requested by the user on 2026-09-27 as a usability improvement. The user wants a simple About entry in settings to verify the current Appi version. This task is recorded as actionable work but is not committed release scope unless the user explicitly commits/includes it in the next release under AGENTS.md.
+Requested by the user on 2026-09-27 as a usability improvement. The user wants a simple About entry in settings to verify the current Appi version. On 2026-09-27 the user explicitly instructed that all currently tracked changes be committed for the next release. UI-2 is therefore committed release scope.
 
 ## Evidence
 The current packaged manifest, `plugin.video.appi/addon.xml`, declares Appi version `0.7.16`, while the current settings definition has no About/version action.
 
 ## Outcome and next action
-Implement a simple settings About action that reports the runtime-installed Appi version from add-on metadata.
+Committed for the next release. Implement a simple settings About action that reports the runtime-installed Appi version from add-on metadata.
