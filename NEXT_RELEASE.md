@@ -1,14 +1,13 @@
 # Next Appi release
 
-Planning status: committed / release candidate. Version: 0.7.15. Current baseline and fallback: [PROJECT_STATE.md](PROJECT_STATE.md).
+Planning status: draft. Version: not assigned. Current baseline and fallback: [PROJECT_STATE.md](PROJECT_STATE.md).
 
-Version 0.7.14 failed target-device acceptance for manual stream selection. HLS-4 is reopened and explicitly committed as the sole release-blocking scope for 0.7.15. The repair must restore the proven 0.7.12 InputStream Adaptive ask-quality playback path; 0.7.12 remains the usable fallback until accepted.
+Version 0.7.15 was published on 2026-09-26. No new release scope is committed. HLS-4 was delivered in 0.7.15 but remains in review pending target-device verification; 0.7.12 remains the usable playback fallback until accepted.
 
 ## Proposed scope
 
 | Task | Selection | Priority | Reason |
 | --- | --- | --- | --- |
-| [HLS-4](docs/tasks/HLS-4.md) | committed | release blocker | 0.7.14 still fails manual selection; restore the 0.7.12 master-URL + InputStream Adaptive ask-quality path |
 | [HLS-1](docs/tasks/HLS-1.md) | backlog | investigation | Diagnose repeated stalls using DIAG-2 evidence and distinguish configured cache size from actual playable read-ahead |
 | [UI-1](docs/tasks/UI-1.md) | backlog | investigation | Skin comparison needed |
 
@@ -22,6 +21,9 @@ Version 0.7.14 failed target-device acceptance for manual stream selection. HLS-
 6. Copy shipped task IDs and scope changes into RELEASE_NOTES, then reset this planning file for the next cycle.
 
 ## Scope decisions
+
+2026-09-26: Appi 0.7.15 was published from merge commit `2ba3ba2dc78519f55e6c01c0372a17f31b310fba`. Shipped scope: reopened HLS-4. Automated release/package run 36291375057, post-merge verification run 36291431201 and Pages deployment run 36291430966 passed. HLS-4 remains in review because target-device acceptance is still required.
+
 
 2026-09-26: user reported that 0.7.14 manual stream-selection playback is still broken exactly as in 0.7.13 and explicitly instructed that the bug fix be committed, executed and published. HLS-4 is reopened and committed as the sole 0.7.15 release-blocking task. The implementation direction is to restore the 0.7.12 playback architecture: retain the original HLS master URL and delegate manual rendition selection/playback to InputStream Adaptive `ask-quality`, rather than Appi resolving a child playlist.
 
@@ -55,4 +57,4 @@ Version 0.7.14 failed target-device acceptance for manual stream selection. HLS-
 
 ## Readiness
 
-0.7.15 source implementation is prepared with HLS-4 as the sole committed release blocker. The candidate restores the 0.7.12 original-master-URL + InputStream Adaptive `ask-quality` path. GitHub Actions run 36291375057 passed automated release/package verification. Target-device acceptance remains pending; 0.7.12 remains the usable playback fallback.
+No new release is committed. Appi 0.7.15 is published and passed automated release/package, post-merge and Pages verification. HLS-4 remains in review/partial verification until target-device manual-selection acceptance is recorded. 0.7.12 remains the usable playback fallback.

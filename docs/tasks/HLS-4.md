@@ -6,7 +6,7 @@ delivery: released
 verification: partial
 owner: ChatGPT release worker 2026-09-26
 base_commit: f00dc00a25c3531187ed2f83dc031e3037fdf8dc
-artifact: https://github.com/ihabmmali/appi/blob/main/plugin.video.appi-0.7.14.zip
+artifact: https://github.com/ihabmmali/appi/blob/main/plugin.video.appi-0.7.15.zip
 ---
 # HLS-4 — Repair 0.7.13 manual HLS playback regression
 
@@ -102,5 +102,11 @@ The 0.7.13 HLS-2/HLS-3 review record states that automated smoke tests covered m
 - Regression checks assert that `app.py` no longer contains the Appi manual selector/parser call, still uses the original `media_url`, and contains the ISA `ask-quality` configuration.
 - Native and adaptive HLS branches were left intact. GitHub Actions run 36291375057 passed the complete automated verify/package gate and produced the deterministic 0.7.15 package (`d8952fcd9b2a30dbcf4e113c28ec8f3ba316c44498218cbb437beaefd65f7bba`). Target-device acceptance remains required after publication.
 
+## Publication — 0.7.15
+- Published from merge commit `2ba3ba2dc78519f55e6c01c0372a17f31b310fba`.
+- Release/package run 36291375057 and post-merge main run 36291431201 passed; GitHub Pages deployment run 36291430966 succeeded.
+- Artifact: https://github.com/ihabmmali/appi/blob/main/plugin.video.appi-0.7.15.zip; SHA-256: `d8952fcd9b2a30dbcf4e113c28ec8f3ba316c44498218cbb437beaefd65f7bba`.
+- Delivery is released; verification remains partial. Do not mark HLS-4 done until the same target Fire TV/provider stream successfully displays the ISA quality chooser and plays a selected rendition.
+
 ## Outcome and next action
-Run the 0.7.15 automated release/package gates, publish under the user's explicit authorization, then target-device test manual rendition selection on the same provider stream. Keep 0.7.12 available until playback is confirmed.
+Target-device test 0.7.15 manual rendition selection on the same provider stream. Confirm that InputStream Adaptive presents the quality choices and that at least one selected rendition starts and continues playback. Keep 0.7.12 available until confirmed.

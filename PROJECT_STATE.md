@@ -5,8 +5,8 @@ Updated: 2026-09-26. Short current summary; start with [AGENTS.md](AGENTS.md) fo
 ## Current baseline
 
 - Repository: https://github.com/ihabmmali/appi ; default branch: main.
-- Current published packaged add-on: **0.7.14**. The experimental 0.8.0 archive is not the main baseline.
-- **Target-device status:** 0.7.14 also failed manual HLS selection playback on the target device in the same way as 0.7.13. The 0.7.14 child-URL/query repair did not restore playback.
+- Current published packaged add-on: **0.7.15**. The experimental 0.8.0 archive is not the main baseline.
+- **Target-device status:** 0.7.15 restores the exact 0.7.12 manual-selection architecture and passed automated verification, but target-device manual HLS acceptance is still pending. 0.7.14 and 0.7.13 both failed that device test.
 - **Current usable fallback:** **0.7.12**. Its proven manual path passes the original master URL to InputStream Adaptive with `ask-quality`.
 - Historical known-good fallback retained in the repository: **0.7.8**.
 - Install page: https://ihabmmali.github.io/appi/
@@ -14,10 +14,10 @@ Updated: 2026-09-26. Short current summary; start with [AGENTS.md](AGENTS.md) fo
 
 ## Current work
 
-- **0.7.14 is published** from merge commit `4eb272c0da19b716906e4909366f6d6ba4173874`; post-merge automated verification passed in run 36290741628.
-- **0.7.15 is committed and active:** HLS-4 is reopened to restore the 0.7.12 InputStream Adaptive `ask-quality` manual-selection path; publication is explicitly authorized by the user.
+- **0.7.15 is published** from merge commit `2ba3ba2dc78519f55e6c01c0372a17f31b310fba`; release/package verification passed in run 36291375057, post-merge verification passed in 36291431201, and Pages deployment passed in 36291430966.
+- HLS-4 is delivered in 0.7.15 but remains in review/partial verification pending the user's target-device manual-selection test.
 - DIAG-2 remains delivered in 0.7.14 and in review/partial verification for its separate target-device telemetry checks.
-- [NEXT_RELEASE.md](NEXT_RELEASE.md): HLS-4 is committed release-blocking scope; HLS-1 and UI-1 remain backlog investigations.
+- [NEXT_RELEASE.md](NEXT_RELEASE.md): reset for the next planning cycle; HLS-1 and UI-1 remain backlog investigations.
 - [KNOWN_ISSUES.md](KNOWN_ISSUES.md): full task index.
 - Lifecycle pilot 0.1 is established in [LIFECYCLE.md](LIFECYCLE.md). [Pilot evaluation](docs/workflows/PILOT.md) records what still needs real-world validation.
 

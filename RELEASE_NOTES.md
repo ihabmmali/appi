@@ -2,16 +2,17 @@
 
 Each entry records the package shipped, its main user-visible changes, and verification at release time. For the current baseline and next tasks read [PROJECT_STATE.md](PROJECT_STATE.md) and [KNOWN_ISSUES.md](KNOWN_ISSUES.md); the [CHANGELOG.md](CHANGELOG.md) is the implemented feature history.
 
-## 0.7.15 — release candidate, 2026-09-26
+## 0.7.15 — 2026-09-26
 
 - Included committed task: HLS-4.
 - 0.7.14 failed target-device manual-selection playback exactly as 0.7.13 did; the query-preservation repair did not restore the required path.
 - Source comparison against working 0.7.12 commit `a099e521cfa767bc8cdee9a72988dcd8a92b9c73` showed that 0.7.12 passed the original HLS master URL to InputStream Adaptive with `stream_selection_type=ask-quality`; Appi did not resolve/play a child rendition itself.
 - 0.7.15 restores that architecture: the original master URL remains the ListItem path and InputStream Adaptive owns rendition discovery, manual quality selection and child-playlist playback.
 - Native Kodi HLS, automatic adaptive mode, diagnostics, subtitles and playback history remain in place.
-- Automated release/package gate: GitHub Actions run 36291375057 passed unit/smoke tests, workflow tracker validation, deterministic build, ZIP/hash/index inspection and packaging.
-- Candidate package SHA-256: `d8952fcd9b2a30dbcf4e113c28ec8f3ba316c44498218cbb437beaefd65f7bba`.
-- Target-device acceptance: pending. 0.7.12 remains the usable playback fallback until 0.7.15 manual selection is verified.
+- Automated verification: release/package run 36291375057 passed unit/smoke tests, workflow tracker validation, deterministic build, ZIP/hash/index inspection and packaging; post-merge main run 36291431201 passed the same release verification on the integrated source; Pages deployment run 36291430966 succeeded.
+- Published merge commit: [2ba3ba2dc78519f55e6c01c0372a17f31b310fba](https://github.com/ihabmmali/appi/commit/2ba3ba2dc78519f55e6c01c0372a17f31b310fba).
+- Package: [plugin.video.appi-0.7.15.zip](https://github.com/ihabmmali/appi/blob/main/plugin.video.appi-0.7.15.zip); SHA-256: `d8952fcd9b2a30dbcf4e113c28ec8f3ba316c44498218cbb437beaefd65f7bba`.
+- Target-device acceptance remains pending. HLS-4 stays in review/partial verification until manual selection is confirmed on the target Fire TV/provider stream. 0.7.12 remains the usable playback fallback.
 
 ## 0.7.14 — 2026-09-26
 
