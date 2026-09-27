@@ -12,7 +12,7 @@ STRINGS = PLUGIN / 'resources' / 'language' / 'resource.language.en_gb' / 'strin
 class SettingsLocalizationTests(unittest.TestCase):
     def test_stable_browser_and_download_batch_features_are_packaged(self):
         addon = ET.parse(PLUGIN / 'addon.xml').getroot()
-        self.assertEqual(addon.attrib.get('version'), '0.7.14')
+        self.assertEqual(addon.attrib.get('version'), '0.7.15')
         helper = addon.find("./requires/import[@addon='plugin.video.themoviedb.helper']")
         self.assertIsNotNone(helper)
         self.assertNotEqual(helper.attrib.get('optional'), 'true')
@@ -35,6 +35,11 @@ class SettingsLocalizationTests(unittest.TestCase):
         self.assertIn("'set_season_watched'", app)
         self.assertNotIn("'hls_playback_engine'", app)
         self.assertNotIn('fetch_text_with_url', app)
+        self.assertNotIn('_manual_hls_selection', app)
+        self.assertNotIn('hls.parse_master', app)
+        self.assertIn("'ask-quality'", app)
+        self.assertIn("path=media_url", app)
+        self.assertIn("'inputstream.adaptive-ask-quality'", app)
         self.assertIn('Fetch metadata for all Recently Played Movies', app)
         self.assertIn('Fetch metadata for all Recently Played TV Shows', app)
         metadata = (PLUGIN / 'resources' / 'lib' / 'metadata.py').read_text(encoding='utf-8')
