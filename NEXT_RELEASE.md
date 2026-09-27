@@ -11,6 +11,7 @@ Planning status: open. Version: not assigned. Current baseline and fallback: [PR
 | [HLS-8](docs/tasks/HLS-8.md) | candidate | playback regression | Repair Buffered Look Ahead preparation/progress/handoff failures seen on 0.7.18 |
 | [LANG-3](docs/tasks/LANG-3.md) | candidate | functional regression | Preferred audio/subtitle language selection appears to have no effect at playback |
 | [HLS-9](docs/tasks/HLS-9.md) | candidate | dependency requirement | Make InputStream Adaptive a required Appi prerequisite because supported modes use it |
+| [PLAY-1](docs/tasks/PLAY-1.md) | candidate | playback-state regression | Restore Kodi resume points and investigate the Trakt API error shown at playback start on 0.7.18 |
 | [HLS-1](docs/tasks/HLS-1.md) | backlog | investigation | Use DIAG-2/HLS-5 target-device evidence to diagnose any repeated stalls that remain |
 | [UI-1](docs/tasks/UI-1.md) | backlog | investigation | Skin comparison needed |
 
@@ -24,6 +25,8 @@ Planning status: open. Version: not assigned. Current baseline and fallback: [PR
 6. Copy shipped task IDs and scope changes into RELEASE_NOTES, then reset this planning file for the next cycle.
 
 ## Scope decisions
+
+2026-09-27: PLAY-1 added as a candidate after the user reported that 0.7.18 no longer preserves Kodi resume/play points and shows a Trakt API error at playback start. Appi currently delegates resume/watched state to Kodi using the canonical plugin playback URL, so the task must verify stable media identity/URL and capture the Trakt error source without assuming it is causal.
 
 2026-09-27: target-device testing confirms 0.7.18 no longer crashes Kodi at startup. Buffered Look Ahead still fails acceptance (no/erratic preparation progress, playback failure, near-90%-then-timeout, retry-dependent success), tracked as HLS-8. Preferred-language selection appears ineffective at playback, tracked as LANG-3. Both are candidates, not yet committed scope.
 
@@ -93,4 +96,4 @@ Planning status: open. Version: not assigned. Current baseline and fallback: [PR
 
 ## Readiness
 
-No new committed implementation scope. Appi 0.7.18 is published and the startup crash is confirmed fixed on the target device, but Buffered Look Ahead and preferred-language application are not accepted. HLS-8, LANG-3 and HLS-9 are current candidates.
+No new committed implementation scope. Appi 0.7.18 is published and the startup crash is confirmed fixed on the target device, but Buffered Look Ahead and preferred-language application are not accepted. HLS-8, LANG-3, HLS-9 and PLAY-1 are current candidates.
