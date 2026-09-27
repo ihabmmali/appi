@@ -3,7 +3,7 @@ id: HLS-7
 role: implementation
 status: review
 delivery: released
-verification: partial
+verification: failed
 owner: Codex release/0.7.17
 base_commit: 6d36d9a52733fbe6f3ded3ba5ee335cb779883e3
 artifact: plugin.video.appi/plugin.video.appi-0.7.17.zip
@@ -61,3 +61,16 @@ Implemented, self-reviewed, integrated and published in 0.7.17. Target-device ac
 
 ## Implementation session — 2026-09-27
 User authorized implementation, testing, integration and publication in this session. Base 6d36d9a52733fbe6f3ded3ba5ee335cb779883e3. One worker owns the scoped source/settings/tests and shared release records; no concurrent worker changes observed. Target 0.7.17. Modes 0–2 must remain unchanged.
+
+
+## 0.7.18 target-device retest
+The 0.7.18 repair prevents the 0.7.17 Kodi startup crash, but Buffered Look Ahead still fails functional acceptance on the target Fire TV.
+
+Observed:
+- preparation window appears with **Filling buffer** but can show no meaningful progress;
+- Kodi spinner then appears and playback fails after a few seconds;
+- repeated attempts can eventually succeed;
+- on another episode, preparation jumps to roughly 90% and then times out with **Unable to prepare stream**;
+- regular playback works on the same episode/file.
+
+This means the shipped HLS-7 repair is not accepted on the target device. [HLS-8](HLS-8.md) owns the current preparation/readiness/handoff failure.

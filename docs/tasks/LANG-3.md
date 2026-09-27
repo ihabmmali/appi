@@ -1,0 +1,50 @@
+---
+id: LANG-3
+role: implementation
+status: ready
+delivery: unreleased
+verification: failed
+owner: unassigned
+base_commit: unset
+artifact: none
+---
+# LANG-3 — Preferred language setting is not applied at playback
+
+## Objective
+Repair preferred audio/subtitle language behavior after target-device testing of 0.7.18 showed that choosing a default language from the new lists does not appear to affect playback.
+
+## Scope
+Trace the complete path from LANG-2's visible list values into LANG-1's runtime audio/subtitle selection.
+
+Investigate:
+- canonical value stored by the list control;
+- normalization of the new non-empty `none` sentinel and actual language codes;
+- whether playback reads the visible setting or stale/legacy hidden values;
+- timing of Kodi audio/subtitle stream enumeration;
+- actual target-device track labels/codes;
+- precedence of per-title subtitle modes and saved external subtitles;
+- independent audio versus subtitle behavior;
+- behavior across Native Kodi, manual ISA, ABR and Buffered Look Ahead where applicable.
+
+Do not reintroduce free-text settings or unsafe empty list values.
+
+## Acceptance
+- Selecting a preferred audio language selects the matching audio track when one exists.
+- Selecting a preferred subtitle language selects the matching internal subtitle track when applicable and not superseded by an explicit per-title choice.
+- **No preference** leaves Kodi/default behavior unchanged.
+- Aliases such as English / eng / en map consistently.
+- Runtime reads the current visible list setting rather than stale migration data.
+- Audio and subtitle preferences are independently verified.
+- No matching track results in graceful fallback, not an unrelated selection.
+- Saved external subtitle/manual override precedence remains intact.
+- Automated tests cover visible list value -> normalization -> Kodi track selection end to end.
+- Target-device verification records selected preference, available track codes/labels and actual chosen track.
+
+## Authorization
+Reported by the user on 2026-09-27 while testing 0.7.18. This task is recorded as ready planning work but is not committed release scope unless explicitly included under AGENTS.md.
+
+## Evidence
+0.7.18 fixes the 0.7.17 native settings-parser crash and Kodi now remains running, but the selected default language appears to have no effect during playback.
+
+## Outcome and next action
+Trace one selected language from settings storage through normalization to actual Kodi stream selection and repair the first broken link.

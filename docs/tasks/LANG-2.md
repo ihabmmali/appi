@@ -72,3 +72,9 @@ The released LANG-1 implementation added normalized preferred-language matching,
 
 ## Implementation session — 2026-09-27
 User authorized implementation, testing, integration and publication in this session. Base 6d36d9a52733fbe6f3ded3ba5ee335cb779883e3. One worker owns the scoped source/settings/tests and shared release records; no concurrent worker changes observed. Target 0.7.17. Modes 0–2 must remain unchanged.
+
+
+## 0.7.18 target-device functional retest
+The 0.7.18 settings-parser crash correction is successful on the target device: Kodi no longer crashes at startup. However, the user reports that selecting a default audio/subtitle language does not appear to affect playback.
+
+The native-settings crash is therefore fixed, but the end-to-end preferred-language behavior remains unaccepted. [LANG-3](LANG-3.md) owns the runtime application failure.

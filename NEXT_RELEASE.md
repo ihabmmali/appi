@@ -2,12 +2,15 @@
 
 Planning status: open. Version: not assigned. Current baseline and fallback: [PROJECT_STATE.md](PROJECT_STATE.md).
 
-0.7.18 is published. No new implementation scope is committed.
+0.7.18 is published. Target-device testing confirms the Kodi startup crash is fixed, but Buffered Look Ahead and preferred-language application still fail acceptance. No new implementation scope is committed.
 
 ## Proposed scope
 
 | Task | Selection | Priority | Reason |
 | --- | --- | --- | --- |
+| [HLS-8](docs/tasks/HLS-8.md) | candidate | playback regression | Repair Buffered Look Ahead preparation/progress/handoff failures seen on 0.7.18 |
+| [LANG-3](docs/tasks/LANG-3.md) | candidate | functional regression | Preferred audio/subtitle language selection appears to have no effect at playback |
+| [HLS-9](docs/tasks/HLS-9.md) | candidate | dependency requirement | Make InputStream Adaptive a required Appi prerequisite because supported modes use it |
 | [HLS-1](docs/tasks/HLS-1.md) | backlog | investigation | Use DIAG-2/HLS-5 target-device evidence to diagnose any repeated stalls that remain |
 | [UI-1](docs/tasks/UI-1.md) | backlog | investigation | Skin comparison needed |
 
@@ -21,6 +24,10 @@ Planning status: open. Version: not assigned. Current baseline and fallback: [PR
 6. Copy shipped task IDs and scope changes into RELEASE_NOTES, then reset this planning file for the next cycle.
 
 ## Scope decisions
+
+2026-09-27: target-device testing confirms 0.7.18 no longer crashes Kodi at startup. Buffered Look Ahead still fails acceptance (no/erratic preparation progress, playback failure, near-90%-then-timeout, retry-dependent success), tracked as HLS-8. Preferred-language selection appears ineffective at playback, tracked as LANG-3. Both are candidates, not yet committed scope.
+
+2026-09-27: HLS-9 added as a candidate after the user required InputStream Adaptive to be an installation prerequisite whenever Appi uses it. Current 0.7.18 metadata marks inputstream.adaptive optional despite manual ISA and ABR modes depending on it.
 
 2026-09-27: Appi 0.7.18 was published through PR #6 / merge `22bf3ba0e59ee5cf045836aa3d8256be3cc684e0`. The release/package run 36351377864, post-merge verification run 36352524841 and Pages deployment run 36352524365 passed. Shipped scope: reopened LANG-2 native-settings crash correction only. Target-device startup confirmation remains pending; scope is reset for the next planning cycle.
 
@@ -86,4 +93,4 @@ Planning status: open. Version: not assigned. Current baseline and fallback: [PR
 
 ## Readiness
 
-No new committed implementation scope. Appi 0.7.18 is published and automated/package/Pages verification passed. Next action is target-device startup confirmation and language-list smoke testing; 0.7.12 remains the usable fallback until that acceptance is recorded.
+No new committed implementation scope. Appi 0.7.18 is published and the startup crash is confirmed fixed on the target device, but Buffered Look Ahead and preferred-language application are not accepted. HLS-8, LANG-3 and HLS-9 are current candidates.

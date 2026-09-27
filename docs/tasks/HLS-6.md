@@ -3,7 +3,7 @@ id: HLS-6
 role: implementation
 status: review
 delivery: released
-verification: partial
+verification: failed
 owner: Codex release/0.7.17
 base_commit: 6d36d9a52733fbe6f3ded3ba5ee335cb779883e3
 artifact: plugin.video.appi/plugin.video.appi-0.7.17.zip
@@ -104,3 +104,9 @@ Implemented, self-reviewed, integrated and published in 0.7.17. Target-device ac
 
 ## Implementation session — 2026-09-27
 User authorized implementation, testing, integration and publication in this session. Base 6d36d9a52733fbe6f3ded3ba5ee335cb779883e3. One worker owns the scoped source/settings/tests and shared release records; no concurrent worker changes observed. Target 0.7.17. Modes 0–2 must remain unchanged.
+
+
+## 0.7.18 target-device UI evidence
+The simple preparation UI exists, but indicator acceptance is still failed. One attempt showed Filling buffer with no visible progress; another jumped to roughly 90% before timing out. When buffered playback eventually succeeded after retries, no buffer indication was displayed during playback.
+
+HLS-8 owns the underlying preparation/readiness failure. HLS-6 remains failed for target-device indicator acceptance until progress is truthful and successful buffered playback exposes the configured indicator/debug behavior.
