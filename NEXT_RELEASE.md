@@ -1,6 +1,6 @@
 # Next Appi release
 
-Planning status: committed. Version: not assigned. Current baseline and fallback: [PROJECT_STATE.md](PROJECT_STATE.md).
+Planning status: committed / release candidate. Version: 0.7.14. Current baseline and fallback: [PROJECT_STATE.md](PROJECT_STATE.md).
 
 The next release scope is committed by explicit user direction on 2026-09-26. Version 0.7.13 remains published but failed target-device acceptance for manual HLS playback; the user has reverted to 0.7.12 for usable playback.
 
@@ -50,4 +50,4 @@ The next release scope is committed by explicit user direction on 2026-09-26. Ve
 
 ## Readiness
 
-The current published package remains 0.7.13, but it is not target-device accepted for manual HLS playback. The user's active rollback is 0.7.12. HLS-4 should be resolved and device-verified before a replacement release is considered ready.
+0.7.14 source implementation is prepared on the release branch for HLS-4 and DIAG-2. Automated release-gate verification is pending. HLS-4 and DIAG-2 remain in review because their required target-device checks cannot be completed before installing the candidate; publication must preserve 0.7.12 as the usable fallback and must not describe device acceptance as complete.
