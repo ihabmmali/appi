@@ -23,7 +23,7 @@ Updated: 2026-09-27. Each linked task is the canonical requirements/status/evide
 | HLS-8 | ready | implementation | [Repair 0.7.18 Buffered Look Ahead preparation and runtime failure](docs/tasks/HLS-8.md) |
 | HLS-9 | ready | implementation | [Make InputStream Adaptive a prerequisite dependency](docs/tasks/HLS-9.md) |
 | SUB-1 | review | review | [Restore downloaded subtitle persistence across playback sessions](docs/tasks/SUB-1.md) |
-| PLAY-1 | ready | implementation | [Restore Kodi resume points and investigate playback-start Trakt API error](docs/tasks/PLAY-1.md) |
+| PLAY-1 | proposed | research | [Investigate playback-start Trakt API error](docs/tasks/PLAY-1.md) |
 | UI-1 | proposed | research | [Playback Program Settings visibility](docs/tasks/UI-1.md) |
 | UI-2 | review | implementation | [About / installed Appi version](docs/tasks/UI-2.md) |
 | UI-3 | review | implementation | [Appi add-on artwork / icon](docs/tasks/UI-3.md) |

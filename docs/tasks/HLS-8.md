@@ -50,10 +50,10 @@ Progress must reflect playback readiness rather than only bytes/tasks scheduled.
 - Target-device verification repeats both reported episodes and records preparation progress, actual buffered bytes/seconds, handoff time, playback result and timeout/error.
 
 ## Authorization
-Reported by the user on 2026-09-27 while testing 0.7.18. This task is recorded as ready planning work but is not committed release scope unless explicitly included under AGENTS.md.
+Reported by the user on 2026-09-27 while testing 0.7.18. On 2026-09-27 the user explicitly committed this repair for the next release and identified robust Buffered Look Ahead Playback as the primary release focus. HLS-8 is committed release scope.
 
 ## Evidence
 Regular playback works on at least one file where Buffered Look Ahead reaches roughly 90% preparation and then times out, isolating the observed failure to the buffered path.
 
 ## Outcome and next action
-Assign a focused Buffered Look Ahead repair worker to instrument preparation readiness/progress, fix handoff and timeout behavior, and verify retries and successful playback on the target device.
+Committed for the next release as the primary playback focus. Assign a focused Buffered Look Ahead repair worker to instrument preparation readiness/progress, fix handoff and timeout behavior, and verify retries and successful playback on the target device.

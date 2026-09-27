@@ -41,10 +41,10 @@ Do not reintroduce free-text settings or unsafe empty list values.
 - Target-device verification records selected preference, available track codes/labels and actual chosen track.
 
 ## Authorization
-Reported by the user on 2026-09-27 while testing 0.7.18. This task is recorded as ready planning work but is not committed release scope unless explicitly included under AGENTS.md.
+Reported by the user on 2026-09-27 while testing 0.7.18. On 2026-09-27 the user explicitly committed this repair for the next release and identified preferred-language selection as the other primary release focus. LANG-3 is committed release scope.
 
 ## Evidence
 0.7.18 fixes the 0.7.17 native settings-parser crash and Kodi now remains running, but the selected default language appears to have no effect during playback.
 
 ## Outcome and next action
-Trace one selected language from settings storage through normalization to actual Kodi stream selection and repair the first broken link.
+Committed for the next release. Trace one selected language from settings storage through normalization to actual Kodi stream selection and repair the first broken link.
