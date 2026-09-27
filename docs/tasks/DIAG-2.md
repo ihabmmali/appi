@@ -1,11 +1,11 @@
 ---
 id: DIAG-2
 role: research
-status: ready
+status: active
 delivery: unreleased
 verification: pending
-owner: unassigned
-base_commit: unset
+owner: ChatGPT release worker 2026-09-26
+base_commit: 90b9561481a14d04765b0bd999ee47ddf232e6c5
 artifact: none
 ---
 # DIAG-2 — Causal HLS playback telemetry
@@ -66,6 +66,12 @@ The released DIAG-1 record states that per-segment HTTP timing, inputstream buff
 The user specifically requires diagnostics to determine whether large configured Kodi cache capacity corresponds to actual playable media buffered before a stall, or whether HLS playback maintains only a shallow read-ahead queue that can drain to zero.
 
 No implementation or target-device verification has yet been performed for DIAG-2. The task is now actionable and committed to the next release; research may be performed as the first implementation step where Kodi/InputStream Adaptive observability must be established before coding.
+
+## Research/implementation session — 2026-09-26
+- Assigned under the user's explicit build/integrate/publish instruction; NEXT_RELEASE lists DIAG-2 as committed scope.
+- Working base: `90b9561481a14d04765b0bd999ee47ddf232e6c5`; task branch: `release/0.7.14-hls4-diag2`.
+- Kodi's add-on Python API exposes playback position plus InfoLabels that can be sampled without proxying media traffic. Appi can therefore record timestamped resolution/bitrate changes, stall intervals, and cache/read-ahead labels when the installed Kodi build exposes them. Native/InputStream Adaptive per-segment HTTP timing and exact representation request history are not reliably exposed through the supported Python API; the bundle must record that limitation rather than infer nonexistent measurements.
+- Implementation will extend DIAG-1 with schema-versioned mode/representation transitions, cache/read-ahead observations, bounded pre-stall history, explicit observability sources/limitations and causal classification while preserving sanitization.
 
 ## Outcome and next action
 Committed for the next release. The assigned worker should first map the exact observability available from Kodi and InputStream Adaptive, then implement the feasible capture points by extending the existing DIAG-1 session/export pipeline and preserving a single timeline across mode changes.
