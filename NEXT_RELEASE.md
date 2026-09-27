@@ -1,6 +1,6 @@
 # Next Appi release
 
-Planning status: committed. Version: 0.7.15. Current baseline and fallback: [PROJECT_STATE.md](PROJECT_STATE.md).
+Planning status: committed / release candidate. Version: 0.7.15. Current baseline and fallback: [PROJECT_STATE.md](PROJECT_STATE.md).
 
 Version 0.7.14 failed target-device acceptance for manual stream selection. HLS-4 is reopened and explicitly committed as the sole release-blocking scope for 0.7.15. The repair must restore the proven 0.7.12 InputStream Adaptive ask-quality playback path; 0.7.12 remains the usable fallback until accepted.
 
@@ -55,4 +55,4 @@ Version 0.7.14 failed target-device acceptance for manual stream selection. HLS-
 
 ## Readiness
 
-0.7.15 is committed with HLS-4 as the sole release blocker. 0.7.14 failed target-device manual-selection acceptance. 0.7.12 remains the usable playback fallback until the restored 0.7.12-style path is verified.
+0.7.15 source implementation is prepared with HLS-4 as the sole committed release blocker. The candidate restores the 0.7.12 original-master-URL + InputStream Adaptive `ask-quality` path. Automated release/package verification and target-device acceptance remain pending; 0.7.12 remains the usable playback fallback.
