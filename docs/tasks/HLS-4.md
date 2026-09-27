@@ -100,7 +100,7 @@ The 0.7.13 HLS-2/HLS-3 review record states that automated smoke tests covered m
 - Manual mode configures InputStream Adaptive and sets `inputstream.adaptive.stream_selection_type=ask-quality`, matching 0.7.12.
 - Diagnostics record that manual selection is owned by InputStream Adaptive and that the master URL was preserved; no authenticated URL is exported.
 - Regression checks assert that `app.py` no longer contains the Appi manual selector/parser call, still uses the original `media_url`, and contains the ISA `ask-quality` configuration.
-- Native and adaptive HLS branches were left intact. Target-device acceptance remains required after publication.
+- Native and adaptive HLS branches were left intact. GitHub Actions run 36291375057 passed the complete automated verify/package gate and produced the deterministic 0.7.15 package (`d8952fcd9b2a30dbcf4e113c28ec8f3ba316c44498218cbb437beaefd65f7bba`). Target-device acceptance remains required after publication.
 
 ## Outcome and next action
 Run the 0.7.15 automated release/package gates, publish under the user's explicit authorization, then target-device test manual rendition selection on the same provider stream. Keep 0.7.12 available until playback is confirmed.
