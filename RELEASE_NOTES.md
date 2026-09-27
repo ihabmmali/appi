@@ -2,7 +2,7 @@
 
 Each entry records the package shipped, its main user-visible changes, and verification at release time. For the current baseline and next tasks read [PROJECT_STATE.md](PROJECT_STATE.md) and [KNOWN_ISSUES.md](KNOWN_ISSUES.md); the [CHANGELOG.md](CHANGELOG.md) is the implemented feature history.
 
-## 0.7.17 — candidate, 2026-09-27
+## 0.7.17 — 2026-09-27
 
 - Committed scope: HLS-7, HLS-6, LANG-2, UI-2, UI-3. Base: `6d36d9a52733fbe6f3ded3ba5ee335cb779883e3`; candidate branch: `release/0.7.17`.
 - Buffered Look Ahead now prepares asynchronously with cancellable progress before Kodi receives the URL. Recovery waits occur for missing media, and failure/cancel/retry/replacement cleanup is isolated by session token. VOD playlists remain stable across repeated access; opaque proxy URLs keep media extensions and byte-range requests are honored.
@@ -10,7 +10,8 @@ Each entry records the package shipped, its main user-visible changes, and verif
 - Language lists retain alias matching and migrate legacy preferences. Settings About reads installed metadata; the packaged Appi icon matches the approved design exactly.
 - Automated local verification: 73 tests passed, including real FFmpeg MPEG-TS and fMP4 decoding at start and after forward/backward seeks, real HTTP transfer integrity/auth/ranges, buffer-size differences, selected rendition preservation, failed retries/cancellation/replacement, legacy-language migration, About upgrade/rollback and unchanged modes 0–2. Tracker validation, ZIP/source/icon inspection and fallback checks passed.
 - Tested implementation commit: `842ef37c8deb6ce340946dbbafa29fbd8745ec0c`.
-- Local package SHA-256: `77dd83244e01bae295d3118073d28b13b2a6d634576cf4ffae84fde14a49b0b1`. GitHub release/package gate and publication are pending.
+- Local package SHA-256: `77dd83244e01bae295d3118073d28b13b2a6d634576cf4ffae84fde14a49b0b1`. Release/package run 36350783947 passed; deterministic artifact commit `20785a1af1e4ebe4d474532b42f4777bff8e337e`. Published through [PR #5](https://github.com/ihabmmali/appi/pull/5), merge commit `18ffae9349b2d225b575cee6a276ea8dcd59143b`. Post-merge verification run 36350856112 and Pages deployment run 36350855315 passed.
+- Delivery: [plugin.video.appi-0.7.17.zip](https://ihabmmali.github.io/appi/plugin.video.appi-0.7.17.zip). The deployed ZIP was downloaded and its SHA-256/ZIP integrity verified against the tested package; the install index includes 0.7.17 and the preserved 0.7.12/0.7.8 fallbacks.
 - Self-review only. Target-device acceptance remains pending for the user's failing streams, UI/skin behavior and icon caching. HLS-7 code-level repair is implemented; it is not a claim that Fire TV/provider behavior has been proven fixed. Tasks remain review/partial. 0.7.12 stays the usable fallback and 0.7.8 is retained.
 - Bounds/limitations: 45-second preparation deadline excludes quality-choice time; reserve waits are 20 seconds. Per-transfer size is limited to one quarter of the budget/active-track share, so unusually large segments may require a larger buffer or lower quality. Overlay seconds describe media cached ahead of Kodi's request cursor, excluding its private decode queue. See ARCHITECTURE for resource limits.
 

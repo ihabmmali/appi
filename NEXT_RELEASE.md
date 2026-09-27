@@ -1,18 +1,13 @@
 # Next Appi release
 
-Planning status: committed; implementation reviewed, release candidate prepared. Version: 0.7.17. Current baseline and fallback: [PROJECT_STATE.md](PROJECT_STATE.md).
+Planning status: open. Version: not assigned. Current baseline and fallback: [PROJECT_STATE.md](PROJECT_STATE.md).
 
-Version 0.7.16 was published on 2026-09-27, but Buffered Look Ahead has now failed target-device acceptance. The user explicitly committed all currently tracked next-release candidates plus the newly reported Buffered Look Ahead stability repair. 0.7.12 remains the usable manual-playback fallback until the newer playback line is accepted on the target device.
+Version 0.7.17 shipped HLS-7, HLS-6, LANG-2, UI-2 and UI-3. All remain in review/partial verification pending target-device acceptance. No new implementation scope is committed. 0.7.12 remains the usable fallback.
 
 ## Proposed scope
 
 | Task | Selection | Priority | Reason |
 | --- | --- | --- | --- |
-| [HLS-7](docs/tasks/HLS-7.md) | committed | release blocker | Stabilize Buffered Look Ahead startup, seeking, retry/navigation state and failure handling after failed target-device acceptance |
-| [HLS-6](docs/tasks/HLS-6.md) | committed | requested playback improvement | Add configurable buffered storage size, Highest available bitrate / Prompt for quality, simple startup/buffering status, and optional detailed debug overlay |
-| [LANG-2](docs/tasks/LANG-2.md) | committed | requested settings improvement | Replace free-text audio/subtitle language preferences with common-language selection lists |
-| [UI-2](docs/tasks/UI-2.md) | committed | requested usability improvement | Add a simple About entry that reports the actually installed Appi version |
-| [UI-3](docs/tasks/UI-3.md) | committed | requested branding improvement | Integrate the user-selected Appi icon now stored at `artwork/appi-icon-selected.png` |
 | [HLS-1](docs/tasks/HLS-1.md) | backlog | investigation | Use DIAG-2/HLS-5 target-device evidence to diagnose any repeated stalls that remain |
 | [UI-1](docs/tasks/UI-1.md) | backlog | investigation | Skin comparison needed |
 
@@ -26,6 +21,8 @@ Version 0.7.16 was published on 2026-09-27, but Buffered Look Ahead has now fail
 6. Copy shipped task IDs and scope changes into RELEASE_NOTES, then reset this planning file for the next cycle.
 
 ## Scope decisions
+
+2026-09-27: 0.7.17 published all five committed tasks through PR #5 / merge `18ffae9349b2d225b575cee6a276ea8dcd59143b`. Release/package 36350783947, post-merge verification 36350856112 and Pages 36350855315 passed; deployed ZIP checksum verified. Scope reset for the next cycle; device acceptance stays open in the canonical task records.
 
 2026-09-27: user explicitly instructed that **all tracked changes so far be committed for the next release**. HLS-6, LANG-2, UI-2 and UI-3 are now committed scope. HLS-7 is added and committed as a release blocker for the failed Buffered Look Ahead target-device behavior. HLS-1 and UI-1 remain backlog investigations because they were not current candidates.
 
@@ -87,6 +84,4 @@ Version 0.7.16 was published on 2026-09-27, but Buffered Look Ahead has now fail
 
 ## Readiness
 
-2026-09-27: 0.7.17 implements all five committed tasks. Tested implementation commit `842ef37c8deb6ce340946dbbafa29fbd8745ec0c`. Local verification passed 73 tests plus tracker/package/source/icon/fallback inspection. Proceed to the authorized package gate and publication; device acceptance stays pending in task records.
-
-The next release scope is committed. HLS-7 is the Buffered Look Ahead release blocker and should be resolved together with HLS-6 before release. LANG-2, UI-2 and UI-3 are also committed. Appi 0.7.16 is published from merge commit `af6791128009e5e9afd408221d8427c2baed65e1`; post-merge verification run 36297143439 and Pages deployment run 36297143062 passed. HLS-5 remains in review/partial verification until target-device buffering effectiveness is tested.
+No new committed implementation scope. Appi 0.7.17 is published and its deployed ZIP/index/checksum are verified. Next action is target Fire TV testing of startup, forward/backward seeks, retries and Recently Played navigation, both quality settings, buffer MB/seconds and overlay, plus language controls, About/version and artwork. Record results in HLS-7/HLS-6/LANG-2/UI-2/UI-3; retain the usable 0.7.12 fallback until device acceptance.

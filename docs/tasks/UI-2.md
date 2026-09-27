@@ -2,11 +2,11 @@
 id: UI-2
 role: implementation
 status: review
-delivery: unreleased
+delivery: released
 verification: partial
 owner: Codex release/0.7.17
 base_commit: 6d36d9a52733fbe6f3ded3ba5ee335cb779883e3
-artifact: none
+artifact: plugin.video.appi/plugin.video.appi-0.7.17.zip
 ---
 # UI-2 — About / installed Appi version
 
@@ -37,6 +37,8 @@ Requested by the user on 2026-09-27 as a usability improvement. The user wants a
 
 ## Evidence
 
+Published in 0.7.17 through PR #5, merge `18ffae9349b2d225b575cee6a276ea8dcd59143b`. Release/package run 36350783947, post-merge verification 36350856112 and Pages deployment 36350855315 passed. Deployed ZIP hash matched `77dd83244e01bae295d3118073d28b13b2a6d634576cf4ffae84fde14a49b0b1`.
+
 2026-09-27 implementation/self-review (0.7.17 candidate): The settings About action obtains name/version from the installed Addon runtime metadata. Smoke coverage changes mocked installed metadata from 0.7.17 to 0.7.12 and verifies the displayed version changes accordingly. No second version constant is used.
 
 73 unit/smoke/integration tests passed with Python 3.12, including real FFmpeg MPEG-TS and fMP4 decode at start, forward seek and backward seek; workflow validation and diff whitespace checks passed. `_effective_hls_mode`, `_configure_hls` and `_configure_mp4` are AST-identical to base 6d36d9a52733fbe6f3ded3ba5ee335cb779883e3. Reviewed implementation commit: `842ef37c8deb6ce340946dbbafa29fbd8745ec0c`. This is self-review, not independent review.
@@ -44,7 +46,7 @@ Requested by the user on 2026-09-27 as a usability improvement. The user wants a
 The current packaged manifest, `plugin.video.appi/addon.xml`, declares Appi version `0.7.16`, while the current settings definition has no About/version action.
 
 ## Outcome and next action
-Implementation and automated self-review complete for the 0.7.17 candidate. Authorized integration/publication is next; target-device acceptance remains pending, so this task stays in review/partial verification. Retest the task's device/UI scenarios after installing 0.7.17; do not mark done from package availability alone.
+Implemented, self-reviewed, integrated and published in 0.7.17. Target-device acceptance remains pending, so this task stays in review/partial verification. Retest the task's device/UI scenarios after installing 0.7.17; do not mark done from package availability alone.
 
 ## Implementation session — 2026-09-27
 User authorized implementation, testing, integration and publication in this session. Base 6d36d9a52733fbe6f3ded3ba5ee335cb779883e3. One worker owns the scoped source/settings/tests and shared release records; no concurrent worker changes observed. Target 0.7.17. Modes 0–2 must remain unchanged.
