@@ -1,13 +1,16 @@
 # Next Appi release
 
-Planning status: open. Version: not assigned. Current baseline and fallback: [PROJECT_STATE.md](PROJECT_STATE.md).
+Planning status: committed crash hotfix. Version: 0.7.18. Current baseline and fallback: [PROJECT_STATE.md](PROJECT_STATE.md).
 
-Version 0.7.17 shipped HLS-7, HLS-6, LANG-2, UI-2 and UI-3. All remain in review/partial verification pending target-device acceptance. No new implementation scope is committed. 0.7.12 remains the usable fallback.
+0.7.17 failed target-device startup acceptance. The sole 0.7.18 scope is the corrective LANG-2 fix under the existing release authorization.
 
 ## Proposed scope
 
+Emergency follow-up to the authorized 0.7.17 release: repair the reported install/startup crash in LANG-2. No feature expansion or playback changes.
+
 | Task | Selection | Priority | Reason |
 | --- | --- | --- | --- |
+| [LANG-2](docs/tasks/LANG-2.md) | committed | release blocker | Remove empty language option values that trigger a native Kodi settings-parser crash |
 | [HLS-1](docs/tasks/HLS-1.md) | backlog | investigation | Use DIAG-2/HLS-5 target-device evidence to diagnose any repeated stalls that remain |
 | [UI-1](docs/tasks/UI-1.md) | backlog | investigation | Skin comparison needed |
 
@@ -84,4 +87,4 @@ Version 0.7.17 shipped HLS-7, HLS-6, LANG-2, UI-2 and UI-3. All remain in review
 
 ## Readiness
 
-No new committed implementation scope. Appi 0.7.17 is published and its deployed ZIP/index/checksum are verified. Next action is target Fire TV testing of startup, forward/backward seeks, retries and Recently Played navigation, both quality settings, buffer MB/seconds and overlay, plus language controls, About/version and artwork. Record results in HLS-7/HLS-6/LANG-2/UI-2/UI-3; retain the usable 0.7.12 fallback until device acceptance.
+0.7.18 candidate corrects the empty language option that Kodi's native parser dereferences. Local 76-test suite and source/ZIP settings validation pass. Package/integrate/publish, then confirm target-device recovery. No playback changes.

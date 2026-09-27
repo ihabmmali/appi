@@ -27,7 +27,7 @@ _ALIASES.update({'el': 'el', 'gre': 'el', 'ell': 'el', 'greek': 'el', 'he': 'he'
 
 def normalize(value):
     value = (value or '').strip()
-    if not value:
+    if not value or value.casefold() == 'none':
         return ''
     if xbmc is not None and hasattr(xbmc, 'convertLanguage'):
         try:
@@ -63,14 +63,21 @@ COMMON_CODES = ('', 'en', 'ar', 'zh', 'da', 'nl', 'fi', 'fr', 'de', 'el', 'he', 
 
 
 def migrate_preferences(addon):
-    if addon.getSetting('language_choices_migrated') == 'true':
-        return
+    migrated = addon.getSetting('language_choices_migrated') == 'true'
     for kind in ('audio', 'subtitle'):
         key = 'preferred_' + kind + '_language'
         current = addon.getSetting(key + '_choice')
-        value = normalize(current or addon.getSetting(key))
-        addon.setSetting(key + '_choice', value if value in COMMON_CODES else '')
-    addon.setSetting('language_choices_migrated', 'true')
+        # The fresh schema default is "none"; first migration must still honor
+        # pre-list legacy preferences. Subsequent runs must preserve explicit None.
+        if migrated:
+            value = normalize(current)
+        else:
+            value = normalize(current if current and current != 'none' else addon.getSetting(key))
+        stored = value if value and value in COMMON_CODES else 'none'
+        if current != stored:
+            addon.setSetting(key + '_choice', stored)
+    if not migrated:
+        addon.setSetting('language_choices_migrated', 'true')
 
 
 def preference(addon, kind):

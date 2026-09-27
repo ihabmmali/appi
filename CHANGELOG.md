@@ -2,6 +2,12 @@
 
 Implemented features, grouped by add-on version. A version listed here means its source/package was published in the repository; it does not by itself certify device testing. For details and earlier 0.7.x entries, see [README.md](README.md). This file is the concise ongoing release history; [RELEASE_NOTES.md](RELEASE_NOTES.md) records what each package shipped and how it was verified.
 
+## 0.7.18 — 2026-09-27
+
+- Fix the 0.7.17 Kodi startup crash trigger: the No preference language options now have a non-empty `none` value, avoiding a null text child in Kodi's native settings parser.
+- Preserve legacy language preferences and explicit No preference, including recovery from empty 0.7.17 values. Playback code is unchanged.
+- Add checks against the actual archived 0.7.17 settings and validate every list option/default in both source and ZIP. Target Fire TV recovery still needs confirmation.
+
 ## 0.7.17 — 2026-09-27
 
 - Repair Buffered Look Ahead startup, seek recovery and session replacement. Startup has a visible cancelable progress dialog; failures are bounded and explicit. Existing playback modes 0–2 remain unchanged.
