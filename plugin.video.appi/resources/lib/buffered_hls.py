@@ -985,7 +985,7 @@ class BufferedHlsManager:
                 except OSError:
                     pass
 
-    def poll(self):
+    def poll(self, player_active=False):
         request_path = os.path.join(self.control, 'request.json')
         request = _json_read(request_path)
         if request:
@@ -1022,6 +1022,7 @@ class BufferedHlsManager:
                 )
         if (
             self.active
+            and not player_active
             and time.monotonic() - self.active.last_access > STALE_SESSION_SECONDS
         ):
             self.stop_active('idle-timeout')
