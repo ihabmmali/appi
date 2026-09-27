@@ -2,6 +2,16 @@
 
 Each entry records the package shipped, its main user-visible changes, and verification at release time. For the current baseline and next tasks read [PROJECT_STATE.md](PROJECT_STATE.md) and [KNOWN_ISSUES.md](KNOWN_ISSUES.md); the [CHANGELOG.md](CHANGELOG.md) is the implemented feature history.
 
+## 0.7.15 — release candidate, 2026-09-26
+
+- Included committed task: HLS-4.
+- 0.7.14 failed target-device manual-selection playback exactly as 0.7.13 did; the query-preservation repair did not restore the required path.
+- Source comparison against working 0.7.12 commit `a099e521cfa767bc8cdee9a72988dcd8a92b9c73` showed that 0.7.12 passed the original HLS master URL to InputStream Adaptive with `stream_selection_type=ask-quality`; Appi did not resolve/play a child rendition itself.
+- 0.7.15 restores that architecture: the original master URL remains the ListItem path and InputStream Adaptive owns rendition discovery, manual quality selection and child-playlist playback.
+- Native Kodi HLS, automatic adaptive mode, diagnostics, subtitles and playback history remain in place.
+- Automated release gate: pending.
+- Target-device acceptance: pending. 0.7.12 remains the usable playback fallback until 0.7.15 manual selection is verified.
+
 ## 0.7.14 — 2026-09-26
 
 - Included committed tasks: HLS-4 and DIAG-2.
