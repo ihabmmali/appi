@@ -8,7 +8,8 @@ No new release scope is committed. Version 0.7.13 was published on 2026-09-26; s
 
 | Task | Selection | Priority | Reason |
 | --- | --- | --- | --- |
-| [HLS-1](docs/tasks/HLS-1.md) | backlog | investigation | Diagnose repeated stalls while distinguishing fixed/ceiling-limited playback from actual ABR |
+| [DIAG-2](docs/tasks/DIAG-2.md) | candidate | requested diagnostic improvement | Add full-session segment/network/representation/buffer telemetry so stalls can be causally diagnosed |
+| [HLS-1](docs/tasks/HLS-1.md) | backlog | investigation | Diagnose repeated stalls using DIAG-2 evidence and distinguish configured cache size from actual playable read-ahead |
 | [UI-1](docs/tasks/UI-1.md) | backlog | investigation | Skin comparison needed |
 
 ## How to plan the release
@@ -22,11 +23,11 @@ No new release scope is committed. Version 0.7.13 was published on 2026-09-26; s
 
 ## Scope decisions
 
+2026-09-26: DIAG-2 added as a candidate after target-device use of the released DIAG-1 package showed that stall detection alone does not capture enough evidence to identify the cause. The requested successor must preserve a full-session causal timeline across playback-mode changes.
+
 2026-09-26: Appi 0.7.13 was published from merge commit `0d708565e4bccb0abe03c7a0ae004ccb3dc0a72a`. Shipped scope: SEARCH-1, SUB-1, SEARCH-2, REFRESH-1, REFRESH-2, LANG-1, DIAG-1, HLS-3 and HLS-2. NEXT_RELEASE was reset for the next planning cycle; task records retain pending target-device verification where applicable.
 
-
 2026-09-26: user explicitly committed all current candidate tasks (SEARCH-1, SUB-1, SEARCH-2, REFRESH-1, REFRESH-2, LANG-1, DIAG-1, HLS-3, HLS-2) and authorized the build, integration and publishing lifecycle for this release.
-
 
 2026-09-24: existing requests migrated as candidates/backlog during lifecycle setup. No release scope or new version has been committed.
 

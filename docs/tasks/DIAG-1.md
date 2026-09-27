@@ -46,9 +46,9 @@ Open research questions include which buffer metrics and low-level segment timin
 Requested by the user on 2026-09-24 as a proposed next-release change for troubleshooting the recurring buffering issue. This authorizes triage/planning records only; implementation, integration and publication remain separate assignments.
 
 ## Evidence
-User report: some streams can begin buffering frequently despite no apparent bandwidth constraint and despite substantially increasing Kodi cache size. Existing [HLS-1](HLS-1.md) already requires manifest, segment-timing and Kodi/inputstream evidence, but collection is currently manual/not yet specified.
+User report: some streams can begin buffering frequently despite no apparent bandwidth constraint and despite substantially increasing Kodi cache size. Existing [HLS-1](HLS-1.md) already requires manifest, segment-timing and Kodi/inputstream evidence.
 
-No implementation or device verification has been performed for DIAG-1.
+The released 0.7.13 implementation successfully provides bounded session capture/export and stall detection, but its own availability map records per-segment HTTP timing, inputstream buffer level and representation/bitrate history as unavailable. On 2026-09-26 the user confirmed that a generated diagnostic package could detect stalls but still could not determine their cause. [DIAG-2](DIAG-2.md) tracks the required causal-telemetry expansion.
 
 ## Build session — 2026-09-26
 - User authorization: all candidates committed to the next release; implementation, integration and publication explicitly authorized.
@@ -64,7 +64,7 @@ No implementation or device verification has been performed for DIAG-1.
 - Verification is partial pending export/capture from one working and one repeatedly stalling stream on the target device.
 
 ## Outcome and next action
-Keep DIAG-1 separate from HLS-1: DIAG-1 should establish a reusable diagnostic export facility; HLS-1 should use its evidence to diagnose the specific repeated-stall problem. Assign a research worker to map Kodi observability and finalize the capture schema before implementation.
+DIAG-1 established the initial reusable diagnostic export facility and remains the shipped 0.7.13 record. Its target-device use exposed an observability gap: stall detection alone is insufficient to distinguish server/CDN, throughput, buffer/read-ahead, ABR and playback-engine causes. Continue the diagnostic capability through [DIAG-2](DIAG-2.md) rather than rewriting the shipped DIAG-1 outcome.
 
 ## Publication — 0.7.13
 - Published to `main` in merge commit `0d708565e4bccb0abe03c7a0ae004ccb3dc0a72a` on 2026-09-26/27.
