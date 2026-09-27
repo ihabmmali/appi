@@ -19,6 +19,7 @@ Updated: 2026-09-27. Short current summary; start with [AGENTS.md](AGENTS.md) fo
 - DIAG-2 remains delivered in 0.7.14 and in review/partial verification for its separate target-device telemetry checks.
 - HLS-5 is delivered in 0.7.16 and remains in review/partial verification pending target-device buffering tests. The three pre-existing playback modes were source-audited and regression-tested as compatibility constraints.
 - HLS-6 is a ready next-release candidate to add a user-configurable Buffered Look Ahead buffer size, a quality choice between Highest available bitrate and Prompt for quality, and an optional live buffer-state debug overlay; it is not yet committed release scope.
+- LANG-2 is a ready candidate to replace free-text preferred audio/subtitle language settings with common-language selection lists while preserving LANG-1 normalization.
 - UI-2 is a ready candidate for a settings About/version display. UI-3 tracks add-on icon artwork; the user-selected design is now stored at `artwork/appi-icon-selected.png` for future integration. Neither is committed release scope.
 - [NEXT_RELEASE.md](NEXT_RELEASE.md): reset to draft planning; HLS-6 is a candidate and no new release scope is committed. HLS-1 and UI-1 remain backlog investigations.
 - [KNOWN_ISSUES.md](KNOWN_ISSUES.md): full task index.

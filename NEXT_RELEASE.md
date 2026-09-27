@@ -9,6 +9,7 @@ Version 0.7.16 was published on 2026-09-27. No new release scope is committed. H
 | Task | Selection | Priority | Reason |
 | --- | --- | --- | --- |
 | [HLS-6](docs/tasks/HLS-6.md) | candidate | requested playback improvement | Add configurable buffered storage size, Highest available bitrate / Prompt for quality, and optional live buffer-state overlay |
+| [LANG-2](docs/tasks/LANG-2.md) | candidate | requested settings improvement | Replace free-text audio/subtitle language preferences with common-language selection lists |
 | [UI-2](docs/tasks/UI-2.md) | candidate | requested usability improvement | Add a simple About entry that reports the actually installed Appi version |
 | [UI-3](docs/tasks/UI-3.md) | candidate | requested branding improvement | Integrate the user-selected Appi icon now stored at `artwork/appi-icon-selected.png` |
 | [HLS-1](docs/tasks/HLS-1.md) | backlog | investigation | Use DIAG-2/HLS-5 target-device evidence to diagnose any repeated stalls that remain |
@@ -24,6 +25,8 @@ Version 0.7.16 was published on 2026-09-27. No new release scope is committed. H
 6. Copy shipped task IDs and scope changes into RELEASE_NOTES, then reset this planning file for the next cycle.
 
 ## Scope decisions
+
+2026-09-27: LANG-2 added as a candidate after the user required preferred audio and subtitle language settings to use curated common-language selection lists instead of free-text inputs. The released LANG-1 normalization behavior should be preserved underneath the new settings UX. This request was logged but not explicitly committed to release scope.
 
 2026-09-27: UI-3 artwork dependency satisfied. The user selected the first generated Appi design and requested that it be stored in the repository for a future dev worker. The approved 512×512 PNG handoff asset is `artwork/appi-icon-selected.png`. UI-3 remains candidate scope; this request stores the artwork but does not explicitly commit UI-3 to the next release.
 
