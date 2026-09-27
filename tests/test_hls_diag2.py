@@ -125,6 +125,26 @@ class DiagnosticAnalysisTests(unittest.TestCase):
         self.assertEqual(categories.get('shallow_or_empty_read_ahead'), 'suggestive')
         self.assertEqual(categories.get('server_or_segment_delay'), 'insufficient_evidence')
 
+    def test_buffered_proxy_declares_direct_segment_and_buffer_observability(self):
+        diagnostics = _load_diagnostics()
+        diagnostics.prepare_playback(
+            'movies', 'm:test', 'https://provider.example/master.m3u8?token=secret',
+            'hls', 'appi-buffered-lookahead',
+            {
+                'hls_mode': 3,
+                'buffered_proxy': True,
+                'buffer_target_seconds': 30,
+                'buffer_startup_seconds': 18,
+            },
+        )
+        payload = diagnostics._read(diagnostics.ACTIVE)
+        self.assertTrue(payload['availability']['per_segment_http_timing'])
+        self.assertTrue(payload['availability']['playlist_refresh_history'])
+        self.assertTrue(payload['availability']['proxy_buffer_depth'])
+        self.assertFalse(payload['availability']['raw_authenticated_url'])
+        self.assertEqual(payload['options']['buffer_target_seconds'], 30)
+        self.assertNotIn('secret', str(payload))
+
     def test_representation_changes_are_reported_without_claiming_segment_timing(self):
         diagnostics = _load_diagnostics()
         payload = {
