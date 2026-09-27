@@ -56,8 +56,8 @@ jobs:
           assert (root / 'addons.xml.sha256').read_text().strip() == hashlib.sha256(addons).hexdigest()
           index = (root / 'index.html').read_text()
           assert package.name in index
+          assert 'plugin.video.appi-0.7.13.zip' in index
           assert 'plugin.video.appi-0.7.12.zip' in index
-          assert 'plugin.video.appi-0.7.11.zip' in index
           assert 'plugin.video.appi-0.7.8.zip' in index
           assert index.count('plugin.video.appi-') == 8
           print('artifact inspection passed:', package.name, actual)
