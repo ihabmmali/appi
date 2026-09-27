@@ -2,11 +2,11 @@
 id: DIAG-2
 role: review
 status: review
-delivery: unreleased
+delivery: released
 verification: partial
 owner: ChatGPT release worker 2026-09-26
 base_commit: 90b9561481a14d04765b0bd999ee47ddf232e6c5
-artifact: none
+artifact: https://github.com/ihabmmali/appi/blob/main/plugin.video.appi-0.7.14.zip
 ---
 # DIAG-2 — Causal HLS playback telemetry
 
@@ -79,6 +79,12 @@ No implementation or target-device verification has yet been performed for DIAG-
 - The final analysis distinguishes observed/suggestive evidence from insufficient evidence and does not claim CDN/segment timing or throughput measurements when per-segment HTTP data is inaccessible.
 - The bundle records observation sources and limitations for unsupported InputStream Adaptive internals and preserves DIAG-1 credential/query/subtitle-content exclusions.
 - Added automated analysis coverage for pre-stall near-empty cache evidence and representation transitions. GitHub Actions PR run 36290602785 passed the full automated gate. Target-device failing/working captures remain required for final verification.
+
+## Publication — 0.7.14
+- Published in merge commit `4eb272c0da19b716906e4909366f6d6ba4173874`.
+- Post-merge automated release verification passed in GitHub Actions run 36290741628.
+- Artifact: https://github.com/ihabmmali/appi/blob/main/plugin.video.appi-0.7.14.zip; SHA-256: `99e2a84c741c8b518058cd93233412ea771969dd4f34690beb31880d5a0db691`.
+- Delivery is released; verification remains partial. A failing-stream and comparable working-stream target-device capture are still required to validate the available cache/read-ahead observations and causal analysis.
 
 ## Outcome and next action
 Review the 0.7.14 candidate with the automated gate, then collect one failing-stream and one working-stream target-device bundle to validate which Player.Cache* labels are exposed on the Fire TV/Kodi build and whether the new timeline can distinguish actual playable read-ahead from configured cache capacity.

@@ -2,11 +2,11 @@
 id: HLS-4
 role: review
 status: review
-delivery: unreleased
+delivery: released
 verification: partial
 owner: ChatGPT release worker 2026-09-26
 base_commit: 90b9561481a14d04765b0bd999ee47ddf232e6c5
-artifact: none
+artifact: https://github.com/ihabmmali/appi/blob/main/plugin.video.appi-0.7.14.zip
 ---
 # HLS-4 — Repair 0.7.13 manual HLS playback regression
 
@@ -72,6 +72,12 @@ The 0.7.13 HLS-2/HLS-3 review record states that automated smoke tests covered m
 - Appi passes sanitized selected-variant identity/metadata into diagnostics without exporting the authenticated URL.
 - Added regression tests for signed relative variants, child-query precedence, cross-origin isolation, Kodi URL options and metadata/URL association.
 - GitHub Actions PR run 36290602785 passed the unit/smoke suite, tracker validation, deterministic build, ZIP/hash/index inspection and fallback checks. Target-device playback remains required before HLS-4 can be marked done.
+
+## Publication — 0.7.14
+- Published in merge commit `4eb272c0da19b716906e4909366f6d6ba4173874`.
+- Post-merge automated release verification passed in GitHub Actions run 36290741628.
+- Artifact: https://github.com/ihabmmali/appi/blob/main/plugin.video.appi-0.7.14.zip; SHA-256: `99e2a84c741c8b518058cd93233412ea771969dd4f34690beb31880d5a0db691`.
+- Delivery is released; verification remains partial. Do not mark this task done until manual fixed-quality playback is confirmed on the target device/provider stream.
 
 ## Outcome and next action
 Review the 0.7.14 candidate with the automated gate, then target-device test at least one authenticated multi-variant provider stream. Keep 0.7.12 available until a manually selected rendition plays successfully and the chooser metadata is confirmed.

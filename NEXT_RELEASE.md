@@ -1,15 +1,13 @@
 # Next Appi release
 
-Planning status: committed / release candidate. Version: 0.7.14. Current baseline and fallback: [PROJECT_STATE.md](PROJECT_STATE.md).
+Planning status: draft. Version: not assigned. Current baseline and fallback: [PROJECT_STATE.md](PROJECT_STATE.md).
 
-The next release scope is committed by explicit user direction on 2026-09-26. Version 0.7.13 remains published but failed target-device acceptance for manual HLS playback; the user has reverted to 0.7.12 for usable playback.
+Version 0.7.14 was published on 2026-09-26. No new release scope is committed. HLS-4 and DIAG-2 were delivered in 0.7.14 but remain in review pending their required target-device verification; 0.7.12 remains the usable playback fallback until HLS-4 is accepted.
 
 ## Proposed scope
 
 | Task | Selection | Priority | Reason |
 | --- | --- | --- | --- |
-| [HLS-4](docs/tasks/HLS-4.md) | committed | release blocker | 0.7.13 manual HLS chooser shows wrong rendition data and every selection fails playback |
-| [DIAG-2](docs/tasks/DIAG-2.md) | committed | requested diagnostic improvement | Add full-session segment/network/representation/buffer telemetry so stalls can be causally diagnosed |
 | [HLS-1](docs/tasks/HLS-1.md) | backlog | investigation | Diagnose repeated stalls using DIAG-2 evidence and distinguish configured cache size from actual playable read-ahead |
 | [UI-1](docs/tasks/UI-1.md) | backlog | investigation | Skin comparison needed |
 
@@ -23,6 +21,9 @@ The next release scope is committed by explicit user direction on 2026-09-26. Ve
 6. Copy shipped task IDs and scope changes into RELEASE_NOTES, then reset this planning file for the next cycle.
 
 ## Scope decisions
+
+2026-09-26: Appi 0.7.14 was published from merge commit `4eb272c0da19b716906e4909366f6d6ba4173874`. Shipped scope: HLS-4 and DIAG-2. Automated post-merge verification passed in run 36290741628. Both tasks remain in review because their documented target-device acceptance evidence is still pending; publication does not imply device acceptance.
+
 
 2026-09-26: user explicitly corrected the release plan and confirmed that HLS-4 and DIAG-2 are changes for the next release. Both are now committed scope. The prior candidate-only state was a planning error that caused the release worker to find no committed work.
 
@@ -50,4 +51,4 @@ The next release scope is committed by explicit user direction on 2026-09-26. Ve
 
 ## Readiness
 
-0.7.14 source implementation is prepared on the release branch for HLS-4 and DIAG-2. GitHub Actions PR run 36290602785 passed the automated release gate. HLS-4 and DIAG-2 remain in review because their required target-device checks cannot be completed before installing the candidate; publication must preserve 0.7.12 as the usable fallback and must not describe device acceptance as complete.
+No new release is committed. Appi 0.7.14 is published and passed the automated release gate, but HLS-4 and DIAG-2 remain in review/partial verification until target-device acceptance is recorded. 0.7.12 remains the usable playback fallback.
