@@ -106,7 +106,7 @@ class BufferedHlsTests(unittest.TestCase):
         media = (
             '#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXT-X-MEDIA-SEQUENCE:10\n'
             '#EXT-X-KEY:METHOD=AES-128,URI="key.bin?keysecret=1",IV=0x1\n'
-            '#EXT-X-MAP:URI="init.mp4"\n'
+            '#EXT-X-MAP:URI="init.mp4",BYTERANGE="4@2"\n'
             '#EXTINF:6.0,\nseg10.ts\n#EXTINF:6.0,\nseg11.ts\n'
             '#EXT-X-DISCONTINUITY\n'
             '#EXTINF:6.0,\nseg12.ts\n#EXTINF:6.0,\nseg13.ts\n'
@@ -156,6 +156,11 @@ class BufferedHlsTests(unittest.TestCase):
         self.assertIn('#EXT-X-DISCONTINUITY', rewritten_media)
         self.assertIn('#EXT-X-KEY:METHOD=AES-128,URI="http://127.0.0.1:', rewritten_media)
         self.assertIn('#EXT-X-MAP:URI="http://127.0.0.1:', rewritten_media)
+        map_line = next(line for line in rewritten_media.splitlines() if line.startswith('#EXT-X-MAP:'))
+        self.assertNotIn('BYTERANGE', map_line)
+        maps = [resource for resource in session.resources.values() if resource.kind == 'map']
+        self.assertEqual(len(maps), 1)
+        self.assertEqual(maps[0].byte_range, '2-5')
         self.assertNotIn('keysecret', rewritten_media)
 
         track = session.tracks['track-' + variants[0].id]
