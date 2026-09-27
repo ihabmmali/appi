@@ -50,4 +50,4 @@ The next release scope is committed by explicit user direction on 2026-09-26. Ve
 
 ## Readiness
 
-0.7.14 source implementation is prepared on the release branch for HLS-4 and DIAG-2. Automated release-gate verification is pending. HLS-4 and DIAG-2 remain in review because their required target-device checks cannot be completed before installing the candidate; publication must preserve 0.7.12 as the usable fallback and must not describe device acceptance as complete.
+0.7.14 source implementation is prepared on the release branch for HLS-4 and DIAG-2. GitHub Actions PR run 36290602785 passed the automated release gate. HLS-4 and DIAG-2 remain in review because their required target-device checks cannot be completed before installing the candidate; publication must preserve 0.7.12 as the usable fallback and must not describe device acceptance as complete.

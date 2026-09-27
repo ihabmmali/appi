@@ -78,7 +78,7 @@ No implementation or target-device verification has yet been performed for DIAG-
 - Cache/read-ahead telemetry samples Kodi Player.CacheLevel, CacheBytes, CacheTime, CacheTimeRemaining and ProgressCache only when the installed build exposes those labels; blank labels are treated as unavailable, never as zero.
 - The final analysis distinguishes observed/suggestive evidence from insufficient evidence and does not claim CDN/segment timing or throughput measurements when per-segment HTTP data is inaccessible.
 - The bundle records observation sources and limitations for unsupported InputStream Adaptive internals and preserves DIAG-1 credential/query/subtitle-content exclusions.
-- Added automated analysis coverage for pre-stall near-empty cache evidence and representation transitions. Target-device failing/working captures remain required for final verification.
+- Added automated analysis coverage for pre-stall near-empty cache evidence and representation transitions. GitHub Actions PR run 36290602785 passed the full automated gate. Target-device failing/working captures remain required for final verification.
 
 ## Outcome and next action
 Review the 0.7.14 candidate with the automated gate, then collect one failing-stream and one working-stream target-device bundle to validate which Player.Cache* labels are exposed on the Fire TV/Kodi build and whether the new timeline can distinguish actual playable read-ahead from configured cache capacity.

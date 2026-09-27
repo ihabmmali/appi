@@ -9,7 +9,7 @@ Each entry records the package shipped, its main user-visible changes, and verif
 - Diagnostics schema 2 adds timestamped stall intervals, representation changes, Kodi cache/read-ahead InfoLabels when available, bounded pre-stall history and evidence-qualified causal classifications.
 - Privacy is retained: raw authenticated URLs, queries, cookies/credentials and subtitle contents are not exported.
 - Known observability limit: supported Kodi add-on Python does not reliably expose per-segment InputStream Adaptive HTTP timing, exact internal queue depth or every internal ABR decision. Those fields are explicitly reported unavailable rather than fabricated.
-- Automated release gate: pending on the release-candidate PR.
+- Automated release gate: GitHub Actions PR run 36290602785 passed unit/smoke tests, workflow tracker validation, deterministic repository build, ZIP/hash/index inspection and fallback preservation.
 - Target-device acceptance: pending. 0.7.12 remains the usable playback fallback until manual selection and the new diagnostic bundle are verified on the user's Fire TV/provider stream.
 
 ## 0.7.13 — 2026-09-26

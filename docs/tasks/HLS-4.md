@@ -71,7 +71,7 @@ The 0.7.13 HLS-2/HLS-3 review record states that automated smoke tests covered m
 - EXT-X-STREAM-INF parsing retains peak and average bandwidth separately, resolution and codecs, and the chooser label is generated from the same variant object whose URL is played.
 - Appi passes sanitized selected-variant identity/metadata into diagnostics without exporting the authenticated URL.
 - Added regression tests for signed relative variants, child-query precedence, cross-origin isolation, Kodi URL options and metadata/URL association.
-- Automated repository gate is pending on the release-candidate PR; target-device playback remains required before HLS-4 can be marked done.
+- GitHub Actions PR run 36290602785 passed the unit/smoke suite, tracker validation, deterministic build, ZIP/hash/index inspection and fallback checks. Target-device playback remains required before HLS-4 can be marked done.
 
 ## Outcome and next action
 Review the 0.7.14 candidate with the automated gate, then target-device test at least one authenticated multi-variant provider stream. Keep 0.7.12 available until a manually selected rendition plays successfully and the chooser metadata is confirmed.
