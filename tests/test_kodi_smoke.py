@@ -66,6 +66,7 @@ class Tag:
 class ListItem:
     def __init__(self,label='',path='',offscreen=False): self.label=label; self.path=path; self.info={}; self.props={}; self.context=[]; self.art={}; self.tagdata={}
     def setInfo(self,t,d): self.info.update(d)
+    def setPath(self,v): self.path=v
     def setProperty(self,k,v): self.props[k]=v
     def getVideoInfoTag(self): return Tag(self)
     def setArt(self,value): self.art.update(value)
@@ -236,8 +237,14 @@ assert 3 in state['sort']
 app.set_season_watched({'show_key':shows[0]['show_key'],'season':'1'})
 assert native_status[app._play_ref_url('tv',app.item_ref(eps[0]),shows[0]['show_key'])]['playcount']==1
 
+settings['hls_quality_mode']='0'
+li0=ListItem(); assert app._configure_hls(li0)=='native-kodi'; assert 'inputstream' not in li0.props
+settings['hls_quality_mode']='1'
 li=ListItem(); assert app._configure_hls(li)=='inputstream.adaptive-ask-quality'; assert li.props.get('inputstream')=='inputstream.adaptive'; assert li.props.get('inputstream.adaptive.stream_selection_type')=='ask-quality'
 settings['hls_quality_mode']='2'; settings['hls_max_bitrate_kbps']='5000'; li2=ListItem(); assert app._configure_hls(li2)=='inputstream.adaptive'; assert li2.props.get('inputstream.adaptive.stream_selection_type')=='adaptive'; assert li2.props.get('inputstream.adaptive.chooser_bandwidth_max')=='5000000'
+settings['hls_quality_mode']='3'
+li_buffer=ListItem(); assert app._configure_hls(li_buffer)=='appi-buffered-lookahead'; assert 'inputstream' not in li_buffer.props
+settings['hls_quality_mode']='1'
 Dialog.select_answers=[2,3]
 app.configure_playback({'target':'movie','catalog':'movies','ref':'m:tt000'})
 pref=playback_prefs.get_target('movie',ref='m:tt000')
@@ -258,6 +265,16 @@ assert resolved_hls.path == 'https://x/m0'
 assert resolved_hls.props.get('inputstream') == 'inputstream.adaptive'
 assert resolved_hls.props.get('inputstream.adaptive.stream_selection_type') == 'ask-quality'
 assert len(playback_history.recent_movies()) >= len(recent_before)
+
+# Buffered mode is isolated: only mode 3 swaps the provider URL for the
+# localhost proxy URL, and it does not assign InputStream Adaptive.
+playback_prefs.set_target('movie', {'hls_mode':3}, ref='m:tt000')
+app.buffered_hls.request_playback=lambda *a,**k: 'http://127.0.0.1:43210/hls/test/master.m3u8'
+app.play_ref({'catalog':'movies','ref':'m:tt000'})
+resolved_buffered=state['resolved'][-1][0][2]
+assert resolved_buffered.path == 'http://127.0.0.1:43210/hls/test/master.m3u8'
+assert 'inputstream' not in resolved_buffered.props
+playback_prefs.set_target('movie', {'hls_mode':1}, ref='m:tt000')
 
 favorites.set_favorite('movie','m:tt000',movies[0],True)
 state['items'].clear(); app.show_favorite_movies()

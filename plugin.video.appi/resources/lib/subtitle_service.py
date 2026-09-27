@@ -4,6 +4,7 @@ from urllib.parse import urlencode
 import xbmc
 import xbmcaddon
 
+from . import buffered_hls
 from . import diagnostics
 from . import languages
 from . import playback_history
@@ -28,9 +29,10 @@ def _integer(setting, default):
 
 
 class AppiPlayer(xbmc.Player):
-    def __init__(self):
+    def __init__(self, buffered_manager=None):
         super().__init__()
         self._search_opened_key = None
+        self._buffered_manager = buffered_manager
 
     def _subtitle_session(self):
         return subtitle_store.load_session() or {}
@@ -105,6 +107,9 @@ class AppiPlayer(xbmc.Player):
             except Exception:
                 pass
         subtitle_store.clear_session()
+        if self._buffered_manager:
+            self._buffered_manager.stop_active(result)
+            self._buffered_manager.flush_diagnostics(diagnostics.event)
         diagnostics.finish(result)
         session = playback_history.finish_session()
         self._search_opened_key = None
@@ -135,7 +140,8 @@ class AppiPlayer(xbmc.Player):
 
 def run():
     monitor = xbmc.Monitor()
-    player = AppiPlayer()
+    buffered_manager = buffered_hls.BufferedHlsManager()
+    player = AppiPlayer(buffered_manager)
     next_metadata_poll = 0.0
     next_diagnostic_sample = 0.0
     next_auto_refresh_check = 0.0
@@ -145,6 +151,11 @@ def run():
     queued_focus = ''
     while not monitor.abortRequested():
         playing = player.isPlayingVideo()
+        try:
+            buffered_manager.poll(player_active=playing)
+            buffered_manager.flush_diagnostics(diagnostics.event)
+        except Exception as exc:
+            xbmc.log('Appi buffered HLS service failed: {}'.format(exc), xbmc.LOGWARNING)
         if playing and _enabled('persist_subtitles', True):
             try:
                 subtitle_store.capture_temp_changes()
@@ -198,3 +209,4 @@ def run():
             next_metadata_poll = now + 2.0
         if monitor.waitForAbort(2.0):
             break
+    buffered_manager.shutdown(diagnostics.event)

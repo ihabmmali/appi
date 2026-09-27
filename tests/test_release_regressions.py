@@ -12,7 +12,7 @@ STRINGS = PLUGIN / 'resources' / 'language' / 'resource.language.en_gb' / 'strin
 class SettingsLocalizationTests(unittest.TestCase):
     def test_stable_browser_and_download_batch_features_are_packaged(self):
         addon = ET.parse(PLUGIN / 'addon.xml').getroot()
-        self.assertEqual(addon.attrib.get('version'), '0.7.15')
+        self.assertEqual(addon.attrib.get('version'), '0.7.16')
         helper = addon.find("./requires/import[@addon='plugin.video.themoviedb.helper']")
         self.assertIsNotNone(helper)
         self.assertNotEqual(helper.attrib.get('optional'), 'true')
@@ -64,9 +64,11 @@ class SettingsLocalizationTests(unittest.TestCase):
         self.assertIn('id="auto_next_episode"', settings)
         self.assertNotIn('id="next_episode_mode"', settings)
         self.assertNotIn('id="hls_playback_engine"', settings)
+        self.assertIn('<option label="32323">3</option>', settings)
         service = (PLUGIN / 'resources' / 'lib' / 'subtitle_service.py').read_text(encoding='utf-8')
         self.assertNotIn('yesno(', service)
         self.assertTrue((PLUGIN / 'resources' / 'lib' / 'hls.py').is_file())
+        self.assertTrue((PLUGIN / 'resources' / 'lib' / 'buffered_hls.py').is_file())
         self.assertTrue((PLUGIN / 'resources' / 'lib' / 'search_history.py').is_file())
         self.assertTrue((PLUGIN / 'resources' / 'lib' / 'diagnostics.py').is_file())
         http = (PLUGIN / 'resources' / 'lib' / 'http.py').read_text(encoding='utf-8')

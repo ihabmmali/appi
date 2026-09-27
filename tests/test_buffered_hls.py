@@ -1,0 +1,269 @@
+import importlib.util
+import os
+import shutil
+import sys
+import tempfile
+import threading
+import time
+import types
+import unittest
+from pathlib import Path
+from urllib.parse import urljoin, urlparse, urlunparse
+
+ROOT = Path(__file__).resolve().parents[1]
+MODULE = ROOT / 'plugin.video.appi' / 'resources' / 'lib' / 'buffered_hls.py'
+
+
+def _load_module():
+    temp_root = tempfile.mkdtemp(prefix='appi-buffer-test-')
+    addon = types.ModuleType('xbmcaddon')
+    addon.Addon = type('Addon', (), {
+        'getAddonInfo': lambda self, name: temp_root if name == 'profile' else '0.7.16'
+    })
+    sys.modules['xbmcaddon'] = addon
+    vfs = types.ModuleType('xbmcvfs')
+    vfs.translatePath = lambda value: temp_root if value == 'special://temp/' else value
+    sys.modules['xbmcvfs'] = vfs
+
+    saved_modules = {
+        name: sys.modules.get(name)
+        for name in ('resources', 'resources.lib', 'resources.lib.hls', 'resources.lib.buffered_hls')
+    }
+    resources = types.ModuleType('resources')
+    resources.__path__ = []
+    lib = types.ModuleType('resources.lib')
+    lib.__path__ = []
+    hls = types.ModuleType('resources.lib.hls')
+
+    def resolve(base_url, child):
+        base_core, base_marker, base_options = base_url.partition('|')
+        child_core, child_marker, child_options = child.partition('|')
+        resolved = urljoin(base_core, child_core)
+        base = urlparse(base_core)
+        parsed = urlparse(resolved)
+        child_parsed = urlparse(child_core)
+        if (
+            not child_parsed.scheme
+            and not child_parsed.netloc
+            and base.query
+            and not child_parsed.query
+        ):
+            parsed = parsed._replace(query=base.query)
+            resolved = urlunparse(parsed)
+        options = child_options if child_marker else (base_options if base_marker else '')
+        return resolved + ('|' + options if options else '')
+
+    hls.resolve_variant_url = resolve
+    sys.modules['resources'] = resources
+    sys.modules['resources.lib'] = lib
+    sys.modules['resources.lib.hls'] = hls
+    spec = importlib.util.spec_from_file_location('resources.lib.buffered_hls', MODULE)
+    module = importlib.util.module_from_spec(spec)
+    sys.modules['resources.lib.buffered_hls'] = module
+    spec.loader.exec_module(module)
+    module._test_root = temp_root
+    for name, previous in saved_modules.items():
+        if previous is None:
+            sys.modules.pop(name, None)
+        else:
+            sys.modules[name] = previous
+    return module
+
+
+def _install_fake_fetch(module, payloads, gate=None):
+    def fake_fetch(url, timeout=20.0, byte_range=''):
+        core = url.split('|', 1)[0]
+        parsed = urlparse(core)
+        if gate is not None and parsed.path.startswith('/s'):
+            number = int(parsed.path.rsplit('/s', 1)[1].split('.', 1)[0])
+            if number >= 1:
+                gate.wait(2.0)
+        data = payloads[parsed.path]
+        return module._FetchResult(
+            data,
+            core,
+            'application/vnd.apple.mpegurl'
+            if parsed.path.endswith('.m3u8')
+            else 'application/octet-stream',
+            200,
+            5.0,
+            10.0,
+        )
+
+    def fake_to_path(url, path, timeout=20.0, byte_range=''):
+        result = fake_fetch(url, timeout, byte_range)
+        Path(path).write_bytes(result.data)
+        return result
+
+    module._fetch = fake_fetch
+    module._fetch_to_path = fake_to_path
+
+
+class BufferedHlsTests(unittest.TestCase):
+    def setUp(self):
+        self.m = _load_module()
+        self.addCleanup(lambda: shutil.rmtree(self.m._test_root, ignore_errors=True))
+
+    def test_playlist_rewrite_startup_reserve_and_sanitized_diagnostics(self):
+        master = (
+            '#EXTM3U\n'
+            '#EXT-X-MEDIA:TYPE=AUDIO,GROUP-ID="a",NAME="English",URI="audio.m3u8"\n'
+            '#EXT-X-STREAM-INF:BANDWIDTH=6500000,AVERAGE-BANDWIDTH=5800000,'
+            'RESOLUTION=1920x1080,CODECS="avc1.640028,mp4a.40.2",AUDIO="a"\n'
+            'video.m3u8\n'
+        )
+        media = (
+            '#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXT-X-MEDIA-SEQUENCE:10\n'
+            '#EXT-X-KEY:METHOD=AES-128,URI="key.bin?keysecret=1",IV=0x1\n'
+            '#EXT-X-MAP:URI="init.mp4",BYTERANGE="4@2"\n'
+            '#EXTINF:6.0,\nseg10.ts\n#EXTINF:6.0,\nseg11.ts\n'
+            '#EXT-X-DISCONTINUITY\n'
+            '#EXTINF:6.0,\nseg12.ts\n#EXTINF:6.0,\nseg13.ts\n'
+            '#EXTINF:6.0,\nseg14.ts\n#EXTINF:6.0,\nseg15.ts\n#EXT-X-ENDLIST\n'
+        )
+        audio = (
+            '#EXTM3U\n#EXT-X-TARGETDURATION:6\n'
+            '#EXTINF:6,\na0.aac\n#EXTINF:6,\na1.aac\n'
+            '#EXTINF:6,\na2.aac\n#EXTINF:6,\na3.aac\n#EXT-X-ENDLIST\n'
+        )
+        payloads = {
+            '/master.m3u8': master.encode(),
+            '/video.m3u8': media.encode(),
+            '/audio.m3u8': audio.encode(),
+            '/key.bin': b'0123456789abcdef',
+            '/init.mp4': b'init',
+        }
+        for number in range(10, 16):
+            payloads['/seg{}.ts'.format(number)] = b'x' * 200
+        for number in range(4):
+            payloads['/a{}.aac'.format(number)] = b'a' * 40
+        _install_fake_fetch(self.m, payloads)
+
+        session = self.m.BufferedHlsSession(
+            'https://up.example/master.m3u8?token=SECRET',
+            root=os.path.join(self.m._test_root, 'session'),
+        )
+        session.start()
+        self.addCleanup(lambda: session.stop('test'))
+
+        master_bytes, _ = session.serve(session.master.id)
+        rewritten_master = master_bytes.decode()
+        self.assertIn('#EXT-X-STREAM-INF:BANDWIDTH=6500000', rewritten_master)
+        self.assertIn('#EXT-X-MEDIA:TYPE=AUDIO', rewritten_master)
+        self.assertNotIn('SECRET', rewritten_master)
+        self.assertNotIn('up.example', rewritten_master)
+
+        variants = [
+            resource for resource in session.resources.values()
+            if resource.metadata.get('representation')
+        ]
+        self.assertEqual(len(variants), 1)
+        self.assertEqual(variants[0].metadata['representation']['height'], 1080)
+
+        media_bytes, _ = session.serve(variants[0].id)
+        rewritten_media = media_bytes.decode()
+        self.assertIn('#EXT-X-DISCONTINUITY', rewritten_media)
+        self.assertIn('#EXT-X-KEY:METHOD=AES-128,URI="http://127.0.0.1:', rewritten_media)
+        self.assertIn('#EXT-X-MAP:URI="http://127.0.0.1:', rewritten_media)
+        map_line = next(line for line in rewritten_media.splitlines() if line.startswith('#EXT-X-MAP:'))
+        self.assertNotIn('BYTERANGE', map_line)
+        maps = [resource for resource in session.resources.values() if resource.kind == 'map']
+        self.assertEqual(len(maps), 1)
+        self.assertEqual(maps[0].byte_range, '2-5')
+        self.assertNotIn('keysecret', rewritten_media)
+
+        track = session.tracks['track-' + variants[0].id]
+        ahead, count = track._ahead(0)
+        self.assertGreaterEqual(ahead, 18.0)
+        self.assertGreaterEqual(count, 3)
+        events = session.drain_events()
+        self.assertTrue(any(name == 'buffer_representation_selected' for name, _ in events))
+        downloads = [fields for name, fields in events if name == 'buffer_segment_download']
+        self.assertTrue(downloads)
+        self.assertIn('throughput_mbps', downloads[0])
+        self.assertFalse(any(
+            'SECRET' in str(value)
+            for _, fields in events
+            for value in fields.values()
+        ))
+
+    def test_depletion_rebuilds_reserve_instead_of_releasing_one_segment(self):
+        m = self.m
+        gate = threading.Event()
+        payloads = {'/s{}.ts'.format(i): b'z' * 50 for i in range(6)}
+        _install_fake_fetch(m, payloads, gate=gate)
+        session = m.BufferedHlsSession(
+            'https://x/master.m3u8',
+            target_seconds=30,
+            startup_seconds=18,
+            recovery_seconds=15,
+            root=os.path.join(m._test_root, 'recovery'),
+        )
+        session.start()
+        self.addCleanup(lambda: session.stop('test'))
+        track = m._Track(session, 't', 30, 18, 15)
+        session.tracks['t'] = track
+        segments = []
+        for i in range(6):
+            resource = session._register(
+                'https://x/s{}.ts'.format(i),
+                'segment',
+                metadata={'track_id': 't', 'index': i, 'sequence': i},
+            )
+            segments.append(m._Segment(resource, i, 6.0, i))
+        track.replace_segments(segments)
+
+        deadline = time.time() + 2
+        while not track._cached(0) and time.time() < deadline:
+            time.sleep(0.01)
+        thread = threading.Thread(target=lambda: track.serve(0))
+        thread.start()
+        time.sleep(0.1)
+        self.assertTrue(thread.is_alive(), 'request resumed after only one buffered segment')
+        gate.set()
+        thread.join(3)
+        self.assertFalse(thread.is_alive())
+        names = [name for name, _ in session.drain_events()]
+        self.assertIn('buffer_depletion', names)
+        self.assertIn('buffer_recovery', names)
+
+    def test_seek_recenters_and_shutdown_removes_disk_buffer(self):
+        m = self.m
+        payloads = {'/s{}.ts'.format(i): b'z' * 20 for i in range(8)}
+        _install_fake_fetch(m, payloads)
+        root = os.path.join(m._test_root, 'seek')
+        session = m.BufferedHlsSession(
+            'https://x/master.m3u8',
+            target_seconds=12,
+            startup_seconds=6,
+            recovery_seconds=6,
+            root=root,
+        )
+        session.start()
+        track = m._Track(session, 't', 12, 6, 6)
+        session.tracks['t'] = track
+        segments = []
+        for i in range(8):
+            resource = session._register(
+                'https://x/s{}.ts'.format(i),
+                'segment',
+                metadata={'track_id': 't', 'index': i, 'sequence': i},
+            )
+            segments.append(m._Segment(resource, i, 3.0, i))
+        track.replace_segments(segments)
+        self.assertTrue(track.wait_startup(2))
+        track.serve(0)
+        path = track.serve(5)
+        self.assertTrue(os.path.isfile(path))
+        self.assertEqual(track.last_served, 5)
+        self.assertIn('buffer_seek_recenter', [name for name, _ in session.drain_events()])
+        session.stop('test-end')
+        self.assertFalse(os.path.exists(root))
+
+    def test_implicit_byteranges_advance(self):
+        self.assertEqual(self.m._byterange('100@50'), ('50-149', 149))
+        self.assertEqual(self.m._byterange('100', 149), ('150-249', 249))
+
+
+if __name__ == '__main__':
+    unittest.main()

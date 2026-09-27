@@ -11,6 +11,7 @@ import xbmcaddon
 import xbmcgui
 import xbmcplugin
 
+from . import buffered_hls
 from . import cache
 from . import diagnostics
 from . import favorites
@@ -1444,7 +1445,7 @@ def _effective_hls_mode(preferences=None):
     if mode is None:
         mode = _int_setting('hls_quality_mode', 1)
     try:
-        return min(2, max(0, int(mode)))
+        return min(3, max(0, int(mode)))
     except (TypeError, ValueError):
         return 1
 
@@ -1456,6 +1457,8 @@ def _configure_hls(list_item, preferences=None):
     mode = _effective_hls_mode(preferences)
     if mode == 0:
         return 'native-kodi'
+    if mode == 3:
+        return 'appi-buffered-lookahead'
 
     if not xbmc.getCondVisibility('System.HasAddon(inputstream.adaptive)'):
         _notify('InputStream Adaptive is not installed; using Kodi HLS playback', error=True)
@@ -1547,6 +1550,22 @@ def play_ref(params):
     engine = 'native-kodi'
     if stream.get('kind') == 'hls':
         engine = _configure_hls(list_item, preferences)
+        if hls_mode == 3:
+            try:
+                buffered_url = buffered_hls.request_playback(
+                    media_url,
+                    target_seconds=buffered_hls.DEFAULT_TARGET_SECONDS,
+                    startup_seconds=buffered_hls.DEFAULT_STARTUP_SECONDS,
+                )
+                list_item.setPath(buffered_url)
+            except Exception as exc:
+                xbmc.log(
+                    'Appi buffered HLS startup failed: {}'.format(exc),
+                    xbmc.LOGERROR,
+                )
+                _notify('Buffered Look Ahead Playback could not start', error=True)
+                xbmcplugin.setResolvedUrl(HANDLE, False, xbmcgui.ListItem())
+                return
     elif stream.get('kind') == 'mp4':
         _configure_mp4(list_item)
         engine = 'kodi-mp4'
@@ -1567,6 +1586,19 @@ def play_ref(params):
             ),
             'manual_master_url_preserved': bool(
                 stream.get('kind') == 'hls' and hls_mode == 1
+            ),
+            'buffered_proxy': bool(
+                stream.get('kind') == 'hls' and hls_mode == 3
+            ),
+            'buffer_target_seconds': (
+                buffered_hls.DEFAULT_TARGET_SECONDS
+                if stream.get('kind') == 'hls' and hls_mode == 3
+                else None
+            ),
+            'buffer_startup_seconds': (
+                buffered_hls.DEFAULT_STARTUP_SECONDS
+                if stream.get('kind') == 'hls' and hls_mode == 3
+                else None
             ),
         },
     )
@@ -1938,8 +1970,9 @@ def configure_playback(params):
         'Native Kodi automatic',
         'Ask quality before playback (InputStream Adaptive)',
         'Adaptive bitrate (InputStream Adaptive)',
+        'Buffered Look Ahead Playback',
     ]
-    hls_preselect = 0 if current_hls is None else min(3, max(1, int(current_hls) + 1))
+    hls_preselect = 0 if current_hls is None else min(4, max(1, int(current_hls) + 1))
     hls_choice = _dialog_select('HLS quality for this {}'.format('show' if target == 'show' else 'title'), hls_choices, hls_preselect)
     if hls_choice < 0:
         return

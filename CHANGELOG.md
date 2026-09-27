@@ -2,6 +2,15 @@
 
 Implemented features, grouped by add-on version. A version listed here means its source/package was published in the repository; it does not by itself certify device testing. For details and earlier 0.7.x entries, see [README.md](README.md). This file is the concise ongoing release history; [RELEASE_NOTES.md](RELEASE_NOTES.md) records what each package shipped and how it was verified.
 
+## 0.7.16 — 2026-09-27
+
+- Add **Buffered Look Ahead Playback** as a fourth, isolated HLS mode backed by a localhost proxy and temporary disk buffer; the target look-ahead is 30 seconds, startup reserve 18 seconds and recovery reserve 15 seconds.
+- Confirm before implementation that **Native Kodi automatic** is genuinely native: it does not assign InputStream Adaptive properties. Preserve that path plus the existing InputStream Adaptive ask-quality and adaptive-bitrate paths.
+- Prefetch sequential VOD HLS segments to disk without transcoding, proxy child/audio/subtitle playlists, keys and initialization maps, preserve discontinuities, and safely re-centre look-ahead after seeks.
+- Extend diagnostics for the buffered path with measured segment latency/throughput, buffer depth, queued/downloaded segment counts, depletion/recovery and selected-representation metadata while excluding authenticated upstream URLs.
+- Add independent regression coverage for all four HLS modes plus deterministic buffer, recovery, seek, cleanup, byte-range and playlist-rewrite tests.
+- Target-device testing is still required to determine whether the deeper playable buffer eliminates the reported intermittent provider stalls.
+
 ## 0.7.15 — 2026-09-26
 
 - Restore the proven 0.7.12 manual HLS playback architecture after 0.7.13 and 0.7.14 both failed target-device manual-selection playback.

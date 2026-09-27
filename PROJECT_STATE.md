@@ -1,6 +1,6 @@
 # Appi project state
 
-Updated: 2026-09-26. Short current summary; start with [AGENTS.md](AGENTS.md) for worker routing.
+Updated: 2026-09-27. Short current summary; start with [AGENTS.md](AGENTS.md) for worker routing.
 
 ## Current baseline
 
@@ -17,7 +17,8 @@ Updated: 2026-09-26. Short current summary; start with [AGENTS.md](AGENTS.md) fo
 - **0.7.15 is published** from merge commit `2ba3ba2dc78519f55e6c01c0372a17f31b310fba`; release/package verification passed in run 36291375057, post-merge verification passed in 36291431201, and Pages deployment passed in 36291430966.
 - HLS-4 is delivered in 0.7.15 but remains in review/partial verification pending the user's target-device manual-selection test.
 - DIAG-2 remains delivered in 0.7.14 and in review/partial verification for its separate target-device telemetry checks.
-- [NEXT_RELEASE.md](NEXT_RELEASE.md): reset for the next planning cycle; HLS-1 and UI-1 remain backlog investigations.
+- **0.7.16 release candidate passed automated verification:** HLS-5 adds an isolated Buffered Look Ahead Playback mode with a disk-backed local HLS proxy; the existing native/manual/adaptive paths are compatibility-frozen by the task. Release/package run 36296897848 passed 54 tests, workflow validation and deterministic artifact inspection; branch artifact commit `6e71ad93276c993724a5973cb8814e603653f4d0` has ZIP SHA-256 `ecb310e42b016cf968b27e2af4d25ed6f1b106b888a9c0da387bde4bde595138`.
+- [NEXT_RELEASE.md](NEXT_RELEASE.md): HLS-5 is committed as the sole new 0.7.16 scope; HLS-1 and UI-1 remain backlog investigations.
 - [KNOWN_ISSUES.md](KNOWN_ISSUES.md): full task index.
 - Lifecycle pilot 0.1 is established in [LIFECYCLE.md](LIFECYCLE.md). [Pilot evaluation](docs/workflows/PILOT.md) records what still needs real-world validation.
 
