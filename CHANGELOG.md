@@ -2,6 +2,14 @@
 
 Implemented features, grouped by add-on version. A version listed here means its source/package was published in the repository; it does not by itself certify device testing. For details and earlier 0.7.x entries, see [README.md](README.md). This file is the concise ongoing release history; [RELEASE_NOTES.md](RELEASE_NOTES.md) records what each package shipped and how it was verified.
 
+## 0.7.14 — 2026-09-26
+
+- Repair authenticated manual HLS variant resolution by preserving the master query for same-origin relative child playlists and retaining Kodi request options.
+- Keep HLS rendition metadata associated with the exact selected child URL; expose resolution, advertised average/peak bandwidth and codecs in the chooser.
+- Extend diagnostics to schema 2 with stall intervals, representation changes, cache/read-ahead InfoLabels when available, pre-stall history and evidence-qualified causal classification.
+- Explicitly record unsupported per-segment HTTP timing and exact InputStream Adaptive queue/representation internals rather than treating configured cache size as proof of buffered media.
+- Target-device acceptance remains pending; 0.7.12 is retained as the usable playback fallback.
+
 ## 0.7.13 — 2026-09-26
 
 - Repair Search cancellation/context handling and add persistent bounded keyword history with reuse, edit, delete and clear actions.
