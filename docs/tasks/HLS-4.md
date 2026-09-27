@@ -1,0 +1,64 @@
+---
+id: HLS-4
+role: implementation
+status: ready
+delivery: unreleased
+verification: failed
+owner: unassigned
+base_commit: unset
+artifact: none
+---
+# HLS-4 — Repair 0.7.13 manual HLS playback regression
+
+## Objective
+Restore working manual/fixed HLS rendition playback after the 0.7.13 regression.
+
+On the user's target device, the new 0.7.13 manual fixed-rate selector is not usable:
+- the rendition-selection menu displays incorrect resolution/stream information;
+- selecting any listed rendition results in a playback failure error;
+- the user reverted to 0.7.12 because 0.7.13 playback is effectively broken for this workflow.
+
+The expected behavior is that the manual chooser accurately describes the variants in the HLS master playlist and that selecting any valid listed rendition resolves and plays that exact stream successfully.
+
+## Scope
+Investigate the 0.7.13 manual HLS implementation introduced as part of HLS-2/HLS-3, with emphasis on master-playlist parsing, rendition metadata mapping, variant URL resolution and the final Kodi playback path.
+
+Compare the 0.7.13 implementation against 0.7.12's working playback path and the provider's actual HLS master/variant structure. Do not preserve a new abstraction merely because automated tests pass; preserve the 0.7.12 behavior where it is the known working reference.
+
+Check at minimum:
+- whether resolution, BANDWIDTH/AVERAGE-BANDWIDTH, codec and variant URI are being associated with the correct `#EXT-X-STREAM-INF` entry;
+- whether relative and absolute variant URIs are resolved correctly against the master playlist URL;
+- whether signed/query-bearing master URLs require query/auth propagation when resolving a variant;
+- whether selected variants are passed to Kodi with the correct MIME/content-lookup/InputStream properties;
+- whether Appi is accidentally passing a malformed, sanitized, stale or otherwise non-playable variant URL;
+- whether manual-mode changes interact incorrectly with diagnostics, subtitles, playback history or InputStream Adaptive.
+
+This repair is distinct from [HLS-3](HLS-3.md), which owns Cancel semantics, and [HLS-2](HLS-2.md), which owns ABR/mode semantics. HLS-4 owns the 0.7.13 regression where displayed rendition information is wrong and selecting a rendition fails playback.
+
+## Acceptance
+- Reproduce the 0.7.13 failure on a target-device/provider stream that offers multiple HLS variants.
+- Compare the same media item under 0.7.12 and record the working baseline behavior.
+- The manual chooser displays the correct resolution and advertised bitrate/bandwidth for every presented variant.
+- Codec/stream metadata shown by Appi corresponds to the same variant URL that will actually be played.
+- Selecting each valid listed rendition resolves to a playable URL and starts playback without an Appi/Kodi playback-failure error.
+- Relative, absolute and query/signed variant URL handling is verified against representative master playlists used by the provider.
+- Selecting one rendition does not silently play a different rendition.
+- Cancel behavior continues to satisfy HLS-3.
+- Automatic/native and adaptive modes are regression-tested so the manual-playback repair does not break them.
+- Diagnostics, subtitle-session setup and Recently Played do not corrupt or replace the selected variant URL.
+- Add automated parser/URL-resolution coverage based on a sanitized fixture matching the failing manifest structure, plus target-device verification.
+- Do not declare the repair complete until a real 0.7.13-derived build plays a manually selected rendition successfully on the user's target device.
+
+## Authorization
+Reported by the user on 2026-09-26 as a blocking regression in released Appi 0.7.13. The user reported incorrect manual rendition information and playback failure for every available manual selection, and reverted to 0.7.12 to restore usable playback. This task is ready for a separate implementation assignment; publication remains separately authorized by the release lifecycle.
+
+## Evidence
+User device evidence on 2026-09-26:
+- 0.7.13 manual fixed-rate selection displays incorrect resolution/stream information.
+- Selecting any available stream results in a playback failure error.
+- The user reverted to 0.7.12 because 0.7.13 playback is effectively broken for this use case.
+
+The 0.7.13 HLS-2/HLS-3 review record states that automated smoke tests covered master-playlist parsing and selection, but target-device playback verification was still pending. This report is therefore a failed target-device acceptance result and demonstrates that the existing automated fixture did not represent the failing provider/runtime path adequately.
+
+## Outcome and next action
+Treat HLS-4 as a release-blocking playback regression. Start from a direct 0.7.12-versus-0.7.13 comparison of the same media/master playlist, capture the exact failing resolved variant URL and Kodi error, then repair the smallest responsible layer before adding further HLS feature work.

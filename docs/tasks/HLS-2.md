@@ -3,7 +3,7 @@ id: HLS-2
 role: review
 status: review
 delivery: released
-verification: partial
+verification: failed
 owner: ChatGPT build session 2026-09-26
 base_commit: 8a9b1ad21b3944d8045e1d1abff2a2556c3035cc
 artifact: https://github.com/ihabmmali/appi/blob/main/plugin.video.appi-0.7.13.zip
@@ -34,7 +34,7 @@ Define a user-facing HLS mode model that clearly separates:
 
 Avoid implying seamless bitrate switching unless device evidence confirms the installed InputStream Adaptive version performs it for the provider's multi-variant HLS manifests.
 
-Coordinate with [HLS-1](HLS-1.md) because ABR behavior may affect the repeated-stall investigation, and with [DIAG-1](DIAG-1.md) so diagnostics can record selected rendition/variant changes when observable.
+Coordinate with [HLS-1](HLS-1.md) because ABR behavior may affect the repeated-stall investigation, and with [DIAG-2](DIAG-2.md) so diagnostics can record selected rendition/variant changes when observable. The 0.7.13 manual-selector regression is tracked separately in [HLS-4](HLS-4.md).
 
 ## Acceptance
 - Confirm which current Appi mode/path is used for each HLS quality choice and document it against the actual source.
@@ -43,7 +43,7 @@ Coordinate with [HLS-1](HLS-1.md) because ABR behavior may affect the repeated-s
 - Distinguish startup rendition selection from runtime adaptation; do not call a mode ABR unless representation changes are observed or otherwise verifiably supported.
 - If dynamic switching is supported, expose an explicitly named Adaptive Bitrate / Variable Bitrate mode.
 - Allow ABR to operate without an unnecessarily low fixed cap, while supporting an optional user maximum bitrate and preserving per-title/show overrides.
-- Keep "Ask quality before playback" as a distinct manual/fixed-rendition path.
+- Keep manual/fixed rendition playback as a distinct path, but require HLS-4 target-device acceptance before relying on the 0.7.13 implementation.
 - Clearly distinguish Kodi-native automatic playback, ceiling-limited fixed/initial selection, and true InputStream Adaptive ABR in settings/help text.
 - Define fallback behavior when InputStream Adaptive is unavailable or the manifest contains only one rendition.
 - Verify startup rendition choice and up/down switching with a controlled multi-variant HLS test or equivalent observable evidence.
@@ -56,9 +56,9 @@ Requested by the user on 2026-09-24 after asking whether current Automatic mode 
 ## Evidence
 Current Appi source in `resources/lib/app.py` shows `hls_mode == 0` returns without selecting InputStream Adaptive, while the maximum-bitrate path explicitly sets `inputstream.adaptive.stream_selection_type` to `adaptive` and supplies `chooser_bandwidth_max`.
 
-User device observation on 2026-09-24: "Limit maximum bitrate" appears to select the highest stream quality lower than the configured maximum limit and then use that rendition. This suggests the current user-visible behavior may be ceiling-based rendition selection rather than true runtime ABR, but direct instrumentation/controlled testing is still required.
+User device observation on 2026-09-24: "Limit maximum bitrate" appears to select the highest stream quality lower than the configured maximum limit and then use that rendition.
 
-Kodi/InputStream Adaptive runtime representation-switch behavior on the target device remains to be verified directly.
+0.7.13 introduced a new Appi-owned manual fixed-rate chooser. On 2026-09-26 the user reported that this chooser displays incorrect rendition information and every selection fails playback, requiring rollback to 0.7.12. Although ABR itself still needs separate runtime verification, this is a failed target-device acceptance result for the released HLS-mode work and is tracked in HLS-4.
 
 ## Build session — 2026-09-26
 - User authorization: all candidates committed to the next release; implementation, integration and publication explicitly authorized.
@@ -70,13 +70,13 @@ Kodi/InputStream Adaptive runtime representation-switch behavior on the target d
 - The settings model now separates Native Kodi automatic, Manual fixed quality and Adaptive bitrate (InputStream Adaptive).
 - Explicit ABR config sets InputStream Adaptive with stream_selection_type=adaptive; maximum bitrate is optional and 0 means no Appi ceiling. Manual fixed quality no longer delegates its chooser to InputStream Adaptive.
 - Unit/smoke coverage verifies master-playlist parsing, manual-mode isolation and the adaptive property/cap path.
-- No target-device representation-switch evidence has been produced. Verification therefore remains partial, and this release must not claim that runtime switching was observed on the user's Fire TV/provider stream.
+- Target-device acceptance failed for the manual fixed-rate path: the user's provider/device shows incorrect rendition metadata and playback failure for every manual selection. ABR representation-switch behavior remains separately unverified.
 
 ## Outcome and next action
-Do not assume the current maximum-bitrate path already satisfies the ABR requirement. A research worker should reproduce the user's observation, determine whether runtime representation switching occurs, and then recommend the smallest source/UI change needed to expose genuinely adaptive playback if supported.
+Do not treat the 0.7.13 HLS-mode implementation as accepted. Repair HLS-4 first using the 0.7.12 working path as reference, then resume ABR verification for this task.
 
 ## Publication — 0.7.13
 - Published to `main` in merge commit `0d708565e4bccb0abe03c7a0ae004ccb3dc0a72a` on 2026-09-26/27.
-- Post-merge release verification: GitHub Actions run 36287058096 passed the full automated gate.
-- Artifact: `plugin.video.appi-0.7.13.zip`; 0.7.8 remains the known-good fallback.
-- Delivery is released; verification remains partial until the task's documented target-device checks are completed.
+- Post-merge release verification: GitHub Actions run 36287058096 passed the automated gate.
+- Artifact: `plugin.video.appi-0.7.13.zip`.
+- Delivery is released, but target-device verification is failed for the manual playback portion of the HLS-mode work.

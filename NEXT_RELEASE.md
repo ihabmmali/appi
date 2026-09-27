@@ -2,12 +2,13 @@
 
 Planning status: draft. Version: not assigned. Current baseline and fallback: [PROJECT_STATE.md](PROJECT_STATE.md).
 
-No new release scope is committed. Version 0.7.13 was published on 2026-09-26; shipped scope is recorded in RELEASE_NOTES.md and the canonical task records.
+No new release scope is committed. Version 0.7.13 was published on 2026-09-26 but has failed target-device acceptance for manual HLS playback; the user has reverted to 0.7.12 for usable playback.
 
 ## Proposed scope
 
 | Task | Selection | Priority | Reason |
 | --- | --- | --- | --- |
+| [HLS-4](docs/tasks/HLS-4.md) | candidate | release blocker | 0.7.13 manual HLS chooser shows wrong rendition data and every selection fails playback |
 | [DIAG-2](docs/tasks/DIAG-2.md) | candidate | requested diagnostic improvement | Add full-session segment/network/representation/buffer telemetry so stalls can be causally diagnosed |
 | [HLS-1](docs/tasks/HLS-1.md) | backlog | investigation | Diagnose repeated stalls using DIAG-2 evidence and distinguish configured cache size from actual playable read-ahead |
 | [UI-1](docs/tasks/UI-1.md) | backlog | investigation | Skin comparison needed |
@@ -22,6 +23,8 @@ No new release scope is committed. Version 0.7.13 was published on 2026-09-26; s
 6. Copy shipped task IDs and scope changes into RELEASE_NOTES, then reset this planning file for the next cycle.
 
 ## Scope decisions
+
+2026-09-26: HLS-4 added as a release-blocking regression after target-device testing showed that 0.7.13 manual HLS selection displays incorrect rendition information and every selected stream fails playback. The user reverted to 0.7.12. Repair should precede additional HLS feature work.
 
 2026-09-26: DIAG-2 added as a candidate after target-device use of the released DIAG-1 package showed that stall detection alone does not capture enough evidence to identify the cause. The requested successor must preserve a full-session causal timeline across playback-mode changes.
 
@@ -45,4 +48,4 @@ No new release scope is committed. Version 0.7.13 was published on 2026-09-26; s
 
 ## Readiness
 
-No new release is committed. The current published release is 0.7.13; see RELEASE_NOTES.md and PROJECT_STATE.md for publication and verification status.
+The current published package remains 0.7.13, but it is not target-device accepted for manual HLS playback. The user's active rollback is 0.7.12. HLS-4 should be resolved and device-verified before a replacement release is considered ready.
