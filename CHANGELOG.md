@@ -2,6 +2,13 @@
 
 Implemented features, grouped by add-on version. A version listed here means its source/package was published in the repository; it does not by itself certify device testing. For details and earlier 0.7.x entries, see [README.md](README.md). This file is the concise ongoing release history; [RELEASE_NOTES.md](RELEASE_NOTES.md) records what each package shipped and how it was verified.
 
+## 0.7.17 — 2026-09-27
+
+- Repair Buffered Look Ahead startup, seek recovery and session replacement. Startup has a visible cancelable progress dialog; failures are bounded and explicit. Existing playback modes 0–2 remain unchanged.
+- Add a 32–1024 MB buffered storage setting (128 MB default), Highest available bitrate / Prompt for quality, simple buffering feedback and an optional live MB/seconds overlay.
+- Replace preferred audio/subtitle text fields with common-language lists, migrate old aliases, add About with the installed runtime version, and package the approved Appi icon.
+- Fire TV/provider acceptance remains pending. Keep 0.7.12 as the usable fallback.
+
 ## 0.7.16 — 2026-09-27
 
 - Add **Buffered Look Ahead Playback** as a fourth, isolated HLS mode backed by a localhost proxy and temporary disk buffer; the target look-ahead is 30 seconds, startup reserve 18 seconds and recovery reserve 15 seconds.

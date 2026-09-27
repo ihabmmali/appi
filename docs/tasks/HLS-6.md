@@ -1,11 +1,11 @@
 ---
 id: HLS-6
 role: implementation
-status: ready
+status: review
 delivery: unreleased
-verification: pending
-owner: unassigned
-base_commit: unset
+verification: partial
+owner: Codex release/0.7.17
+base_commit: 6d36d9a52733fbe6f3ded3ba5ee335cb779883e3
 artifact: none
 ---
 # HLS-6 — Configurable Buffered Look Ahead buffer, quality choice and debug overlay
@@ -86,6 +86,11 @@ Requested by the user on 2026-09-27 while HLS-5 target-device testing is still p
 On 2026-09-27 the user explicitly instructed that all currently tracked changes be committed for the next release. HLS-6 is therefore committed release scope.
 
 ## Evidence
+
+2026-09-27 implementation/self-review (0.7.17 candidate): The 32–1024 MB setting (128 default) now controls byte-based prefetch with a 70% ahead target and headroom inside the total disk cap. Tests show 64 MB retains more actual media than 32 MB and both exceed the old 30-second depth. Highest mode selects advertised BANDWIDTH, tied/missing values select the first manifest entry; prompt mode serves the exact choice while retaining associated audio groups and signed relative URLs. A single rendition skips the chooser. Startup progress and simple recovery text are separate from the live-toggle MB/seconds debug overlay. Tests cover both quality paths, unknown bandwidth, byte budgets, debug enabled/disabled and real HLS transfer/auth/range/truncation handling. Seconds mean contiguous cached durations ahead of the Kodi request cursor, not Kodi's private decoder cache.
+
+73 unit/smoke/integration tests passed with Python 3.12, including real FFmpeg MPEG-TS and fMP4 decode at start, forward seek and backward seek; workflow validation and diff whitespace checks passed. `_effective_hls_mode`, `_configure_hls` and `_configure_mp4` are AST-identical to base 6d36d9a52733fbe6f3ded3ba5ee335cb779883e3. Reviewed implementation commit: `842ef37c8deb6ce340946dbbafa29fbd8745ec0c`. This is self-review, not independent review.
+
 Current 0.7.16 source in `resources/lib/buffered_hls.py` defines `DEFAULT_TARGET_SECONDS = 30.0` and `MAX_SESSION_BYTES = 384 * 1024 * 1024`. Current settings expose the playback-mode selector but no Buffered Look Ahead buffer-size, quality-behavior or overlay-visibility controls.
 
 The buffered proxy already tracks values such as buffered seconds and cached segment counts for diagnostics, so HLS-6 can reuse that state for a lightweight on-screen indicator rather than inventing a separate buffer model.
@@ -93,4 +98,7 @@ The buffered proxy already tracks values such as buffered seconds and cached seg
 The previous HLS-6 wording incorrectly introduced a maximum-bitrate ceiling. On 2026-09-27 the user corrected the quality requirement: Buffered Look Ahead should instead either automatically use the highest available bitrate or prompt the user to choose an available bitrate/resolution.
 
 ## Outcome and next action
-Committed for the next release. Implement the user-configurable buffer size, the two requested quality behaviors, the simple startup/buffering status indicator, and the optional detailed debug overlay. Preserve modes 0–2 unchanged and retain the buffered proxy's isolated architecture.
+Implementation and automated self-review complete for the 0.7.17 candidate. Authorized integration/publication is next; target-device acceptance remains pending, so this task stays in review/partial verification. Retest the task's device/UI scenarios after installing 0.7.17; do not mark done from package availability alone.
+
+## Implementation session — 2026-09-27
+User authorized implementation, testing, integration and publication in this session. Base 6d36d9a52733fbe6f3ded3ba5ee335cb779883e3. One worker owns the scoped source/settings/tests and shared release records; no concurrent worker changes observed. Target 0.7.17. Modes 0–2 must remain unchanged.

@@ -102,6 +102,18 @@ xp.setResolvedUrl=lambda *a,**k: state['resolved'].append((a,k)) or True
 sys.modules['xbmcplugin']=xp
 from resources.lib import app, favorites, metadata, playback_history, playback_prefs
 
+# About must reflect the installed metadata after upgrades and rollbacks.
+original_info=app.ADDON.getAddonInfo
+original_ok=Dialog.ok
+about_messages=[]
+Dialog.ok=lambda self,*args: about_messages.append(args)
+for installed in ('0.7.17','0.7.12'):
+    app.ADDON.getAddonInfo=lambda key: installed if key=='version' else 'Appi'
+    app._run_action({'action':'about'})
+    assert about_messages[-1] == ('Appi', 'Installed version: '+installed)
+app.ADDON.getAddonInfo=original_info
+Dialog.ok=original_ok
+
 movies=[{'kind':'movie','display_title':'Movie %03d (2025)'%i,'title':'Movie %03d'%i,'year':2025,'tvg_id':'tt%03d'%i,'media_url':'https://x/m%d'%i} for i in range(30)]
 shows=[{'show_key':'tt%03d\\x1fShow %03d\\x1f2025'%(i,i),'cache_name':'tv_show_%d'%i,'show_title':'Show %03d'%i,'group_title':'Show %03d (2025)'%i,'year':2025,'tvg_id':'tt%03d'%i,'seasons':[1],'episode_count':1} for i in range(30)]
 eps=[{'kind':'episode','display_title':'Show 000 (2025) S01 E01','show_title':'Show 000','year':2025,'tvg_id':'tt000','season':1,'episode':1,'media_url':'https://x/e'}]

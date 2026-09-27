@@ -14,6 +14,8 @@ Updated: 2026-09-27. Short current summary; start with [AGENTS.md](AGENTS.md) fo
 
 ## Current work
 
+- **0.7.17 candidate** on `release/0.7.17` implements HLS-7, HLS-6, LANG-2, UI-2 and UI-3. All 73 local tests (including real TS/fMP4 decode/seek) pass; package gate/publication is next. All five tasks remain review/partial until target-device acceptance.
+
 - **0.7.16 is published** from merge commit `af6791128009e5e9afd408221d8427c2baed65e1`; release/package run 36296897848, final candidate gate 36297078894, post-merge verification 36297143439 and Pages deployment 36297143062 passed. Package SHA-256 is `ecb310e42b016cf968b27e2af4d25ed6f1b106b888a9c0da387bde4bde595138`.
 - HLS-4 is delivered in 0.7.15 but remains in review/partial verification pending the user's target-device manual-selection test.
 - DIAG-2 remains delivered in 0.7.14 and in review/partial verification for its separate target-device telemetry checks.

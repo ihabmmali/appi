@@ -1551,57 +1551,68 @@ def play_ref(params):
     if stream.get('kind') == 'hls':
         engine = _configure_hls(list_item, preferences)
         if hls_mode == 3:
+            diagnostics.prepare_playback(catalog_name, ref, media_url, 'hls', engine, {
+                'hls_mode': 3, 'buffered_proxy': True,
+                'buffer_capacity_mb': buffered_hls.buffer_size_mb(_int_setting('buffered_buffer_mb', 128)),
+                'buffer_quality': 'prompt' if _int_setting('buffered_quality', 0) == 1 else 'highest',
+            })
             try:
                 buffered_url = buffered_hls.request_playback(
                     media_url,
                     target_seconds=buffered_hls.DEFAULT_TARGET_SECONDS,
                     startup_seconds=buffered_hls.DEFAULT_STARTUP_SECONDS,
+                    buffer_mb=_int_setting('buffered_buffer_mb', 128),
+                    quality='prompt' if _int_setting('buffered_quality', 0) == 1 else 'highest',
                 )
                 list_item.setPath(buffered_url)
+            except buffered_hls.PlaybackCancelled:
+                xbmcplugin.setResolvedUrl(HANDLE, False, xbmcgui.ListItem())
+                return
             except Exception as exc:
                 xbmc.log(
                     'Appi buffered HLS startup failed: {}'.format(exc),
                     xbmc.LOGERROR,
                 )
-                _notify('Buffered Look Ahead Playback could not start', error=True)
+                xbmcgui.Dialog().ok('Appi — Buffered Look Ahead', str(exc))
                 xbmcplugin.setResolvedUrl(HANDLE, False, xbmcgui.ListItem())
                 return
     elif stream.get('kind') == 'mp4':
         _configure_mp4(list_item)
         engine = 'kodi-mp4'
 
-    diagnostics.prepare_playback(
-        catalog_name,
-        ref,
-        media_url,
-        stream.get('kind'),
-        engine,
-        {
-            'hls_mode': hls_mode if stream.get('kind') == 'hls' else None,
-            'hls_max_kbps': preferences.get('hls_max_kbps', _int_setting('hls_max_bitrate_kbps', 8000)),
-            'manual_selection_owner': (
-                'inputstream.adaptive'
-                if stream.get('kind') == 'hls' and hls_mode == 1
-                else None
-            ),
-            'manual_master_url_preserved': bool(
-                stream.get('kind') == 'hls' and hls_mode == 1
-            ),
-            'buffered_proxy': bool(
-                stream.get('kind') == 'hls' and hls_mode == 3
-            ),
-            'buffer_target_seconds': (
-                buffered_hls.DEFAULT_TARGET_SECONDS
-                if stream.get('kind') == 'hls' and hls_mode == 3
-                else None
-            ),
-            'buffer_startup_seconds': (
-                buffered_hls.DEFAULT_STARTUP_SECONDS
-                if stream.get('kind') == 'hls' and hls_mode == 3
-                else None
-            ),
-        },
-    )
+    if not (stream.get('kind') == 'hls' and hls_mode == 3):
+        diagnostics.prepare_playback(
+            catalog_name,
+            ref,
+            media_url,
+            stream.get('kind'),
+            engine,
+            {
+                'hls_mode': hls_mode if stream.get('kind') == 'hls' else None,
+                'hls_max_kbps': preferences.get('hls_max_kbps', _int_setting('hls_max_bitrate_kbps', 8000)),
+                'manual_selection_owner': (
+                    'inputstream.adaptive'
+                    if stream.get('kind') == 'hls' and hls_mode == 1
+                    else None
+                ),
+                'manual_master_url_preserved': bool(
+                    stream.get('kind') == 'hls' and hls_mode == 1
+                ),
+                'buffered_proxy': bool(
+                    stream.get('kind') == 'hls' and hls_mode == 3
+                ),
+                'buffer_capacity_mb': (
+                    buffered_hls.buffer_size_mb(_int_setting('buffered_buffer_mb', 128))
+                    if stream.get('kind') == 'hls' and hls_mode == 3
+                    else None
+                ),
+                'buffer_startup_seconds': (
+                    buffered_hls.DEFAULT_STARTUP_SECONDS
+                    if stream.get('kind') == 'hls' and hls_mode == 3
+                    else None
+                ),
+            },
+        )
 
     subtitle_mode = _subtitle_mode(preferences)
     persist = _bool_setting('persist_subtitles', True)
@@ -2110,6 +2121,9 @@ def _run_action(params):
             xbmcgui.Dialog().ok('Appi diagnostics', str(exc))
     elif action == 'clear_data':
         clear_data(params.get('scope', ''))
+    elif action == 'about':
+        xbmcgui.Dialog().ok(ADDON.getAddonInfo('name') or 'Appi',
+                            'Installed version: ' + ADDON.getAddonInfo('version'))
     elif action == 'settings':
         ADDON.openSettings()
         xbmc.executebuiltin('Container.Update({})'.format(BASE_URL))

@@ -18,6 +18,13 @@ Appi is a Kodi video add-on for user-configured movie and TV-show M3U catalogues
 
 Add `https://ihabmmali.github.io/appi/` in Kodi File Manager, then install the current `plugin.video.appi-<version>.zip`.
 
+## 0.7.17
+
+- Repair Buffered Look Ahead startup, seek recovery and session replacement. Startup has a visible cancelable progress dialog; failures are bounded and explicit. Existing playback modes 0–2 remain unchanged.
+- Add a 32–1024 MB buffered storage setting (128 MB default), Highest available bitrate / Prompt for quality, simple buffering feedback and an optional live MB/seconds overlay.
+- Replace preferred audio/subtitle text fields with common-language lists, migrate old aliases, add About with the installed runtime version, and package the approved Appi icon.
+- Fire TV/provider acceptance remains pending. Keep 0.7.12 as the usable fallback.
+
 ## 0.7.16
 
 - Add **Buffered Look Ahead Playback** as a fourth HLS choice. It runs through Appi's isolated localhost HLS proxy, stores prefetched media in Kodi's temporary storage and targets about 30 seconds of playable media ahead of Kodi.

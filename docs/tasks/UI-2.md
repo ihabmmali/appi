@@ -1,11 +1,11 @@
 ---
 id: UI-2
 role: implementation
-status: ready
+status: review
 delivery: unreleased
-verification: pending
-owner: unassigned
-base_commit: unset
+verification: partial
+owner: Codex release/0.7.17
+base_commit: 6d36d9a52733fbe6f3ded3ba5ee335cb779883e3
 artifact: none
 ---
 # UI-2 — About / installed Appi version
@@ -36,7 +36,15 @@ The value shown must reflect the actually installed package, including after upg
 Requested by the user on 2026-09-27 as a usability improvement. The user wants a simple About entry in settings to verify the current Appi version. On 2026-09-27 the user explicitly instructed that all currently tracked changes be committed for the next release. UI-2 is therefore committed release scope.
 
 ## Evidence
+
+2026-09-27 implementation/self-review (0.7.17 candidate): The settings About action obtains name/version from the installed Addon runtime metadata. Smoke coverage changes mocked installed metadata from 0.7.17 to 0.7.12 and verifies the displayed version changes accordingly. No second version constant is used.
+
+73 unit/smoke/integration tests passed with Python 3.12, including real FFmpeg MPEG-TS and fMP4 decode at start, forward seek and backward seek; workflow validation and diff whitespace checks passed. `_effective_hls_mode`, `_configure_hls` and `_configure_mp4` are AST-identical to base 6d36d9a52733fbe6f3ded3ba5ee335cb779883e3. Reviewed implementation commit: `842ef37c8deb6ce340946dbbafa29fbd8745ec0c`. This is self-review, not independent review.
+
 The current packaged manifest, `plugin.video.appi/addon.xml`, declares Appi version `0.7.16`, while the current settings definition has no About/version action.
 
 ## Outcome and next action
-Committed for the next release. Implement a simple settings About action that reports the runtime-installed Appi version from add-on metadata.
+Implementation and automated self-review complete for the 0.7.17 candidate. Authorized integration/publication is next; target-device acceptance remains pending, so this task stays in review/partial verification. Retest the task's device/UI scenarios after installing 0.7.17; do not mark done from package availability alone.
+
+## Implementation session — 2026-09-27
+User authorized implementation, testing, integration and publication in this session. Base 6d36d9a52733fbe6f3ded3ba5ee335cb779883e3. One worker owns the scoped source/settings/tests and shared release records; no concurrent worker changes observed. Target 0.7.17. Modes 0–2 must remain unchanged.

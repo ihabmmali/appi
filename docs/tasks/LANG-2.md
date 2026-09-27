@@ -1,11 +1,11 @@
 ---
 id: LANG-2
 role: implementation
-status: ready
+status: review
 delivery: unreleased
-verification: pending
-owner: unassigned
-base_commit: unset
+verification: partial
+owner: Codex release/0.7.17
+base_commit: 6d36d9a52733fbe6f3ded3ba5ee335cb779883e3
 artifact: none
 ---
 # LANG-2 — Common-language selection lists for audio and subtitles
@@ -48,7 +48,15 @@ Requested by the user on 2026-09-27. The user explicitly requires the audio-lang
 On 2026-09-27 the user explicitly instructed that all currently tracked changes be committed for the next release. LANG-2 is therefore committed release scope.
 
 ## Evidence
+
+2026-09-27 implementation/self-review (0.7.17 candidate): Both visible controls are curated lists of 29 common languages plus No preference, storing canonical codes independently. Hidden legacy strings migrate once; recognized aliases survive, unknown strings safely become No preference, and later explicit None does not resurrect a legacy preference. Existing subtitle-mode precedence and saved-subtitle smoke tests remain passing.
+
+73 unit/smoke/integration tests passed with Python 3.12, including real FFmpeg MPEG-TS and fMP4 decode at start, forward seek and backward seek; workflow validation and diff whitespace checks passed. `_effective_hls_mode`, `_configure_hls` and `_configure_mp4` are AST-identical to base 6d36d9a52733fbe6f3ded3ba5ee335cb779883e3. Reviewed implementation commit: `842ef37c8deb6ce340946dbbafa29fbd8745ec0c`. This is self-review, not independent review.
+
 The released LANG-1 implementation added normalized preferred-language matching, but the current `plugin.video.appi/resources/settings.xml` still defines both `preferred_audio_language` and `preferred_subtitle_language` as string edit controls with free-text input.
 
 ## Outcome and next action
-Committed for the next release. Replace both free-text controls with curated language-selection lists while preserving LANG-1 normalization and backwards compatibility for existing stored values.
+Implementation and automated self-review complete for the 0.7.17 candidate. Authorized integration/publication is next; target-device acceptance remains pending, so this task stays in review/partial verification. Retest the task's device/UI scenarios after installing 0.7.17; do not mark done from package availability alone.
+
+## Implementation session — 2026-09-27
+User authorized implementation, testing, integration and publication in this session. Base 6d36d9a52733fbe6f3ded3ba5ee335cb779883e3. One worker owns the scoped source/settings/tests and shared release records; no concurrent worker changes observed. Target 0.7.17. Modes 0–2 must remain unchanged.

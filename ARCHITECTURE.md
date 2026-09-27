@@ -1,6 +1,6 @@
 # Appi architecture
 
-Updated for the 0.7.15 HLS rollback-style repair candidate (2026-09-26). Source describes implemented behavior; accepted requirements and decisions describe intended behavior.
+Updated for the 0.7.17 buffered playback candidate (2026-09-27). Source describes implemented behavior; accepted requirements and decisions describe intended behavior.
 
 ## Project goals and binding rules
 
@@ -47,3 +47,15 @@ These goals bind the portable [lifecycle](LIFECYCLE.md) to Appi. Accepted change
 
 `python3 tools/build_repository.py` regenerates add-on ZIPs, SHA-256 sidecars, `addons.xml` and its checksum, and the Pages `index.html`. The install page lists the current package plus selected fallback packages; the repository retains other older ZIPs. `repository.appi` reads the repository feed from the raw `main` files. A documentation-only change requires no rebuild or version bump.
 
+
+## Buffered Look Ahead — 0.7.17
+
+Mode 3 alone uses `buffered_hls.py`. The plugin creates a unique request mailbox and displays cancellable preparation progress; the persistent service prepares the selected stream on a background thread before resolving Kodi playback. Kodi receives a filtered localhost master retaining associated rendition groups, with appropriate media extensions and byte-range responses. VOD playlists are reused rather than rewritten/rebuffered on repeated requests. Modes 0–2 keep their existing configuration and provider URL paths.
+
+The configured storage budget is clamped to 32–1024 MiB (UI label MB), default 128. Prefetch aims for 70% of that total across active tracks, reserving space for in-flight media, keys/maps and demand. A single transfer is limited to one quarter of the total or one quarter of each active track's share, whichever is smaller. Admission evicts remote/consumed windows before downloading so temporary files remain within the total budget; pinned HTTP responses are protected. A segment exceeding this bound fails explicitly; increasing the buffer or selecting lower quality may be needed for unusually large segments. This replaces the fixed 30-second depth cap.
+
+Startup needs 12 playable seconds or the available end-of-stream/capacity reserve, with a 45-second preparation deadline excluding user quality-choice time (chooser service wait bounded to 180 seconds). Upstream transfer reads have 10-second timeouts and elapsed-time checks; startup/recovery reserve waits are bounded to 20 seconds. Cached segment requests return promptly; missing seeks recenter and wait for a 6-second recovery reserve. The service reports failure if Kodi does not consume/start the prepared stream, and stale player callbacks only clean up their own session token. Navigation is not an input to session state.
+
+The optional `buffered_ui.py` label uses Kodi fullscreen video window 12005 and reads the live debug toggle without changing fetch behavior. Ordinary buffering text also uses Kodi's Player.Caching condition. Reported seconds are contiguous cached segment durations ahead of Kodi's proxy read cursor, not Kodi's private decoder queue or a guarantee of remaining playback time. The startup progress dialog is independent of diagnostics.
+
+Language choices use new canonical-code settings with a one-time migration from hidden legacy text settings, preserving explicit No preference after migration. About reads `Addon.getAddonInfo`; the manifest references `resources/icon.png`, identical to the approved source artwork.

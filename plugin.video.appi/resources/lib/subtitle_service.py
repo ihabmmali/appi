@@ -5,6 +5,7 @@ import xbmc
 import xbmcaddon
 
 from . import buffered_hls
+from .buffered_ui import BufferOverlay
 from . import diagnostics
 from . import languages
 from . import playback_history
@@ -33,6 +34,7 @@ class AppiPlayer(xbmc.Player):
         super().__init__()
         self._search_opened_key = None
         self._buffered_manager = buffered_manager
+        self._buffered_token = None
 
     def _subtitle_session(self):
         return subtitle_store.load_session() or {}
@@ -67,7 +69,7 @@ class AppiPlayer(xbmc.Player):
                 xbmc.log('Appi could not restore saved subtitles: {}'.format(exc), xbmc.LOGWARNING)
 
     def _apply_preferred_languages(self):
-        audio = (ADDON.getSetting('preferred_audio_language') or '').strip()
+        audio = languages.preference(ADDON, 'audio')
         if audio:
             try:
                 index = languages.match_index(audio, self.getAvailableAudioStreams())
@@ -78,7 +80,7 @@ class AppiPlayer(xbmc.Player):
 
         session = self._subtitle_session()
         mode = session.get('subtitle_mode') or 'global'
-        subtitle = (ADDON.getSetting('preferred_subtitle_language') or '').strip()
+        subtitle = languages.preference(ADDON, 'subtitle')
         if subtitle and mode == 'global':
             try:
                 index = languages.match_index(subtitle, self.getAvailableSubtitleStreams())
@@ -89,6 +91,8 @@ class AppiPlayer(xbmc.Player):
                 xbmc.log('Appi subtitle-language selection failed: {}'.format(exc), xbmc.LOGWARNING)
 
     def onAVStarted(self):
+        if self._buffered_manager:
+            self._buffered_token = self._buffered_manager.playback_started(self.getPlayingFile())
         self._apply_preferred_languages()
         diagnostics.player_started(self)
         self._apply_session_subtitles()
@@ -108,7 +112,8 @@ class AppiPlayer(xbmc.Player):
                 pass
         subtitle_store.clear_session()
         if self._buffered_manager:
-            self._buffered_manager.stop_active(result)
+            self._buffered_manager.playback_finished(self._buffered_token, result)
+            self._buffered_token = None
             self._buffered_manager.flush_diagnostics(diagnostics.event)
         diagnostics.finish(result)
         session = playback_history.finish_session()
@@ -142,6 +147,8 @@ def run():
     monitor = xbmc.Monitor()
     buffered_manager = buffered_hls.BufferedHlsManager()
     player = AppiPlayer(buffered_manager)
+    overlay = BufferOverlay()
+    languages.migrate_preferences(ADDON)
     next_metadata_poll = 0.0
     next_diagnostic_sample = 0.0
     next_auto_refresh_check = 0.0
@@ -154,6 +161,16 @@ def run():
         try:
             buffered_manager.poll(player_active=playing)
             buffered_manager.flush_diagnostics(diagnostics.event)
+            session = buffered_manager.active
+            status = session.status() if session else None
+            if status and playing:
+                status['recovering'] = status['recovering'] or xbmc.getCondVisibility('Player.Caching')
+            overlay.update(status if session and session.ready else None,
+                           _enabled('buffered_debug_overlay', False), playing)
+            if session and playing:
+                diagnostics.event('buffer_status', **{k: v for k, v in status.items()
+                                  if k in {'cached_ahead_bytes', 'buffered_seconds',
+                                           'cached_segments_ahead', 'buffer_capacity_mb'}})
         except Exception as exc:
             xbmc.log('Appi buffered HLS service failed: {}'.format(exc), xbmc.LOGWARNING)
         if playing and _enabled('persist_subtitles', True):
@@ -209,4 +226,5 @@ def run():
             next_metadata_poll = now + 2.0
         if monitor.waitForAbort(2.0):
             break
+    overlay.close()
     buffered_manager.shutdown(diagnostics.event)
