@@ -8,6 +8,7 @@ Version 0.7.16 was published on 2026-09-27. No new release scope is committed. H
 
 | Task | Selection | Priority | Reason |
 | --- | --- | --- | --- |
+| [HLS-6](docs/tasks/HLS-6.md) | candidate | requested playback improvement | Make Buffered Look Ahead capacity user-configurable in storage terms and ensure the setting changes actual prefetch depth |
 | [HLS-1](docs/tasks/HLS-1.md) | backlog | investigation | Use DIAG-2/HLS-5 target-device evidence to diagnose any repeated stalls that remain |
 | [UI-1](docs/tasks/UI-1.md) | backlog | investigation | Skin comparison needed |
 
@@ -21,6 +22,8 @@ Version 0.7.16 was published on 2026-09-27. No new release scope is committed. H
 6. Copy shipped task IDs and scope changes into RELEASE_NOTES, then reset this planning file for the next cycle.
 
 ## Scope decisions
+
+2026-09-27: HLS-6 added as a candidate after the user required Buffered Look Ahead Playback to have user-configurable buffer capacity, at minimum in storage units. The released 0.7.16 path has a fixed ~30-second target and hardcoded 384 MB disk ceiling, so the follow-up must make the configured storage value affect actual prefetch depth rather than merely exposing the existing safety cap. This request was logged but not explicitly committed to release scope.
 
 2026-09-27: Appi 0.7.16 was published from merge commit `af6791128009e5e9afd408221d8427c2baed65e1`. Shipped scope: HLS-5. Post-merge verification run 36297143439 and Pages deployment run 36297143062 passed. HLS-5 remains in review/partial verification because publication and automated tests do not establish target-device buffering effectiveness.
 

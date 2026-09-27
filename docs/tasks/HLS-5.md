@@ -76,3 +76,9 @@ Implementation/review evidence on 2026-09-27:
 
 ## Outcome and next action
 Implementation, automated release verification, integration and publication pass. HLS-5 remains in review/partial verification because only target-device playback can establish whether the 30-second look-ahead eliminates the reported provider stalls. Published merge commit: `af6791128009e5e9afd408221d8427c2baed65e1`; post-merge verification run 36297143439 and Pages deployment run 36297143062 both passed. Next action: test all four modes on the target Fire TV/provider stream, especially the previously stalling stream in Buffered Look Ahead Playback, and retain/export diagnostics if a stall remains.
+
+
+## Post-publication follow-up — 2026-09-27
+The user has not yet completed target-device validation of Buffered Look Ahead Playback, but identified an additional requirement before considering the feature complete: look-ahead capacity must be user-configurable, at minimum in storage terms.
+
+The released 0.7.16 implementation uses a fixed ~30-second target plus a hardcoded 384 MB session disk ceiling. Merely exposing the 384 MB ceiling would not make the actual look-ahead depth configurable because the 30-second target would still stop prefetching first. [HLS-6](HLS-6.md) therefore owns the follow-up requirement that a user-configured storage budget must influence the actual amount of media prefetched ahead, while retaining a bounded safety policy.

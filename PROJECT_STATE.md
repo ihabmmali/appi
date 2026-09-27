@@ -18,7 +18,8 @@ Updated: 2026-09-27. Short current summary; start with [AGENTS.md](AGENTS.md) fo
 - HLS-4 is delivered in 0.7.15 but remains in review/partial verification pending the user's target-device manual-selection test.
 - DIAG-2 remains delivered in 0.7.14 and in review/partial verification for its separate target-device telemetry checks.
 - HLS-5 is delivered in 0.7.16 and remains in review/partial verification pending target-device buffering tests. The three pre-existing playback modes were source-audited and regression-tested as compatibility constraints.
-- [NEXT_RELEASE.md](NEXT_RELEASE.md): reset to draft planning; no new release scope is committed. HLS-1 and UI-1 remain backlog investigations.
+- HLS-6 is a ready next-release candidate to make Buffered Look Ahead capacity user-configurable in storage terms; it is not yet committed release scope.
+- [NEXT_RELEASE.md](NEXT_RELEASE.md): reset to draft planning; HLS-6 is a candidate and no new release scope is committed. HLS-1 and UI-1 remain backlog investigations.
 - [KNOWN_ISSUES.md](KNOWN_ISSUES.md): full task index.
 - Lifecycle pilot 0.1 is established in [LIFECYCLE.md](LIFECYCLE.md). [Pilot evaluation](docs/workflows/PILOT.md) records what still needs real-world validation.
 
