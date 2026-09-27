@@ -55,4 +55,4 @@ Version 0.7.14 failed target-device acceptance for manual stream selection. HLS-
 
 ## Readiness
 
-0.7.15 source implementation is prepared with HLS-4 as the sole committed release blocker. The candidate restores the 0.7.12 original-master-URL + InputStream Adaptive `ask-quality` path. Automated release/package verification and target-device acceptance remain pending; 0.7.12 remains the usable playback fallback.
+0.7.15 source implementation is prepared with HLS-4 as the sole committed release blocker. The candidate restores the 0.7.12 original-master-URL + InputStream Adaptive `ask-quality` path. GitHub Actions run 36291375057 passed automated release/package verification. Target-device acceptance remains pending; 0.7.12 remains the usable playback fallback.
