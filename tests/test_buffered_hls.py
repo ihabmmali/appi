@@ -25,6 +25,10 @@ def _load_module():
     vfs.translatePath = lambda value: temp_root if value == 'special://temp/' else value
     sys.modules['xbmcvfs'] = vfs
 
+    saved_modules = {
+        name: sys.modules.get(name)
+        for name in ('resources', 'resources.lib', 'resources.lib.hls', 'resources.lib.buffered_hls')
+    }
     resources = types.ModuleType('resources')
     resources.__path__ = []
     lib = types.ModuleType('resources.lib')
@@ -58,6 +62,11 @@ def _load_module():
     sys.modules['resources.lib.buffered_hls'] = module
     spec.loader.exec_module(module)
     module._test_root = temp_root
+    for name, previous in saved_modules.items():
+        if previous is None:
+            sys.modules.pop(name, None)
+        else:
+            sys.modules[name] = previous
     return module
 
 
