@@ -1,9 +1,9 @@
 ---
 id: DIAG-2
-role: research
-status: active
+role: review
+status: review
 delivery: unreleased
-verification: pending
+verification: partial
 owner: ChatGPT release worker 2026-09-26
 base_commit: 90b9561481a14d04765b0bd999ee47ddf232e6c5
 artifact: none
@@ -73,5 +73,12 @@ No implementation or target-device verification has yet been performed for DIAG-
 - Kodi's add-on Python API exposes playback position plus InfoLabels that can be sampled without proxying media traffic. Appi can therefore record timestamped resolution/bitrate changes, stall intervals, and cache/read-ahead labels when the installed Kodi build exposes them. Native/InputStream Adaptive per-segment HTTP timing and exact representation request history are not reliably exposed through the supported Python API; the bundle must record that limitation rather than infer nonexistent measurements.
 - Implementation will extend DIAG-1 with schema-versioned mode/representation transitions, cache/read-ahead observations, bounded pre-stall history, explicit observability sources/limitations and causal classification while preserving sanitization.
 
+## Implementation evidence — 2026-09-26
+- Diagnostics schema 2 keeps one bounded session timeline and records prepared engine/mode metadata, AV start, 2-second player samples, representation changes and explicit stall start/end intervals.
+- Cache/read-ahead telemetry samples Kodi Player.CacheLevel, CacheBytes, CacheTime, CacheTimeRemaining and ProgressCache only when the installed build exposes those labels; blank labels are treated as unavailable, never as zero.
+- The final analysis distinguishes observed/suggestive evidence from insufficient evidence and does not claim CDN/segment timing or throughput measurements when per-segment HTTP data is inaccessible.
+- The bundle records observation sources and limitations for unsupported InputStream Adaptive internals and preserves DIAG-1 credential/query/subtitle-content exclusions.
+- Added automated analysis coverage for pre-stall near-empty cache evidence and representation transitions. Target-device failing/working captures remain required for final verification.
+
 ## Outcome and next action
-Committed for the next release. The assigned worker should first map the exact observability available from Kodi and InputStream Adaptive, then implement the feasible capture points by extending the existing DIAG-1 session/export pipeline and preserving a single timeline across mode changes.
+Review the 0.7.14 candidate with the automated gate, then collect one failing-stream and one working-stream target-device bundle to validate which Player.Cache* labels are exposed on the Fire TV/Kodi build and whether the new timeline can distinguish actual playable read-ahead from configured cache capacity.
