@@ -6,7 +6,7 @@ delivery: released
 verification: partial
 owner: ChatGPT build session 2026-09-26
 base_commit: 8a9b1ad21b3944d8045e1d1abff2a2556c3035cc
-artifact: https://github.com/ihabmmali/appi/blob/main/plugin.video.appi-0.7.12.zip
+artifact: https://github.com/ihabmmali/appi/blob/main/plugin.video.appi-0.7.13.zip
 ---
 # SEARCH-1 — Search navigation regression investigation
 
@@ -62,3 +62,9 @@ No new device reproduction has been performed in this triage update.
 
 ## Outcome and next action
 Treat SEARCH-1 as the canonical navigation-regression task. A review worker should reproduce the explicit flows above on the current baseline. Any confirmed failure should move this same task into implementation with targeted regression tests; do not close it based only on the existence of the 0.7.12 session-retention code.
+
+## Publication — 0.7.13
+- Published to `main` in merge commit `0d708565e4bccb0abe03c7a0ae004ccb3dc0a72a` on 2026-09-26/27.
+- Post-merge release verification: GitHub Actions run 36287058096 passed the full automated gate.
+- Artifact: `plugin.video.appi-0.7.13.zip`; 0.7.8 remains the known-good fallback.
+- Delivery is released; verification remains partial until the task's documented target-device checks are completed.
