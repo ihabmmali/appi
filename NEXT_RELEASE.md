@@ -1,17 +1,13 @@
 # Next Appi release
 
-Planning status: committed. Version: 0.7.21. Current baseline and fallback: [PROJECT_STATE.md](PROJECT_STATE.md).
+Planning status: open. Version: not assigned. Current baseline and fallback: [PROJECT_STATE.md](PROJECT_STATE.md).
 
-0.7.20 is published. The committed 0.7.21 scope is HLS-12, HLS-13, HLS-14 and HLS-15. AUDIO-1, HLS-10 and HLS-11 remain in review for their separate 0.7.20 target-device acceptance.
+0.7.21 is published. No next-release scope is currently committed. HLS-12, HLS-13, HLS-14 and HLS-15 remain in review for target-device acceptance of the shipped 0.7.21 behavior; any follow-up repair must be triaged and explicitly committed.
 
 ## Proposed scope
 
 | Task | Selection | Priority | Reason |
 | --- | --- | --- | --- |
-| [HLS-13](docs/tasks/HLS-13.md) | committed | release-blocking buffering redesign | Replace 12-second/equal-share buffering with a true deep high-water/low-water reservoir that uses configured capacity to protect higher selected bitrates |
-| [HLS-14](docs/tasks/HLS-14.md) | committed | confirmed overlay defect | Detailed debug overlay still renders nothing during confirmed Buffered Look Ahead playback on 0.7.20 |
-| [HLS-15](docs/tasks/HLS-15.md) | committed | buffering status UX | Normal startup/recovery status must show actual buffered KB/MB, not only a progress bar |
-| [HLS-12](docs/tasks/HLS-12.md) | committed | release-blocking playback redesign | 0.7.20 still times out; replace stateful seek recovery with a fresh buffer epoch at every seek/resume target |
 | [PLAY-1](docs/tasks/PLAY-1.md) | backlog | investigation | Resume persistence is working; only investigate the playback-start Trakt API error |
 | [HLS-1](docs/tasks/HLS-1.md) | backlog | investigation | Use buffered-mode/diagnostic evidence to diagnose any underlying provider stalls that remain |
 | [UI-1](docs/tasks/UI-1.md) | backlog | investigation | Skin comparison needed |
@@ -26,6 +22,9 @@ Planning status: committed. Version: 0.7.21. Current baseline and fallback: [PRO
 6. Copy shipped task IDs and scope changes into RELEASE_NOTES, then reset this planning file for the next cycle.
 
 ## Scope decisions
+
+2026-09-28: Appi 0.7.21 published through PR #10 / merge `d9e0be64681fa2dbe9cc434f81375a9c0992a3e1`. Final strengthened candidate run `36381180991` passed 94 tests (1 skipped), workflow validation and deterministic package inspection; final pre-integration evidence run `36381370108` also passed with no generated artifact drift. Post-merge verification run `36381516837` and Pages deployment run `36381516378` passed. Shipped scope: HLS-12, HLS-13, HLS-14 and HLS-15. Their delivery is released while target-device verification remains review/partial. Planning is reset; no next-release scope is committed.
+
 
 2026-09-28: user explicitly summarized and committed the next Buffered Look Ahead repair scope: HLS-12 (seek/resume still broken), HLS-13 (buffering algorithm/deep-reservoir defect), HLS-14 (detailed debug overlay renders nothing), and new HLS-15 (normal preparation/recovery UI must show actual buffered KB/MB, not just a percentage bar). All four are committed next-release scope; HLS-12 and HLS-13 are release blockers.
 
@@ -125,4 +124,4 @@ Planning status: committed. Version: 0.7.21. Current baseline and fallback: [PRO
 
 ## Readiness
 
-Committed next-release scope: HLS-12, HLS-13, HLS-14 and HLS-15. HLS-12 and HLS-13 are release blockers. HLS-14 must restore the detailed overlay, and HLS-15 must show actual buffered KB/MB in the normal preparation/recovery UI. PLAY-1, HLS-1 and UI-1 remain backlog investigations; target-device acceptance for shipped AUDIO-1, HLS-10 and HLS-11 remains tracked in their canonical task records.
+No next-release scope is committed. HLS-12, HLS-13, HLS-14 and HLS-15 are shipped in 0.7.21 and remain review/partial pending target-device acceptance. PLAY-1, HLS-1 and UI-1 remain backlog investigations; target-device acceptance for earlier shipped tasks remains tracked in their canonical task records.

@@ -2,11 +2,11 @@
 id: HLS-15
 role: implementation
 status: review
-delivery: unreleased
+delivery: released
 verification: partial
 owner: builder-publisher-2026-09-28
 base_commit: 4a415f9eaeb48c77ef2fcaa895db90d7e66ab183
-artifact: plugin.video.appi/plugin.video.appi-0.7.21.zip
+artifact: https://ihabmmali.github.io/appi/plugin.video.appi-0.7.21.zip
 ---
 # HLS-15 — Show actual buffered KB/MB in the normal preparation/recovery UI
 
@@ -62,8 +62,10 @@ Published 0.7.20 shows a simple preparation window/progress bar but does not giv
 
 Automated 0.7.21 candidate run `36381180991` passed numeric contiguous-playable byte/target reporting for startup and recovery UI, including KB/MB formatting. Target-device observation of the preparation/recovery text remains required.
 
+Published in Appi 0.7.21 through PR #10 / merge `d9e0be64681fa2dbe9cc434f81375a9c0992a3e1`. Post-merge verification run `36381516837` and Pages deployment run `36381516378` passed. Published ZIP SHA-256: `0e8c615d40cf9f42e0345c61e11a7b244fc443c8858902d53fffda92c1935c81`. Delivery is released; target-device verification remains partial.
+
 ## Outcome and next action
-Committed for the next release. Wire the simple preparation/recovery UI directly to HLS-13/HLS-12's active-epoch playable-reserve byte metrics and display those bytes as KB/MB throughout filling and recovery.
+Released in 0.7.21. Complete the remaining target-device acceptance documented above; any new defect or repair must be triaged as follow-up work rather than silently reopening this release scope.
 
 
 Implementation session 2026-09-28: activated on `release/0.7.21` from base `4a415f9eaeb48c77ef2fcaa895db90d7e66ab183`; authorized scope is implementation, review, integration and publication of the committed next release.

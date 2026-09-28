@@ -2,7 +2,7 @@
 
 Each entry records the package shipped, its main user-visible changes, and verification at release time. For the current baseline and next tasks read [PROJECT_STATE.md](PROJECT_STATE.md) and [KNOWN_ISSUES.md](KNOWN_ISSUES.md); the [CHANGELOG.md](CHANGELOG.md) is the implemented feature history.
 
-## 0.7.21 — candidate 2026-09-28
+## 0.7.21 — 2026-09-28
 
 - Committed scope: HLS-12, HLS-13, HLS-14 and HLS-15. Base `4a415f9eaeb48c77ef2fcaa895db90d7e66ab183`; branch `release/0.7.21`; main implementation `f91e3f25c012267a86d91c344a68ee5b941438e2`; capacity/test correction `568300582687d75c0ddfacab9b4a0a2e3cf31dff`.
 - HLS-13 replaces fixed 12-second/equal-share buffering with a shared byte reservoir: 50% configured-capacity startup target, 80% high-water, 60% low-water, 15% critical reserve, dynamic video/audio use, continuous refill, measured throughput and inactivity-based media transfer timeout.
@@ -12,6 +12,7 @@ Each entry records the package shipped, its main user-visible changes, and verif
 - Existing HLS modes 0–2 are intentionally unchanged. The design does not auto-downgrade quality and cannot sustain a rendition indefinitely when long-term provider throughput remains below consumption.
 - Gate run `36380665062` exposed four stale 0.7.20-oriented test assumptions; corrected run `36380784448` then passed 90 tests but correctly stopped on lifecycle tracker metadata. Run `36380895989` passed the full gate and produced the first candidate package. The acceptance suite was then strengthened for high/low-water hysteresis, upstream-stall masking, measured sustained-throughput deficit reporting and slow-but-progressing transfers.
 - Final candidate run `36381180991` passed 94 tests (1 skipped), tracker validation, deterministic rebuild and package/index inspection. Final deterministic artifact commit: `26216385f185476b778f73b8dae5e7abfe73f339`. ZIP SHA-256: `0e8c615d40cf9f42e0345c61e11a7b244fc443c8858902d53fffda92c1935c81`.
+- Published through PR #10 / merge `d9e0be64681fa2dbe9cc434f81375a9c0992a3e1`. Post-merge verification run `36381516837` passed and Pages deployment run `36381516378` completed successfully. Delivery: [plugin.video.appi-0.7.21.zip](https://ihabmmali.github.io/appi/plugin.video.appi-0.7.21.zip).
 - Target-device acceptance remains required for the user's problematic higher-bitrate stream, forward/backward/repeated seek, saved-point start, numeric startup status and visible detailed overlay.
 
 ## 0.7.20 — 2026-09-27

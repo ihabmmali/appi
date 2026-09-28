@@ -2,11 +2,11 @@
 id: HLS-13
 role: implementation
 status: review
-delivery: unreleased
+delivery: released
 verification: partial
 owner: builder-publisher-2026-09-28
 base_commit: 4a415f9eaeb48c77ef2fcaa895db90d7e66ab183
-artifact: plugin.video.appi/plugin.video.appi-0.7.21.zip
+artifact: https://ihabmmali.github.io/appi/plugin.video.appi-0.7.21.zip
 ---
 # HLS-13 — Implement true deep-reservoir Buffered Look Ahead playback
 
@@ -94,8 +94,10 @@ The user reports that lowering the selected buffered rendition makes playback wo
 
 Automated 0.7.21 candidate run `36381180991` passed shared-capacity/deep-reservoir, high/low-water hysteresis, cached-reserve stall masking, measured sustained-deficit reporting and slow-but-progressing transfer coverage. The deterministic package uses capacity-driven startup/refill with no automatic quality downgrade. The problematic higher-bitrate target-device stream still requires acceptance.
 
+Published in Appi 0.7.21 through PR #10 / merge `d9e0be64681fa2dbe9cc434f81375a9c0992a3e1`. Post-merge verification run `36381516837` and Pages deployment run `36381516378` passed. Published ZIP SHA-256: `0e8c615d40cf9f42e0345c61e11a7b244fc443c8858902d53fffda92c1935c81`. Delivery is released; target-device verification remains partial.
+
 ## Outcome and next action
-Committed for the next release. Replace shallow-start/equal-share caching with a real high-water/low-water producer-consumer reservoir and verify it against the problematic higher-bitrate stream, not merely a lower rendition that already works without buffering.
+Released in 0.7.21. Complete the remaining target-device acceptance documented above; any new defect or repair must be triaged as follow-up work rather than silently reopening this release scope.
 
 
 Implementation session 2026-09-28: activated on `release/0.7.21` from base `4a415f9eaeb48c77ef2fcaa895db90d7e66ab183`; authorized scope is implementation, review, integration and publication of the committed next release.
