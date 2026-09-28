@@ -1,5 +1,8 @@
 """Lightweight, non-modal buffer text on Kodi's fullscreen video window."""
-import xbmc
+try:
+    import xbmc
+except ImportError:  # pragma: no cover - Kodi supplies xbmc; tests may not.
+    xbmc = None
 import xbmcgui
 
 
@@ -28,12 +31,13 @@ class BufferOverlay:
     def _failure(self, operation, exc):
         message = '{}: {}: {}'.format(operation, type(exc).__name__, exc)
         if message != self._last_failure:
-            xbmc.log(
-                'Appi buffered overlay {} failed: {}: {}'.format(
-                    operation, type(exc).__name__, exc
-                ),
-                xbmc.LOGWARNING,
-            )
+            if xbmc is not None:
+                xbmc.log(
+                    'Appi buffered overlay {} failed: {}: {}'.format(
+                        operation, type(exc).__name__, exc
+                    ),
+                    getattr(xbmc, 'LOGWARNING', 2),
+                )
             self._last_failure = message
 
     def update(self, status, debug=False, playing=False):
