@@ -22,8 +22,8 @@ Updated: 2026-09-27. Each linked task is the canonical requirements/status/evide
 | HLS-7 | review | implementation | [Stabilize Buffered Look Ahead startup, seeking and failure handling](docs/tasks/HLS-7.md) |
 | HLS-8 | review | implementation | [Repair 0.7.18 Buffered Look Ahead preparation and runtime failure](docs/tasks/HLS-8.md) |
 | HLS-9 | review | implementation | [Make InputStream Adaptive a prerequisite dependency](docs/tasks/HLS-9.md) |
-| HLS-10 | ready | implementation | [Repair Buffered Look Ahead detailed debug overlay](docs/tasks/HLS-10.md) |
-| HLS-11 | ready | implementation | [Repair Buffered Look Ahead seek and recovery timeout](docs/tasks/HLS-11.md) |
+| HLS-10 | proposed | research | [Verify/repair Buffered Look Ahead detailed debug overlay](docs/tasks/HLS-10.md) |
+| HLS-11 | ready | implementation | [Repair multi-variant HLS seek, resume-point and recovery timeout](docs/tasks/HLS-11.md) |
 | SUB-1 | review | review | [Restore downloaded subtitle persistence across playback sessions](docs/tasks/SUB-1.md) |
 | PLAY-1 | proposed | research | [Investigate playback-start Trakt API error](docs/tasks/PLAY-1.md) |
 | UI-1 | proposed | research | [Playback Program Settings visibility](docs/tasks/UI-1.md) |

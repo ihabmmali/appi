@@ -8,16 +8,16 @@ owner: unassigned
 base_commit: unset
 artifact: none
 ---
-# HLS-11 — Repair Buffered Look Ahead seek and recovery timeout
+# HLS-11 — Repair multi-variant HLS seek, resume-point and recovery timeout
 
 ## Objective
-Make seeking and post-seek recovery reliable in Buffered Look Ahead mode after 0.7.19 fixed initial preparation/playback but target-device seeks still fail with Appi-generated timeout errors.
+Make random-access playback reliable for known multi-variant HLS streams in Buffered Look Ahead mode. On 0.7.19 these streams load and play well from the beginning, but manual seeking and starting from a saved/resume playback point fail with Appi-generated timeout/recovery errors.
 
 ## Observed target-device behavior
-- initial preparation is fast;
-- the buffer fills quickly;
-- ordinary playback is stable;
-- seeking/fast-forwarding triggers an Appi timeout;
+- the tested streams clearly expose multiple HLS resolution/bitrate choices, confirming a multi-variant HLS master;
+- from time 0, initial preparation is fast, the buffer fills quickly and ordinary playback is stable;
+- seeking/fast-forwarding away from the sequential playback position triggers an Appi timeout;
+- starting/resuming the same kind of stream from a previously saved playback point also fails, indicating the defect is not limited to an in-session seek;
 - the error may suggest trying a lower-quality stream even though the same quality prepared quickly and plays normally before the seek;
 - after the seek failure, resuming consistently starts playback briefly;
 - the normal **Appi buffering** indicator then appears;
@@ -26,12 +26,13 @@ Make seeking and post-seek recovery reliable in Buffered Look Ahead mode after 0
 The lower-quality suggestion must not be treated as proof that bitrate is the cause.
 
 ## Scope
-Repair only Buffered Look Ahead seek/recovery while preserving the working initial preparation/handoff path and playback modes 0–2.
+Repair only Buffered Look Ahead random-access/recovery behavior for HLS while preserving the now-demonstrated working time-0 preparation/handoff path and playback modes 0–2.
 
 Investigate:
 - detection of non-sequential segment requests and the requested seek target;
+- cold start at a non-zero Kodi resume/bookmark position, before normal sequential segment history has been established;
 - re-centering `last_served` and prefetch priority at the requested segment;
-- coordination of video and associated audio tracks after a seek;
+- coordination of selected video and associated/default audio tracks after a seek or resume-point start, especially for multi-variant masters;
 - whether stale/in-flight pre-seek downloads consume capacity or delay the seek target;
 - behavior when the requested segment is outside the retained rolling buffer;
 - the current 20-second recovery-reserve wait and whether the requested target can safely resume before a larger reserve is rebuilt;
@@ -43,8 +44,10 @@ Investigate:
 Do not reduce selected quality merely to hide a seek-state defect. Quality fallback should only be suggested when diagnostics establish insufficient throughput/capacity.
 
 ## Acceptance
-- Forward seeking from stable Buffered Look Ahead playback resumes reliably at the requested position.
+- A known multi-variant HLS master plays successfully from time 0 as a regression baseline.
+- Forward seeking from that stable Buffered Look Ahead playback resumes reliably at the requested position.
 - Backward seeking resumes reliably, including when old segments have been evicted and must be fetched again.
+- Starting the same known HLS item from a saved non-zero Kodi resume point succeeds without first playing from time 0.
 - The requested target segment is immediately prioritized after re-centering.
 - Required video/audio tracks reach a coherent playable state after the seek.
 - Stale pre-seek work does not starve the requested target or hold the session in an obsolete recovery state.
@@ -58,7 +61,7 @@ Do not reduce selected quality merely to hide a seek-state defect. Quality fallb
 - Initial preparation and ordinary non-seek Buffered Look Ahead playback remain as reliable as observed in 0.7.19.
 - Modes 0–2 remain unchanged.
 - Automated tests cover forward seek outside cache, backward seek after eviction, repeated seeks, recovery timeout, resume-after-timeout, associated audio/video coordination and stale-prefetch reprioritization.
-- Target-device verification reproduces the reported seek and resume-after-failure sequence on the same stream that starts and plays normally.
+- Target-device verification uses at least one positively identified multi-variant HLS master and covers: start from time 0, manual forward seek, manual backward seek, fresh playback from a saved non-zero resume point, and the post-timeout resume sequence.
 
 ## Authorization
 Reported by the user on 2026-09-27 while testing published Appi 0.7.19. This task is logged as a ready candidate and is not committed to a future release unless explicitly included under AGENTS.md.
@@ -66,7 +69,7 @@ Reported by the user on 2026-09-27 while testing published Appi 0.7.19. This tas
 ## Evidence
 0.7.19 source re-centres a track on a non-sequential segment request and waits for a recovery reserve with `RECOVERY_TIMEOUT = 20.0`.
 
-On the target device the same stream prepares rapidly and plays well before seeking. A seek times out. Resuming then consistently plays briefly, displays **Appi buffering**, stutters and exits with a buffering-failed timeout. This points to seek/recovery state, target prioritization, or post-timeout cleanup rather than demonstrated insufficient stream bitrate.
+On the target device, streams that expose multiple resolution choices—clear evidence of multi-variant HLS masters—prepare rapidly and play well from time 0. Manual seeks fail, and starting/resuming from an existing non-zero playback point also fails. After a seek timeout, resuming consistently plays briefly, displays **Appi buffering**, stutters and exits with a buffering-failed timeout. This isolates the remaining problem to random-access/recovery state much more strongly than to initial bandwidth, master parsing or rendition selection.
 
 ## Outcome and next action
-Instrument the requested segment, per-track re-centering, in-flight downloads, cached-ahead reserve and post-timeout state across the failing seek/resume sequence. Repair recovery so the target is prioritized and a timeout cannot leave the session in a recurring degraded state.
+Instrument the requested segment, per-track re-centering, selected rendition/audio association, in-flight downloads, cached-ahead reserve and post-timeout state across both an in-session seek and a cold start from a saved non-zero resume point. Repair recovery so the target is prioritized and a timeout cannot leave the session in a recurring degraded state.

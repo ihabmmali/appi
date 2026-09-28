@@ -5,7 +5,7 @@ Each entry records the package shipped, its main user-visible changes, and verif
 ## 0.7.19 — 2026-09-27
 
 - Published through PR #7 / merge `f495858b2e8c1f146802c04b8533334ee8b36b79`; the repository install index lists 0.7.19 as current.
-- Target-device follow-up: initial Buffered Look Ahead preparation/playback now appears to work and the simple startup windows display. The detailed debug overlay remains invisible (HLS-10). Seeking can time out; after a failed seek, resume consistently plays briefly, displays **Appi buffering**, stutters and exits with a buffering-failed timeout (HLS-11). These defects prevent full buffered-mode acceptance.
+- Target-device follow-up: positively identified multi-variant HLS masters prepare and play well from time 0. Manual seeking and starting from a saved non-zero playback point still fail; after a seek timeout, resume briefly plays, displays **Appi buffering**, stutters and exits with another buffering-failed timeout (HLS-11). The earlier no-overlay observation is not yet conclusive because that test item may not have traversed Buffered Look Ahead; HLS-10 now requires confirmation on a known HLS buffered session.
 
 - Committed scope: HLS-8, LANG-3, HLS-9 and UI-4. Base `c7a344ae2afa1160adb7daf522092c89b46105bf`; branch `release/0.7.19`; PR #7.
 - HLS-8: replace optimistic/single-track preparation with a coordinated startup gate. The selected video and associated default audio rendition are prepared before handoff; startup progress is the minimum readiness of required tracks. Independent resources download concurrently under explicit byte reservations rather than sharing one network-wide lock, so a stalled request cannot block every track.

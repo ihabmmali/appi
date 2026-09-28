@@ -8,8 +8,8 @@ Planning status: open. Version: not assigned. Current baseline and fallback: [PR
 
 | Task | Selection | Priority | Reason |
 | --- | --- | --- | --- |
-| [HLS-10](docs/tasks/HLS-10.md) | candidate | buffered UI defect | Detailed debug overlay is enabled but invisible on 0.7.19 |
-| [HLS-11](docs/tasks/HLS-11.md) | candidate | playback regression | Seek recovery times out; resume briefly plays, shows Appi buffering, stutters and times out again |
+| [HLS-10](docs/tasks/HLS-10.md) | candidate | overlay investigation | Confirm detailed overlay behavior on a known HLS buffered session; earlier no-overlay case may have bypassed Buffered Look Ahead |
+| [HLS-11](docs/tasks/HLS-11.md) | candidate | playback regression | Known multi-variant HLS plays from time 0 but fails on manual seek and saved-point resume; recovery then loops into timeout |
 | [PLAY-1](docs/tasks/PLAY-1.md) | backlog | investigation | Resume persistence is working; only investigate the playback-start Trakt API error |
 | [HLS-1](docs/tasks/HLS-1.md) | backlog | investigation | Use buffered-mode/diagnostic evidence to diagnose any underlying provider stalls that remain |
 | [UI-1](docs/tasks/UI-1.md) | backlog | investigation | Skin comparison needed |
@@ -24,6 +24,8 @@ Planning status: open. Version: not assigned. Current baseline and fallback: [PR
 6. Copy shipped task IDs and scope changes into RELEASE_NOTES, then reset this planning file for the next cycle.
 
 ## Scope decisions
+
+2026-09-27: target-device evidence refined: known multi-variant HLS masters (identified by exposed resolution choices) prepare and play well from time 0, but fail on manual seek and when starting from a saved non-zero playback point. HLS-11 is narrowed to HLS random-access/recovery and must test both in-session seek and cold resume-point start. The earlier HLS-10 no-overlay observation is now considered inconclusive until repeated on a positively identified HLS buffered session, because non-HLS items bypass Buffered Look Ahead entirely.
 
 2026-09-27: 0.7.19 target-device follow-up is positive for initial Buffered Look Ahead preparation/playback and the simple startup windows, but the detailed debug overlay is invisible and seek/recovery is reproducibly broken. HLS-10 tracks the overlay. HLS-11 tracks the seek timeout plus the consistent post-failure sequence where resume briefly plays, displays Appi buffering, stutters and exits with buffering-failed timeout. Both are candidates, not yet committed scope.
 
@@ -103,4 +105,4 @@ Planning status: open. Version: not assigned. Current baseline and fallback: [PR
 
 ## Readiness
 
-No new implementation scope is committed. HLS-10 and HLS-11 are ready candidates based on 0.7.19 target-device findings. LANG-3 remains a shipped review item awaiting target-device language-selection confirmation.
+No new implementation scope is committed. HLS-11 is a ready candidate based on reproducible multi-variant HLS seek/resume failure. HLS-10 is a proposed overlay investigation pending confirmation on a known HLS buffered session. LANG-3 remains a shipped review item awaiting target-device language-selection confirmation.

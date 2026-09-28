@@ -64,10 +64,10 @@ Implemented and published in 0.7.19. Target-device evidence is positive for init
 
 
 ## 0.7.19 target-device acceptance
-Initial Buffered Look Ahead preparation and playback now appear to work on the target Fire TV, and the simple startup/preparation windows display correctly.
+Initial Buffered Look Ahead preparation and playback now work from time 0 on target-device streams that clearly expose multiple HLS variants/resolutions, and the simple startup/preparation windows display correctly.
 
 Two post-release defects remain:
 - the detailed debug overlay is invisible when enabled; tracked by [HLS-10](HLS-10.md);
 - seeking can trigger an Appi timeout. After that failure, resuming consistently starts playback briefly, displays **Appi buffering**, stutters, then exits playback with a buffering-failed timeout; tracked by [HLS-11](HLS-11.md).
 
-This is positive device evidence for the original 0.7.18 preparation/handoff regression, but not full Buffered Look Ahead acceptance. HLS-8 remains partial while focused successor tasks own the remaining overlay and seek/recovery defects.
+This is positive device evidence for master-playlist parsing, rendition selection, initial preparation/handoff and sequential playback on known multi-variant HLS, but not full Buffered Look Ahead acceptance. HLS-8 remains partial while focused successor tasks own the remaining overlay and seek/recovery defects.

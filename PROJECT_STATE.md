@@ -13,13 +13,13 @@ Updated: 2026-09-27. Start with [AGENTS.md](AGENTS.md) for role routing.
 
 ## Current work
 
-- **0.7.19 is published.** Initial Buffered Look Ahead preparation/playback now appears to work on the target Fire TV and the simple startup windows display.
-- HLS-10 is a ready candidate because the optional detailed buffer debug overlay remains invisible when enabled.
-- HLS-11 is a ready candidate because seeking in Buffered Look Ahead times out. After the failure, resume consistently plays briefly, displays **Appi buffering**, stutters and exits with a buffering-failed timeout.
+- **0.7.19 is published.** Known multi-variant HLS masters now prepare and play well from time 0 in Buffered Look Ahead on the target Fire TV; the simple startup windows display.
+- HLS-10 is a proposed investigation: the no-overlay observation may have been on a non-HLS item that bypassed Buffered Look Ahead, so it must be repeated on a known HLS buffered session.
+- HLS-11 is a ready candidate because known multi-variant HLS works from time 0 but fails on manual seek and saved-point resume. After a seek failure, resume briefly plays, displays **Appi buffering**, stutters and exits with a buffering-failed timeout.
 - HLS-8 is shipped/review-partial: the original 0.7.18 preparation/handoff regression has positive device evidence, while focused successor tasks own the remaining overlay and seek defects.
 - LANG-3, HLS-9 and UI-4 are shipped in 0.7.19; their canonical records retain any outstanding target-device acceptance.
 - PLAY-1 remains a backlog Trakt-error investigation. HLS-1 and UI-1 remain backlog investigations.
-- [NEXT_RELEASE.md](NEXT_RELEASE.md): HLS-10 and HLS-11 are candidates; no new implementation scope is committed. [KNOWN_ISSUES.md](KNOWN_ISSUES.md): full task index.
+- [NEXT_RELEASE.md](NEXT_RELEASE.md): HLS-11 is a ready candidate and HLS-10 is a proposed investigation; no new implementation scope is committed. [KNOWN_ISSUES.md](KNOWN_ISSUES.md): full task index.
 
 ## Context on demand
 
