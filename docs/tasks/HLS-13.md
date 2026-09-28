@@ -1,12 +1,12 @@
 ---
 id: HLS-13
 role: implementation
-status: active
+status: review
 delivery: unreleased
-verification: failed
+verification: partial
 owner: builder-publisher-2026-09-28
 base_commit: 4a415f9eaeb48c77ef2fcaa895db90d7e66ab183
-artifact: none
+artifact: plugin.video.appi/plugin.video.appi-0.7.21.zip
 ---
 # HLS-13 — Implement true deep-reservoir Buffered Look Ahead playback
 
@@ -91,6 +91,8 @@ Created from target-device findings on published 0.7.20 on 2026-09-28. The user 
 Current 0.7.20 source uses a 12-second startup reserve and, after startup, caps each track at 70% of configured capacity divided equally by track count. A 128 MB two-track session therefore gives the video track roughly 44.8 MB of forward cache budget even though audio normally needs far less.
 
 The user reports that lowering the selected buffered rendition makes playback work, while that same lower rendition already works in ordinary InputStream Adaptive mode. The intended Buffered Look Ahead value therefore remains unproven for the higher bitrate.
+
+Automated 0.7.21 candidate run `36381180991` passed shared-capacity/deep-reservoir, high/low-water hysteresis, cached-reserve stall masking, measured sustained-deficit reporting and slow-but-progressing transfer coverage. The deterministic package uses capacity-driven startup/refill with no automatic quality downgrade. The problematic higher-bitrate target-device stream still requires acceptance.
 
 ## Outcome and next action
 Committed for the next release. Replace shallow-start/equal-share caching with a real high-water/low-water producer-consumer reservoir and verify it against the problematic higher-bitrate stream, not merely a lower rendition that already works without buffering.

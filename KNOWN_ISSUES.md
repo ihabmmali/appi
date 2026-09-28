@@ -24,11 +24,11 @@ Updated: 2026-09-28. Each linked task is the canonical requirements/status/evide
 | HLS-8 | review | implementation | [Repair 0.7.18 Buffered Look Ahead preparation and runtime failure](docs/tasks/HLS-8.md) |
 | HLS-9 | review | implementation | [Make InputStream Adaptive a prerequisite dependency](docs/tasks/HLS-9.md) |
 | HLS-10 | review | research | [Verify/repair Buffered Look Ahead detailed debug overlay](docs/tasks/HLS-10.md) |
-| HLS-13 | active | implementation | [Implement true deep-reservoir Buffered Look Ahead playback](docs/tasks/HLS-13.md) |
-| HLS-14 | active | implementation | [Make the detailed Buffered Look Ahead overlay actually visible](docs/tasks/HLS-14.md) |
-| HLS-15 | active | implementation | [Show actual buffered KB/MB in the normal preparation/recovery UI](docs/tasks/HLS-15.md) |
+| HLS-13 | review | implementation | [Implement true deep-reservoir Buffered Look Ahead playback](docs/tasks/HLS-13.md) |
+| HLS-14 | review | implementation | [Make the detailed Buffered Look Ahead overlay actually visible](docs/tasks/HLS-14.md) |
+| HLS-15 | review | implementation | [Show actual buffered KB/MB in the normal preparation/recovery UI](docs/tasks/HLS-15.md) |
 | HLS-11 | review | implementation | [Repair multi-variant HLS seek, resume-point and recovery timeout](docs/tasks/HLS-11.md) |
-| HLS-12 | active | implementation | [Replace Buffered Look Ahead seek/resume with fresh buffer epochs](docs/tasks/HLS-12.md) |
+| HLS-12 | review | implementation | [Replace Buffered Look Ahead seek/resume with fresh buffer epochs](docs/tasks/HLS-12.md) |
 | SUB-1 | review | review | [Restore downloaded subtitle persistence across playback sessions](docs/tasks/SUB-1.md) |
 | PLAY-1 | proposed | research | [Investigate playback-start Trakt API error](docs/tasks/PLAY-1.md) |
 | UI-1 | proposed | research | [Playback Program Settings visibility](docs/tasks/UI-1.md) |

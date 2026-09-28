@@ -10,7 +10,9 @@ Each entry records the package shipped, its main user-visible changes, and verif
 - HLS-15 wires the ordinary preparation/recovery UI to active-epoch playable bytes and target bytes, so KB/MB remains visible without enabling detailed debug.
 - HLS-14 replaces fullscreen-window control injection with a guarded modeless `WindowDialog` overlay and exposes playable MB/seconds, water state, epoch and optional selected/provider bitrate metrics.
 - Existing HLS modes 0–2 are intentionally unchanged. The design does not auto-downgrade quality and cannot sustain a rendition indefinitely when long-term provider throughput remains below consumption.
-- Automated release/package verification: pending. Target-device acceptance remains required for the user's problematic higher-bitrate stream, forward/backward/repeated seek, saved-point start, numeric startup status and visible detailed overlay.
+- Gate run `36380665062` exposed four stale 0.7.20-oriented test assumptions; corrected run `36380784448` then passed 90 tests but correctly stopped on lifecycle tracker metadata. Run `36380895989` passed the full gate and produced the first candidate package. The acceptance suite was then strengthened for high/low-water hysteresis, upstream-stall masking, measured sustained-throughput deficit reporting and slow-but-progressing transfers.
+- Final candidate run `36381180991` passed 94 tests (1 skipped), tracker validation, deterministic rebuild and package/index inspection. Final deterministic artifact commit: `26216385f185476b778f73b8dae5e7abfe73f339`. ZIP SHA-256: `0e8c615d40cf9f42e0345c61e11a7b244fc443c8858902d53fffda92c1935c81`.
+- Target-device acceptance remains required for the user's problematic higher-bitrate stream, forward/backward/repeated seek, saved-point start, numeric startup status and visible detailed overlay.
 
 ## 0.7.20 — 2026-09-27
 

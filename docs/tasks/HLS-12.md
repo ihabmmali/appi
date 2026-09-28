@@ -1,12 +1,12 @@
 ---
 id: HLS-12
 role: implementation
-status: active
+status: review
 delivery: unreleased
-verification: failed
+verification: partial
 owner: builder-publisher-2026-09-28
 base_commit: 4a415f9eaeb48c77ef2fcaa895db90d7e66ab183
-artifact: none
+artifact: plugin.video.appi/plugin.video.appi-0.7.21.zip
 ---
 # HLS-12 — Replace Buffered Look Ahead seek/resume with fresh buffer epochs
 
@@ -70,6 +70,8 @@ Created from failed target-device acceptance of published 0.7.20 on 2026-09-28. 
 Published 0.7.20 still times out in Buffered Look Ahead despite HLS-11's coordinated re-centering/recovery changes.
 
 The user has repeatedly observed that initial sequential playback can work while random access fails, making seek/resume state management the persistent failure boundary.
+
+Automated 0.7.21 candidate run `36381180991` passed fresh-epoch coverage for coordinated video/audio timeline alignment, cold non-zero resume, forward/backward/repeated seek behavior, timeout/retry and deliberately late stale-epoch completion. Final target-device acceptance on the previously failing multi-variant stream is still required.
 
 ## Outcome and next action
 Committed for the next release. Implement a clean epoch-based target rebuild for seek/resume rather than another incremental modification of the existing recovery state machine.
