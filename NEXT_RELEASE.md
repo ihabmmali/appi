@@ -1,16 +1,13 @@
 # Next Appi release
 
-Planning status: release candidate. Version: 0.7.20. Current baseline and fallback: [PROJECT_STATE.md](PROJECT_STATE.md).
+Planning status: open. Version: not assigned. Current baseline and fallback: [PROJECT_STATE.md](PROJECT_STATE.md).
 
-0.7.19 remains the published repository package while 0.7.20 is an automated-gate-passed release candidate on `release/0.7.20`. Candidate artifact commit `1ca52ad0b55a3f3e19acd8e4b288d8d13fe57ab4`; target-device acceptance remains separate.
+0.7.20 is published. No next-release scope is currently committed. AUDIO-1, HLS-10 and HLS-11 remain in review for target-device acceptance; any follow-up repair must be triaged and explicitly committed rather than silently carried into a new release.
 
 ## Proposed scope
 
 | Task | Selection | Priority | Reason |
 | --- | --- | --- | --- |
-| [AUDIO-1](docs/tasks/AUDIO-1.md) | committed | release-blocking playback regression | ISA video plays and audio streams are visible in Kodi, but output is silent in 0.7.19; reverting to 0.7.8 restores audio |
-| [HLS-10](docs/tasks/HLS-10.md) | committed | overlay investigation | Confirm detailed overlay behavior on a known HLS buffered session; earlier no-overlay case may have bypassed Buffered Look Ahead |
-| [HLS-11](docs/tasks/HLS-11.md) | committed | playback regression | Known multi-variant HLS plays from time 0 but fails on manual seek and saved-point resume; recovery then loops into timeout |
 | [PLAY-1](docs/tasks/PLAY-1.md) | backlog | investigation | Resume persistence is working; only investigate the playback-start Trakt API error |
 | [HLS-1](docs/tasks/HLS-1.md) | backlog | investigation | Use buffered-mode/diagnostic evidence to diagnose any underlying provider stalls that remain |
 | [UI-1](docs/tasks/UI-1.md) | backlog | investigation | Skin comparison needed |
@@ -25,6 +22,9 @@ Planning status: release candidate. Version: 0.7.20. Current baseline and fallba
 6. Copy shipped task IDs and scope changes into RELEASE_NOTES, then reset this planning file for the next cycle.
 
 ## Scope decisions
+
+2026-09-27: Appi 0.7.20 published through PR #8 / merge `6e6db9bec185ec6b5eea664d27cb7b94f4efa2ef`. Post-merge verification run `36376270017` and Pages deployment run `36376269821` passed. Shipped scope: AUDIO-1, HLS-10 and HLS-11. Their delivery is released while target-device verification remains review/partial. The planning file is reset; no next-release scope is committed.
+
 
 2026-09-27: 0.7.20 candidate passed corrected release/package run `36375784976` after the first gate caught and the branch fixed an overlay test-isolation regression. AUDIO-1 and HLS-11 candidate repairs are implemented without changing HLS modes 0–2. HLS-10 adds operation-specific overlay logging while retaining the existing window target until a confirmed HLS device test supplies evidence to change it. Artifact commit `1ca52ad0b55a3f3e19acd8e4b288d8d13fe57ab4`; target-device verification remains pending.
 
@@ -113,4 +113,4 @@ Planning status: release candidate. Version: 0.7.20. Current baseline and fallba
 
 ## Readiness
 
-Committed next-release scope: AUDIO-1, HLS-10 and HLS-11. AUDIO-1 and HLS-11 are release blockers. HLS-10 is a committed investigation-first verify/repair task. LANG-3 remains a shipped failed-verification dependency of AUDIO-1 and must be re-verified after audio is restored.
+No next-release scope is committed. Current published baseline is 0.7.20. PLAY-1, HLS-1 and UI-1 remain backlog investigations; target-device acceptance for shipped AUDIO-1, HLS-10 and HLS-11 remains tracked in their canonical task records.

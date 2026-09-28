@@ -2,11 +2,11 @@
 id: HLS-11
 role: implementation
 status: review
-delivery: unreleased
+delivery: released
 verification: partial
 owner: builder-publisher-2026-09-27
 base_commit: 24ac0358640864a0129d97b638ca37c616f6612b
-artifact: none
+artifact: https://ihabmmali.github.io/appi/plugin.video.appi-0.7.20.zip
 ---
 # HLS-11 — Repair multi-variant HLS seek, resume-point and recovery timeout
 
@@ -75,5 +75,7 @@ On the target device, streams that expose multiple resolution choices—clear ev
 
 Candidate implementation `4c5363e3220dc16507b308e6ccfa8bbec4eb6d40` treats any non-sequential request, including a cold first request at a non-zero segment, as random access; maps its playlist-relative time across active tracks; re-centres their cursors; and directly prioritizes the requested resource while prefetch follows the new window. Recovery-timeout telemetry is emitted before failure, and dedicated `RecoveryTimeout` handling returns a retriable HTTP 503 without setting the session fatal error. Generic preparation failure text no longer recommends lower quality without causal evidence. Tests cover coordinated A/V mapping, cold resume, timeout followed by successful retry and repeated forward/backward reprioritization. Release/package run `36375784976` passed the full automated gate. Target-device multi-variant HLS acceptance remains pending.
 
+Published through PR #8 / merge `6e6db9bec185ec6b5eea664d27cb7b94f4efa2ef`. Post-merge verification run `36376270017` passed and Pages deployment run `36376269821` completed successfully. Delivery is `https://ihabmmali.github.io/appi/plugin.video.appi-0.7.20.zip`; the verified generated ZIP SHA-256 is `41e1bdec7229d1a0a3d8787427ac9c434fb773e302c7d8f5bae428de0de7755f`. Publication does not establish target-device acceptance.
+
 ## Outcome and next action
-0.7.20 candidate passed automated verification and is ready for integration/publication. Device acceptance must repeat time-0 playback, forward/backward seek and cold saved-point resume on the known multi-variant stream and confirm a recovery timeout no longer poisons a subsequent retry.
+0.7.20 is published. Keep this task in review/partial verification until the documented target-device checks are completed; do not treat publication as acceptance.
