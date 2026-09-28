@@ -2,13 +2,14 @@
 
 Planning status: open. Version: not assigned. Current baseline and fallback: [PROJECT_STATE.md](PROJECT_STATE.md).
 
-0.7.21 is published. No next-release scope is currently committed. HLS-16 and UI-5 are current candidates. HLS-12, HLS-13, HLS-14 and HLS-15 remain in review for target-device acceptance of the shipped 0.7.21 behavior; any follow-up repair must be triaged and explicitly committed.
+0.7.21 is published. No next-release scope is currently committed. HLS-16, HLS-17 and UI-5 are current candidates. HLS-12, HLS-13, HLS-14 and HLS-15 remain in review for target-device acceptance of the shipped 0.7.21 behavior; any follow-up repair must be triaged and explicitly committed.
 
 ## Proposed scope
 
 | Task | Selection | Priority | Reason |
 | --- | --- | --- | --- |
 | [HLS-16](docs/tasks/HLS-16.md) | candidate | confirmed overlay regression | 0.7.21 buffering appears to work well, but the replacement WindowDialog debug overlay is still invisible on Fire TV |
+| [HLS-17](docs/tasks/HLS-17.md) | candidate | buffering status UX | Startup window shows the intentional 50% startup target; label it separately from configured total capacity while preserving the working 0.7.21 algorithm |
 | [UI-5](docs/tasks/UI-5.md) | candidate | settings UX | Remove the redundant About-inside-About click and show installed version directly |
 | [PLAY-1](docs/tasks/PLAY-1.md) | backlog | investigation | Resume persistence is working; only investigate the playback-start Trakt API error |
 | [HLS-1](docs/tasks/HLS-1.md) | backlog | investigation | Use buffered-mode/diagnostic evidence to diagnose any underlying provider stalls that remain |
@@ -24,6 +25,8 @@ Planning status: open. Version: not assigned. Current baseline and fallback: [PR
 6. Copy shipped task IDs and scope changes into RELEASE_NOTES, then reset this planning file for the next cycle.
 
 ## Scope decisions
+
+2026-09-28: HLS-17 added after target-device checks confirmed exact 50% startup targets at 126→63 MB, 128→64 MB and 256→128 MB. This is not the buffer setting being ignored: 0.7.21 intentionally starts at 50% and refills toward 80% high-water. HLS-17 is UI clarification only, and the working HLS-13 reservoir algorithm is now a preservation constraint unless the user explicitly authorizes an algorithm change.
 
 2026-09-28: 0.7.21 target-device follow-up is positive for the deep Buffered Look Ahead behavior: the user reports buffering appears to work well. HLS-13 gains positive device evidence but remains review/partial until its full documented scenarios are confirmed. HLS-14 fails target-device acceptance because its modeless WindowDialog detailed overlay remains invisible; HLS-16 is the successor candidate and may replace the rendering mechanism entirely. UI-5 also captures the earlier settings usability report that About currently contains a redundant nested About action before the version is shown.
 

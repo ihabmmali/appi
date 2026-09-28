@@ -107,3 +107,18 @@ Implementation session 2026-09-28: activated on `release/0.7.21` from base `4a41
 The user reports that Buffered Look Ahead **appears to work well now on 0.7.21**. This is positive target-device evidence for the deep-reservoir redesign.
 
 Do not overstate this as full acceptance unless the remaining documented high-bitrate/seek/resume scenarios are explicitly confirmed. The important distinction is that the core buffering behavior is now materially improved on-device, while the detailed overlay remains a separate failed UI path.
+
+
+## Preservation constraint after 0.7.21 device success
+The user considers the 0.7.21 reservoir algorithm the first Buffered Look Ahead implementation in the project that actually works well on the target device.
+
+Future UI, telemetry and settings-label changes must preserve the 0.7.21 buffering algorithm unless the user explicitly authorizes an algorithm change. In particular, do not casually alter the current startup/high-water/low-water ratios, shared-capacity policy, refill behavior, progress-aware transfer handling, epoch integration or selected-quality behavior while fixing unrelated UI defects.
+
+Current 0.7.21 policy:
+- configured buffer capacity: 100% of `buffer_mb`;
+- startup target: 50% of configured capacity;
+- high-water: 80%;
+- low-water: 60%;
+- critical reserve: 15%.
+
+Target-device observations confirm the 50% startup target exactly: 126 MB configured -> 63 MB shown, 128 MB -> 64 MB, and 256 MB -> 128 MB. The configured capacity is therefore not being ignored.

@@ -28,6 +28,7 @@ Updated: 2026-09-28. Each linked task is the canonical requirements/status/evide
 | HLS-14 | review | implementation | [Make the detailed Buffered Look Ahead overlay actually visible](docs/tasks/HLS-14.md) |
 | HLS-15 | review | implementation | [Show actual buffered KB/MB in the normal preparation/recovery UI](docs/tasks/HLS-15.md) |
 | HLS-16 | ready | implementation | [Replace invisible Buffered Look Ahead debug overlay with a target-device-proven renderer](docs/tasks/HLS-16.md) |
+| HLS-17 | ready | implementation | [Clarify startup target versus configured buffer capacity](docs/tasks/HLS-17.md) |
 | HLS-11 | review | implementation | [Repair multi-variant HLS seek, resume-point and recovery timeout](docs/tasks/HLS-11.md) |
 | HLS-12 | review | implementation | [Replace Buffered Look Ahead seek/resume with fresh buffer epochs](docs/tasks/HLS-12.md) |
 | SUB-1 | review | review | [Restore downloaded subtitle persistence across playback sessions](docs/tasks/SUB-1.md) |

@@ -69,3 +69,14 @@ Released in 0.7.21. Complete the remaining target-device acceptance documented a
 
 
 Implementation session 2026-09-28: activated on `release/0.7.21` from base `4a415f9eaeb48c77ef2fcaa895db90d7e66ab183`; authorized scope is implementation, review, integration and publication of the committed next release.
+
+
+## 0.7.21 target-device UI semantics
+The numeric startup display is working, but its target is ambiguous to the user. Target-device observations are exact:
+- 126 MB configured -> 63 MB startup target;
+- 128 MB configured -> 64 MB startup target;
+- 256 MB configured -> 128 MB startup target.
+
+Source confirms this is intentional algorithm behavior, not a lost setting: HLS-13 uses a 50% startup target (`STARTUP_WATER_RATIO = 0.50`) while retaining the full configured capacity and refilling toward an 80% high-water mark after playback begins.
+
+The remaining UI issue is semantic clarity: the startup window should distinguish **startup target** from **configured total capacity** rather than making the half-capacity startup target appear to be the configured buffer size. [HLS-17](HLS-17.md) owns that clarification.
