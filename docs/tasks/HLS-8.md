@@ -1,9 +1,9 @@
 ---
 id: HLS-8
 role: implementation
-status: active
+status: review
 delivery: unreleased
-verification: failed
+verification: partial
 owner: GPT-5.6 Sol release/0.7.19
 base_commit: c7a344ae2afa1160adb7daf522092c89b46105bf
 artifact: none
@@ -55,7 +55,9 @@ Reported by the user on 2026-09-27 while testing 0.7.18. On 2026-09-27 the user 
 ## Evidence
 
 2026-09-27 implementation session: assigned to GPT-5.6 Sol on `release/0.7.19` from base `c7a344ae2afa1160adb7daf522092c89b46105bf`. User authorization covers implementation, integration and publication of the committed next-release scope. Source/test changes are isolated on the release branch; HLS-8 preserves playback modes 0–2.
+
+Automated release/package run 36370407423 passed after the first gate correctly caught an outdated associated-audio test fixture. The corrected gate ran 81 tests (1 skipped), workflow tracker validation, deterministic rebuild and package/index inspection. Candidate artifact commit `f25cfffb099eaa43f3865c5ac2a227d4958a7a2d`; ZIP SHA-256 `1bee04f63b79a4654ff0dcf8e8db94ee89e709d16091722f38283c1b01bf2f4d`. HLS-8 coverage includes coordinated video/default-audio readiness, truthful minimum-track progress, near-complete timeout without premature handoff, non-racing control/preparation deadlines, concurrent independent-track prefetch, retry/session isolation and the pre-existing seek/recovery/decoder tests.
 Regular playback works on at least one file where Buffered Look Ahead reaches roughly 90% preparation and then times out, isolating the observed failure to the buffered path.
 
 ## Outcome and next action
-Committed for the next release as the primary playback focus. Assign a focused Buffered Look Ahead repair worker to instrument preparation readiness/progress, fix handoff and timeout behavior, and verify retries and successful playback on the target device.
+Implementation is in review with automated verification passing. Target-device acceptance is still required: repeat both reported episodes on Fire TV, confirm preparation progresses to handoff without the old near-90% timeout/retry dependency, verify playback continues while look-ahead fills, and capture diagnostics for any remaining failure. Modes 0–2 remain unchanged.

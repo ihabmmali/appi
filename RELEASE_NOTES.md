@@ -10,7 +10,10 @@ Each entry records the package shipped, its main user-visible changes, and verif
 - LANG-3: preferred audio/internal-subtitle application retries for up to 12 seconds after AV start so Kodi/InputStream Adaptive can enumerate streams first. No preference remains inert; missing matches fall back cleanly; saved external/per-title subtitle choices retain precedence.
 - HLS-9: `inputstream.adaptive` is now a required manifest dependency while runtime fallback diagnostics remain intact.
 - UI-4: `plugin.video.appi/resources/icon.png` is the exact current `artwork/appi-icon-selected.png` blob.
-- Existing HLS modes 0–2 are unchanged by the implementation. Automated release/package verification is pending at this candidate stage; target-device acceptance remains separately required for the two reported Buffered Look Ahead episodes and actual language switching.
+- Existing HLS modes 0–2 are unchanged by the implementation.
+- Gate evidence: run 36370310600 correctly failed before packaging because an older quality-selection test fixture advertised an audio rendition without providing its playlist; the fixture was updated to model the now-required associated-audio preparation. Corrected run 36370407423 then passed 81 tests (1 skipped), tracker validation, deterministic rebuild and package/index inspection and completed the package job.
+- Candidate artifact commit: `f25cfffb099eaa43f3865c5ac2a227d4958a7a2d`. ZIP SHA-256: `1bee04f63b79a4654ff0dcf8e8db94ee89e709d16091722f38283c1b01bf2f4d`.
+- Final review adds direct assertions against the generated ZIP for the required InputStream Adaptive dependency and exact revised icon. Target-device acceptance remains separately required for the two reported Buffered Look Ahead episodes, actual language switching, clean dependency resolution and Kodi artwork display.
 
 ## 0.7.18 — 2026-09-27
 

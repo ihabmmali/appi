@@ -1,8 +1,8 @@
 # Next Appi release
 
-Planning status: release candidate. Version: 0.7.19. Current baseline and fallback: [PROJECT_STATE.md](PROJECT_STATE.md).
+Planning status: release candidate verified. Version: 0.7.19. Current baseline and fallback: [PROJECT_STATE.md](PROJECT_STATE.md).
 
-0.7.18 is published. Target-device testing confirms the Kodi startup crash is fixed, but Buffered Look Ahead and preferred-language application still fail acceptance. The committed HLS-8, LANG-3, HLS-9 and UI-4 scope is implemented on `release/0.7.19` / PR #7 and is entering the automated release/package gate. Target-device acceptance remains separate from code/package verification.
+0.7.18 is published. Target-device testing confirms the Kodi startup crash is fixed, but Buffered Look Ahead and preferred-language application still fail acceptance. The committed HLS-8, LANG-3, HLS-9 and UI-4 scope is implemented on `release/0.7.19` / PR #7. Corrected release/package run 36370407423 passed 81 tests, tracker validation, deterministic rebuild and package/index inspection and produced artifact commit `f25cfffb099eaa43f3865c5ac2a227d4958a7a2d`. A final review gate adds explicit archived-ZIP assertions for HLS-9/UI-4 before integration. Target-device acceptance remains separate from code/package verification.
 
 ## Proposed scope
 
