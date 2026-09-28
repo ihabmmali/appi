@@ -98,7 +98,7 @@ Diagnostics must record recovery entry, retries, successful recovery, exhaustion
 - Exhausted recovery ends cleanly with a truthful terminal reason.
 - Automated tests compare healthy-provider behavior before/after HLS-19 and prove equivalence.
 - Fault-injection tests cover temporary no-progress stalls, repeated transient errors, provider recovery, recovery exhaustion and audio/video coherence.
-- Target-device acceptance must demonstrate both ordinary playback and deliberate/observed recovery without regression to the working 0.7.21 buffering behavior.
+- Target-device acceptance must demonstrate ordinary playback, deliberate/observed recovery, and an extended pause/resume cycle without regression to the working 0.7.21 buffering behavior.
 
 ## Authorization
 Requested by the user on 2026-09-28 after observing that a sufficiently delayed stream / emptied reservoir can still end in timeout and buffering failure. The user explicitly required that the new resilience **must not impact the currently working 0.7.21 algorithm**. This is a ready candidate and is not committed until explicitly included under AGENTS.md.
@@ -108,3 +108,24 @@ Requested by the user on 2026-09-28 after observing that a sufficiently delayed 
 
 ## Outcome and next action
 Add an isolated recovery controller around the proven 0.7.21 reservoir. Prove non-regression first, then prove that transient depletion can recover within configurable limits.
+
+
+## Pause/resume lifecycle evidence
+Target-device observation on 0.7.21: pausing playback for an extended period can cause the video to exit silently. Starting/resuming the item again works normally.
+
+Source review exposes a plausible lifecycle failure boundary:
+- the service passes `player.isPlayingVideo()` into `BufferedHlsManager.poll(player_active=...)`;
+- after playback has started, the manager stops the active buffered session when `player_active` is false and no local HLS request has refreshed `last_access` for more than 10 seconds;
+- paused playback naturally stops consuming local HLS segments, so `last_access` can stop advancing;
+- if the target Kodi/Fire TV build reports a paused player as not actively playing for this check, the manager can tear down the session while the user is merely paused.
+
+This must be verified on-device/logged rather than assumed, but HLS-19 must not allow pause to be mistaken for playback termination.
+
+### Additional HLS-19 requirements
+- Explicitly distinguish **playing**, **paused**, **stopped/ended**, **error**, and **buffering/caching** states when deciding whether to retire a session.
+- A paused session must remain valid indefinitely subject only to an explicit, user-configurable pause-retention policy; the default must not silently terminate normal long pauses.
+- Do not use absence of segment requests by itself as proof playback ended.
+- On resume from pause, keep the same session/epoch when playback position has not changed.
+- If the provider-side media URLs expire during a very long pause, recover through the normal HLS-19 retry/reload path rather than silently exiting.
+- Log the reason for any session retirement so a silent user-visible exit can be traced.
+- Add target-device acceptance for a pause substantially longer than 10 seconds followed by successful resume without restarting the item.

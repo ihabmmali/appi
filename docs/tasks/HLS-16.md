@@ -46,3 +46,18 @@ The 0.7.21 modeless `WindowDialog` renderer passes automated lifecycle tests but
 
 ## Outcome and next action
 Instrument the actual target-device GUI lifecycle and replace the renderer with one demonstrated to remain visible above fullscreen video.
+
+
+## Seek/recovery observability
+Target-device observation on 0.7.21: after a seek there is a noticeable delay before playback resumes. This is plausibly HLS-12 rebuilding the new epoch reserve, but the current invisible overlay prevents confirmation.
+
+The repaired overlay must therefore make seek behavior observable in real time. During a seek/recenter it should show, where available:
+- epoch/reason = seek or cold-resume;
+- requested target time/segment;
+- currently buffered KB/MB for the new epoch;
+- target recovery reserve;
+- playable seconds ahead;
+- whether the state is filling, recovering, stalled or ready;
+- retry count/status when HLS-19 is active.
+
+This is diagnostic visibility only; do not change the working seek/reservoir algorithm merely to shorten the observed delay without evidence.

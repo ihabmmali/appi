@@ -80,3 +80,9 @@ Released in 0.7.21. Complete the remaining target-device acceptance documented a
 
 
 Implementation session 2026-09-28: activated on `release/0.7.21` from base `4a415f9eaeb48c77ef2fcaa895db90d7e66ab183`; authorized scope is implementation, review, integration and publication of the committed next release.
+
+
+## 0.7.21 post-seek observation
+The user reports a clear delay after seeking before playback resumes. This may be expected behavior from the fresh-epoch reserve rebuild introduced by HLS-12, but the detailed overlay is currently broken, so the device cannot show whether the delay corresponds to healthy refill, provider stall, or retry.
+
+Do not treat the delay alone as an HLS-12 regression without telemetry. HLS-16 must expose the new-epoch fill/recovery state, and HLS-19 must expose retry/recovery state if provider delay is involved.

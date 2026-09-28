@@ -29,6 +29,8 @@ Planning status: open. Version: not assigned. Current baseline and fallback: [PR
 
 ## Scope decisions
 
+2026-09-28: Additional target-device evidence for HLS-19/HLS-16: an extended pause can cause buffered playback to exit silently, while starting/resuming the item again works; source has a plausible 10-second player-idle retirement boundary that must be verified against Kodi's paused-state reporting. Separately, seek now has a noticeable resume delay that may simply be fresh-epoch reserve rebuilding, but the broken debug overlay prevents confirmation. HLS-16 must display seek/recovery fill state; HLS-19 must make pause distinct from stop and preserve the working 0.7.21 reservoir.
+
 2026-09-28: HLS-19 added at user request after 0.7.21 showed terminal failure when provider delay outlasts the playable reserve. The recovery layer must be isolated from the working HLS-13 reservoir: healthy-provider startup/refill/watermark/track-balancing/quality behavior is a protected non-regression baseline. Appi should own configurable retry/recovery instead of relying on Kodi to retry an HTTP 503 after the current hard-coded 20-second recovery wait.
 
 2026-09-28: UI-6 added after 0.7.21 target-device observation that Kodi appears to show the original Appi graphic again. Source inspection of the exact 0.7.21 artifact commit shows the approved flat handoff and packaged `resources/icon.png` are byte-identical, and the builder packages that source directly. The likely remaining boundary is Kodi artwork caching against the unchanged `resources/icon.png` path. UI-6 will preserve the approved PNG bytes but version the manifest-referenced icon filename to force a cache miss.
