@@ -1,19 +1,17 @@
 # Next Appi release
 
-Planning status: release candidate verified. Version: 0.7.19. Current baseline and fallback: [PROJECT_STATE.md](PROJECT_STATE.md).
+Planning status: open. Version: not assigned. Current baseline and fallback: [PROJECT_STATE.md](PROJECT_STATE.md).
 
-0.7.18 is published. Target-device testing confirms the Kodi startup crash is fixed, but Buffered Look Ahead and preferred-language application still fail acceptance. The committed HLS-8, LANG-3, HLS-9 and UI-4 scope is implemented on `release/0.7.19` / PR #7. Corrected release/package run 36370407423 passed 81 tests, tracker validation, deterministic rebuild and package/index inspection and produced artifact commit `f25cfffb099eaa43f3865c5ac2a227d4958a7a2d`. A final review gate adds explicit archived-ZIP assertions for HLS-9/UI-4 before integration. Target-device acceptance remains separate from code/package verification.
+0.7.19 is published and is the current repository package. Target-device testing is positive for initial Buffered Look Ahead preparation/playback and the simple startup windows, but detailed-overlay visibility and seek/recovery remain broken. Preferred-language application shipped in 0.7.19 and still needs target-device confirmation.
 
 ## Proposed scope
 
 | Task | Selection | Priority | Reason |
 | --- | --- | --- | --- |
-| [HLS-8](docs/tasks/HLS-8.md) | committed | release blocker | Repair Buffered Look Ahead preparation/progress/handoff failures seen on 0.7.18 |
-| [LANG-3](docs/tasks/LANG-3.md) | committed | release blocker | Preferred audio/subtitle language selection appears to have no effect at playback |
-| [HLS-9](docs/tasks/HLS-9.md) | committed | dependency requirement | Make InputStream Adaptive a required Appi prerequisite because supported modes use it |
-| [UI-4](docs/tasks/UI-4.md) | committed | artwork update | Integrate the latest user-uploaded flat Appi icon into the packaged add-on |
+| [HLS-10](docs/tasks/HLS-10.md) | candidate | buffered UI defect | Detailed debug overlay is enabled but invisible on 0.7.19 |
+| [HLS-11](docs/tasks/HLS-11.md) | candidate | playback regression | Seek recovery times out; resume briefly plays, shows Appi buffering, stutters and times out again |
 | [PLAY-1](docs/tasks/PLAY-1.md) | backlog | investigation | Resume persistence is working; only investigate the playback-start Trakt API error |
-| [HLS-1](docs/tasks/HLS-1.md) | backlog | investigation | Use DIAG-2/HLS-5 target-device evidence to diagnose any repeated stalls that remain |
+| [HLS-1](docs/tasks/HLS-1.md) | backlog | investigation | Use buffered-mode/diagnostic evidence to diagnose any underlying provider stalls that remain |
 | [UI-1](docs/tasks/UI-1.md) | backlog | investigation | Skin comparison needed |
 
 ## How to plan the release
@@ -26,6 +24,10 @@ Planning status: release candidate verified. Version: 0.7.19. Current baseline a
 6. Copy shipped task IDs and scope changes into RELEASE_NOTES, then reset this planning file for the next cycle.
 
 ## Scope decisions
+
+2026-09-27: 0.7.19 target-device follow-up is positive for initial Buffered Look Ahead preparation/playback and the simple startup windows, but the detailed debug overlay is invisible and seek/recovery is reproducibly broken. HLS-10 tracks the overlay. HLS-11 tracks the seek timeout plus the consistent post-failure sequence where resume briefly plays, displays Appi buffering, stutters and exits with buffering-failed timeout. Both are candidates, not yet committed scope.
+
+2026-09-27: 0.7.19 is published through PR #7 / merge `f495858b2e8c1f146802c04b8533334ee8b36b79`; HLS-8, LANG-3, HLS-9 and UI-4 are shipped and retained in their canonical review records for target-device acceptance.
 
 2026-09-27: user explicitly instructed that **all changes be committed to the next release** after uploading revised artwork. HLS-9 is promoted from candidate to committed scope. UI-4 is created and committed to package the newly uploaded artwork, which currently differs from the icon in the add-on resources. Existing committed blockers HLS-8 and LANG-3 remain in scope. Backlog investigations remain backlog.
 
@@ -101,4 +103,4 @@ Planning status: release candidate verified. Version: 0.7.19. Current baseline a
 
 ## Readiness
 
-Committed scope: HLS-8, LANG-3, HLS-9 and UI-4. HLS-8 and LANG-3 remain release blockers requiring target-device acceptance before publication. PLAY-1 and the older HLS-1/UI-1 investigations remain backlog.
+No new implementation scope is committed. HLS-10 and HLS-11 are ready candidates based on 0.7.19 target-device findings. LANG-3 remains a shipped review item awaiting target-device language-selection confirmation.

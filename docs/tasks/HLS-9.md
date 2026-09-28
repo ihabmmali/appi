@@ -2,11 +2,11 @@
 id: HLS-9
 role: implementation
 status: review
-delivery: unreleased
+delivery: released
 verification: partial
 owner: GPT-5.6 Sol release/0.7.19
 base_commit: c7a344ae2afa1160adb7daf522092c89b46105bf
-artifact: none
+artifact: plugin.video.appi/plugin.video.appi-0.7.19.zip
 ---
 # HLS-9 — Make InputStream Adaptive a prerequisite dependency
 

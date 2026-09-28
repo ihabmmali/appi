@@ -2,11 +2,11 @@
 id: HLS-8
 role: implementation
 status: review
-delivery: unreleased
+delivery: released
 verification: partial
 owner: GPT-5.6 Sol release/0.7.19
 base_commit: c7a344ae2afa1160adb7daf522092c89b46105bf
-artifact: none
+artifact: plugin.video.appi/plugin.video.appi-0.7.19.zip
 ---
 # HLS-8 — Repair 0.7.18 Buffered Look Ahead preparation and runtime failure
 
@@ -60,4 +60,14 @@ Automated release/package run 36370407423 passed after the first gate correctly 
 Regular playback works on at least one file where Buffered Look Ahead reaches roughly 90% preparation and then times out, isolating the observed failure to the buffered path.
 
 ## Outcome and next action
-Implementation is in review with automated verification passing. Target-device acceptance is still required: repeat both reported episodes on Fire TV, confirm preparation progresses to handoff without the old near-90% timeout/retry dependency, verify playback continues while look-ahead fills, and capture diagnostics for any remaining failure. Modes 0–2 remain unchanged.
+Implemented and published in 0.7.19. Target-device evidence is positive for initial preparation/handoff and ordinary buffered playback. Verification remains partial because seek/recovery is still failing and the optional detailed overlay is invisible; those defects are tracked as HLS-11 and HLS-10. Modes 0–2 remain unchanged.
+
+
+## 0.7.19 target-device acceptance
+Initial Buffered Look Ahead preparation and playback now appear to work on the target Fire TV, and the simple startup/preparation windows display correctly.
+
+Two post-release defects remain:
+- the detailed debug overlay is invisible when enabled; tracked by [HLS-10](HLS-10.md);
+- seeking can trigger an Appi timeout. After that failure, resuming consistently starts playback briefly, displays **Appi buffering**, stutters, then exits playback with a buffering-failed timeout; tracked by [HLS-11](HLS-11.md).
+
+This is positive device evidence for the original 0.7.18 preparation/handoff regression, but not full Buffered Look Ahead acceptance. HLS-8 remains partial while focused successor tasks own the remaining overlay and seek/recovery defects.

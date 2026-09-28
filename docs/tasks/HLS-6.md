@@ -110,3 +110,9 @@ User authorized implementation, testing, integration and publication in this ses
 The simple preparation UI exists, but indicator acceptance is still failed. One attempt showed Filling buffer with no visible progress; another jumped to roughly 90% before timing out. When buffered playback eventually succeeded after retries, no buffer indication was displayed during playback.
 
 HLS-8 owns the underlying preparation/readiness failure. HLS-6 remains failed for target-device indicator acceptance until progress is truthful and successful buffered playback exposes the configured indicator/debug behavior.
+
+
+## 0.7.19 target-device overlay evidence
+Buffered Look Ahead initial preparation/playback now appears to work and the simple startup/preparation windows display correctly. Enabling the detailed debug overlay still produces no visible overlay during playback.
+
+The normal startup status path is therefore functioning while the optional live-metrics overlay remains unaccepted. The focused post-0.7.19 repair is [HLS-10](HLS-10.md).

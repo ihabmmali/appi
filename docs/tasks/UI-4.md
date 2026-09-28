@@ -2,11 +2,11 @@
 id: UI-4
 role: implementation
 status: review
-delivery: unreleased
+delivery: released
 verification: partial
 owner: GPT-5.6 Sol release/0.7.19
 base_commit: c7a344ae2afa1160adb7daf522092c89b46105bf
-artifact: artwork/appi-icon-selected.png
+artifact: plugin.video.appi/plugin.video.appi-0.7.19.zip
 ---
 # UI-4 — Integrate revised Appi artwork
 
