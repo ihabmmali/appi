@@ -1,9 +1,9 @@
 ---
 id: AUDIO-1
 role: implementation
-status: active
+status: review
 delivery: unreleased
-verification: failed
+verification: partial
 owner: builder-publisher-2026-09-27
 base_commit: 24ac0358640864a0129d97b638ca37c616f6612b
 artifact: none
@@ -82,5 +82,7 @@ In 0.7.19, `subtitle_service.AppiPlayer` starts preferred-language handling on `
 
 The unchanged core ISA handoff plus the newly introduced service-side audio selection makes that feature boundary especially important to test first. Kodi's ability to display audio stream details while output remains silent is additional evidence that discovery alone is not the missing step.
 
+Candidate implementation `4c5363e3220dc16507b308e6ccfa8bbec4eb6d40` leaves the established native/manual/adaptive HLS ListItem configuration unchanged and changes only post-AV preferred-audio behavior. No preference is inert. Explicit selection waits for an unchanged non-empty stream list across a service poll boundary, re-enumerates immediately before using an index, leaves a stable no-match untouched, and queries Kodi's current audio stream through JSON-RPC when available so an already-selected preferred stream receives no redundant `setAudioStream()` call. Release/package run `36375784976` passed the full 87-test suite (1 intentional skip), tracker validation, deterministic rebuild and package inspection. Target-device audible-output acceptance remains pending.
+
 ## Outcome and next action
-Committed for the next release. Use a known item that is silent in 0.7.19 and audible in 0.7.8. First A/B the 0.7.19 build with preferred-audio manipulation bypassed while leaving InputStream configuration unchanged. Repair the first proven regression rather than refactoring the working 0.7.8 ISA architecture.
+0.7.20 candidate passed automated verification and is ready for integration/publication under the existing authorization. Device acceptance must compare the same ISA item against 0.7.8/0.7.19 and confirm audible output in manual and adaptive modes with No preference and an explicit language.

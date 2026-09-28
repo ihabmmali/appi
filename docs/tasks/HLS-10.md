@@ -1,9 +1,9 @@
 ---
 id: HLS-10
 role: research
-status: active
+status: review
 delivery: unreleased
-verification: pending
+verification: partial
 owner: builder-publisher-2026-09-27
 base_commit: 24ac0358640864a0129d97b638ca37c616f6612b
 artifact: none
@@ -49,5 +49,7 @@ Implementation/research session opened on branch `release/0.7.20` from base `24a
 
 The setting exists and the persistent service re-reads it. The service calls `BufferOverlay.update()` for a ready buffered session while playing; `buffered_ui.py` injects a label into Kodi window 12005. Appi's playback path invokes `buffered_hls.request_playback()` only when the selected stream is classified as HLS and mode 3 is active. Therefore the earlier no-overlay observation is inconclusive until repeated on a known HLS buffered session.
 
+Source review confirms the persistent service re-reads `buffered_debug_overlay` and passes ready active-session status into `BufferOverlay.update()`; the overlay still targets fullscreen video window 12005. Because the earlier invisible-overlay observation may not have traversed Buffered Look Ahead, there is insufficient device evidence to change that target. Candidate implementation `4c5363e3220dc16507b308e6ccfa8bbec4eb6d40` guards and logs the exact Window/ControlLabel/addControl/setLabel/removeControl operation while keeping failures non-fatal. Release/package run `36375784976` passed the overlay regression test plus the complete automated suite. Confirmed HLS Fire TV visibility remains pending.
+
 ## Outcome and next action
-Committed for the next release. Repeat the overlay test on a known multi-variant HLS stream with Buffered Look Ahead active. If the overlay is still absent, instrument and repair the runtime overlay path without changing the buffering engine.
+0.7.20 candidate passed automated verification and is ready for integration/publication. Target-device testing must use a positively identified mode-3 HLS session with the detailed toggle enabled and disabled; if still invisible, the new operation-specific log identifies the next repair point.

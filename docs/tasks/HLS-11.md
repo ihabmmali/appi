@@ -1,9 +1,9 @@
 ---
 id: HLS-11
 role: implementation
-status: active
+status: review
 delivery: unreleased
-verification: failed
+verification: partial
 owner: builder-publisher-2026-09-27
 base_commit: 24ac0358640864a0129d97b638ca37c616f6612b
 artifact: none
@@ -73,5 +73,7 @@ Implementation/research session opened on branch `release/0.7.20` from base `24a
 
 On the target device, streams that expose multiple resolution choices—clear evidence of multi-variant HLS masters—prepare rapidly and play well from time 0. Manual seeks fail, and starting/resuming from an existing non-zero playback point also fails. After a seek timeout, resuming consistently plays briefly, displays **Appi buffering**, stutters and exits with a buffering-failed timeout. This isolates the remaining problem to random-access/recovery state much more strongly than to initial bandwidth, master parsing or rendition selection.
 
+Candidate implementation `4c5363e3220dc16507b308e6ccfa8bbec4eb6d40` treats any non-sequential request, including a cold first request at a non-zero segment, as random access; maps its playlist-relative time across active tracks; re-centres their cursors; and directly prioritizes the requested resource while prefetch follows the new window. Recovery-timeout telemetry is emitted before failure, and dedicated `RecoveryTimeout` handling returns a retriable HTTP 503 without setting the session fatal error. Generic preparation failure text no longer recommends lower quality without causal evidence. Tests cover coordinated A/V mapping, cold resume, timeout followed by successful retry and repeated forward/backward reprioritization. Release/package run `36375784976` passed the full automated gate. Target-device multi-variant HLS acceptance remains pending.
+
 ## Outcome and next action
-Committed for the next release. Instrument the requested segment, per-track re-centering, selected rendition/audio association, in-flight downloads, cached-ahead reserve and post-timeout state across both an in-session seek and a cold start from a saved non-zero resume point. Repair recovery so the target is prioritized and a timeout cannot leave the session in a recurring degraded state.
+0.7.20 candidate passed automated verification and is ready for integration/publication. Device acceptance must repeat time-0 playback, forward/backward seek and cold saved-point resume on the known multi-variant stream and confirm a recovery timeout no longer poisons a subsequent retry.
