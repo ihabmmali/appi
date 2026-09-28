@@ -1,11 +1,11 @@
 ---
 id: HLS-14
 role: implementation
-status: ready
+status: active
 delivery: unreleased
 verification: failed
-owner: unassigned
-base_commit: unset
+owner: builder-publisher-2026-09-28
+base_commit: 4a415f9eaeb48c77ef2fcaa895db90d7e66ab183
 artifact: none
 ---
 # HLS-14 — Make the detailed Buffered Look Ahead overlay actually visible
@@ -41,3 +41,6 @@ HLS-10 shipped additional logging in 0.7.20 but preserved the existing fullscree
 
 ## Outcome and next action
 Committed for the next release. Use the HLS-10 logs to identify the failing GUI path, then replace it with a target-device-proven overlay mechanism.
+
+
+Implementation session 2026-09-28: activated on `release/0.7.21` from base `4a415f9eaeb48c77ef2fcaa895db90d7e66ab183`; authorized scope is implementation, review, integration and publication of the committed next release.

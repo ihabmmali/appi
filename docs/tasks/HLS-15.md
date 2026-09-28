@@ -1,11 +1,11 @@
 ---
 id: HLS-15
 role: implementation
-status: ready
+status: active
 delivery: unreleased
 verification: pending
-owner: unassigned
-base_commit: unset
+owner: builder-publisher-2026-09-28
+base_commit: 4a415f9eaeb48c77ef2fcaa895db90d7e66ab183
 artifact: none
 ---
 # HLS-15 — Show actual buffered KB/MB in the normal preparation/recovery UI
@@ -62,3 +62,6 @@ Published 0.7.20 shows a simple preparation window/progress bar but does not giv
 
 ## Outcome and next action
 Committed for the next release. Wire the simple preparation/recovery UI directly to HLS-13/HLS-12's active-epoch playable-reserve byte metrics and display those bytes as KB/MB throughout filling and recovery.
+
+
+Implementation session 2026-09-28: activated on `release/0.7.21` from base `4a415f9eaeb48c77ef2fcaa895db90d7e66ab183`; authorized scope is implementation, review, integration and publication of the committed next release.

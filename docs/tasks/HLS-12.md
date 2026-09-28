@@ -1,11 +1,11 @@
 ---
 id: HLS-12
 role: implementation
-status: ready
+status: active
 delivery: unreleased
 verification: failed
-owner: unassigned
-base_commit: unset
+owner: builder-publisher-2026-09-28
+base_commit: 4a415f9eaeb48c77ef2fcaa895db90d7e66ab183
 artifact: none
 ---
 # HLS-12 — Replace Buffered Look Ahead seek/resume with fresh buffer epochs
@@ -70,3 +70,6 @@ The user has repeatedly observed that initial sequential playback can work while
 
 ## Outcome and next action
 Committed for the next release. Implement a clean epoch-based target rebuild for seek/resume rather than another incremental modification of the existing recovery state machine.
+
+
+Implementation session 2026-09-28: activated on `release/0.7.21` from base `4a415f9eaeb48c77ef2fcaa895db90d7e66ab183`; authorized scope is implementation, review, integration and publication of the committed next release.

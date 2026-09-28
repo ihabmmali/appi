@@ -1,11 +1,11 @@
 ---
 id: HLS-13
 role: implementation
-status: ready
+status: active
 delivery: unreleased
 verification: failed
-owner: unassigned
-base_commit: unset
+owner: builder-publisher-2026-09-28
+base_commit: 4a415f9eaeb48c77ef2fcaa895db90d7e66ab183
 artifact: none
 ---
 # HLS-13 — Implement true deep-reservoir Buffered Look Ahead playback
@@ -91,3 +91,6 @@ The user reports that lowering the selected buffered rendition makes playback wo
 
 ## Outcome and next action
 Committed for the next release. Replace shallow-start/equal-share caching with a real high-water/low-water producer-consumer reservoir and verify it against the problematic higher-bitrate stream, not merely a lower rendition that already works without buffering.
+
+
+Implementation session 2026-09-28: activated on `release/0.7.21` from base `4a415f9eaeb48c77ef2fcaa895db90d7e66ab183`; authorized scope is implementation, review, integration and publication of the committed next release.
