@@ -15,6 +15,9 @@ Make Buffered Look Ahead deliver its intended advantage over ordinary HLS playba
 
 The feature is intended for VOD HLS where provider delivery is bursty or intermittently stalls. It cannot violate throughput physics: if the provider's sustained average delivery rate remains below the selected rendition's consumption rate for long enough, any finite buffer will eventually drain. In that case Appi must report the measured limitation accurately rather than pretending a larger timeout can solve it.
 
+## Scope
+Replace Buffered Look Ahead's startup and steady-state cache policy with a capacity-driven producer/consumer reservoir, including shared video/audio capacity, high/low/critical watermarks, continuous refill, progress-aware transfer timeout and truthful reservoir/throughput telemetry. Integrate the reservoir with HLS-12 epochs without changing modes 0–2.
+
 ## Current 0.7.20 design problem
 The current code does not use the configured buffer as a true startup reservoir.
 

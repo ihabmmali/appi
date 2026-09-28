@@ -15,6 +15,9 @@ Replace the repeatedly failing stateful seek/recovery logic with a simpler deter
 
 For Buffered Look Ahead VOD, any manual seek or playback start at a saved non-zero resume point must be treated as a **new buffer epoch at the requested target position**. Appi must not try to preserve and recover the old pre-seek queue/session state.
 
+## Scope
+Implement the fresh-epoch random-access design only inside Buffered Look Ahead mode: epoch ownership, stale-work invalidation, cross-track target alignment, target-first fetching, contiguous target reserve, bounded failure and diagnostic evidence. Preserve the three non-buffered HLS playback modes and the user's selected rendition.
+
 ## Why this supersedes HLS-11
 0.7.20 shipped an HLS-11 repair that coordinated track re-centering, reprioritized targets and made recovery misses retriable. It still times out on the target device.
 
