@@ -1,11 +1,11 @@
 ---
 id: HLS-9
 role: implementation
-status: ready
+status: active
 delivery: unreleased
 verification: pending
-owner: unassigned
-base_commit: unset
+owner: GPT-5.6 Sol release/0.7.19
+base_commit: c7a344ae2afa1160adb7daf522092c89b46105bf
 artifact: none
 ---
 # HLS-9 — Make InputStream Adaptive a prerequisite dependency
@@ -34,6 +34,8 @@ Retain graceful runtime diagnostics for unexpected disabled/broken dependency st
 Requested by the user on 2026-09-27: if InputStream Adaptive is used, it must be a prerequisite dependency. On 2026-09-27 the user explicitly instructed that all tracked changes be committed to the next release. HLS-9 is therefore committed release scope.
 
 ## Evidence
+
+2026-09-27 implementation session: assigned to GPT-5.6 Sol on `release/0.7.19` from base `c7a344ae2afa1160adb7daf522092c89b46105bf`. User authorization covers implementation, integration and publication of the committed next-release scope. Source/test changes are isolated on the release branch; HLS-8 preserves playback modes 0–2.
 Current 0.7.18 `plugin.video.appi/addon.xml` declares:
 `<import addon="inputstream.adaptive" version="21.0.0" optional="true"/>`
 while Appi has manual InputStream Adaptive and adaptive bitrate playback modes.

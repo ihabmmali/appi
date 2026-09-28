@@ -13,6 +13,9 @@ class SettingsLocalizationTests(unittest.TestCase):
     def test_stable_browser_and_download_batch_features_are_packaged(self):
         addon = ET.parse(PLUGIN / 'addon.xml').getroot()
         self.assertEqual(addon.attrib.get('version'), '0.7.18')
+        isa = addon.find("./requires/import[@addon='inputstream.adaptive']")
+        self.assertIsNotNone(isa)
+        self.assertNotEqual(isa.attrib.get('optional'), 'true')
         helper = addon.find("./requires/import[@addon='plugin.video.themoviedb.helper']")
         self.assertIsNotNone(helper)
         self.assertNotEqual(helper.attrib.get('optional'), 'true')

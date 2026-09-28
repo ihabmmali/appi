@@ -1,11 +1,11 @@
 ---
 id: UI-4
 role: implementation
-status: ready
+status: active
 delivery: unreleased
 verification: pending
-owner: unassigned
-base_commit: unset
+owner: GPT-5.6 Sol release/0.7.19
+base_commit: c7a344ae2afa1160adb7daf522092c89b46105bf
 artifact: artwork/appi-icon-selected.png
 ---
 # UI-4 — Integrate revised Appi artwork
@@ -34,6 +34,8 @@ The approved handoff at `artwork/appi-icon-selected.png` was updated on 2026-09-
 The user stated on 2026-09-27 that the artwork has been updated and uploaded to GitHub, then explicitly instructed that all changes be committed to the next release. UI-4 is therefore committed release scope.
 
 ## Evidence
+
+2026-09-27 implementation session: assigned to GPT-5.6 Sol on `release/0.7.19` from base `c7a344ae2afa1160adb7daf522092c89b46105bf`. User authorization covers implementation, integration and publication of the committed next-release scope. Source/test changes are isolated on the release branch; HLS-8 preserves playback modes 0–2.
 Current repository tree shows `artwork/appi-icon-selected.png` at blob `08016a229ed053e000deffad659a2b94bd64acfc` while `plugin.video.appi/resources/icon.png` remains blob `0909423e26a8b2329c1ace2bfa70cdf9d4274ad6`. The handoff and packaged icon therefore differ and the latest artwork is not yet delivered.
 
 ## Outcome and next action

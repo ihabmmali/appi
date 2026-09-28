@@ -22,12 +22,12 @@ DEFAULT_STARTUP_SECONDS = 12.0
 DEFAULT_RECOVERY_SECONDS = 6.0
 REQUEST_TIMEOUT = 10.0
 RECOVERY_TIMEOUT = 20.0
-CONTROL_TIMEOUT = 10.0
+CONTROL_TIMEOUT = 65.0
 STALE_SESSION_SECONDS = 90.0
 MAX_SESSION_BYTES = 384 * 1024 * 1024
 DEFAULT_BUFFER_MB = 128
 STARTUP_TIMEOUT = 45.0
-_USER_AGENT = 'Kodi Appi Buffered/0.7.17'
+_USER_AGENT = 'Kodi Appi Buffered/0.7.19'
 _URI_RE = re.compile(r'URI=(?P<quoted>"(?P<qvalue>[^"]*)"|(?P<uvalue>[^,]*))', re.IGNORECASE)
 _ATTR_RE = re.compile(r'([A-Z0-9-]+)=(?:"([^"]*)"|([^,]*))', re.IGNORECASE)
 
@@ -112,7 +112,7 @@ def buffer_size_mb(value):
 
 
 def request_playback(source_url, target_seconds=DEFAULT_TARGET_SECONDS,
-                     startup_seconds=DEFAULT_STARTUP_SECONDS, timeout=STARTUP_TIMEOUT,
+                     startup_seconds=DEFAULT_STARTUP_SECONDS, timeout=CONTROL_TIMEOUT,
                      buffer_mb=DEFAULT_BUFFER_MB, quality='highest'):
     # Unique mailboxes prevent a cancelled/late reply being used by a retry.
     import xbmc
@@ -152,6 +152,7 @@ def request_playback(source_url, target_seconds=DEFAULT_TARGET_SECONDS,
                 deadline = time.monotonic() + timeout
                 dialog.create('Appi — Buffered Look Ahead', 'Filling buffer…')
             if response.get('ready') and response.get('local_url'):
+                dialog.update(100, 'Buffer ready — starting playback…')
                 success = True
                 return response['local_url']
             dialog.update(int(response.get('percent', 0)), response.get('message', 'Preparing stream…'))
@@ -418,7 +419,20 @@ class _Track:
 
     def _next_missing(self):
         start = max(0, self.last_served + 1)
-        # Byte capacity determines lookahead, not the old 30-second target.
+
+        # During preparation every required track gets a fair chance to reach
+        # its playable startup reserve. Without this gate, a fast video track
+        # can monopolize the session-wide download lock and fill most of the
+        # byte budget while associated audio remains empty.
+        if not self.session._startup_complete:
+            ahead, _ = self._ahead(start)
+            remaining = sum(seg.duration for seg in self.segments[start:])
+            threshold = min(self.startup_seconds, remaining)
+            if threshold <= 0 or ahead >= threshold:
+                return None
+
+        # After startup, byte capacity determines lookahead rather than a
+        # fixed seconds ceiling.
         budget = self.session.max_bytes * 0.70 / max(1, len(self.session.tracks))
         total = 0
         for index in range(start, len(self.segments)):
@@ -460,6 +474,22 @@ class _Track:
                 if self._stop.wait(0.5):
                     break
 
+    def _reserve_state(self, index, reserve_seconds):
+        ahead, count = self._ahead(index)
+        remaining = sum(seg.duration for seg in self.segments[index:])
+        threshold = min(reserve_seconds, remaining)
+        capacity_reached = (
+            index < len(self.segments)
+            and self._cached(index)
+            and self._next_missing() is None
+        )
+        ready = (
+            ahead >= threshold
+            or capacity_reached
+            or (remaining <= 0 and index >= len(self.segments))
+        )
+        return ahead, count, threshold, ready
+
     def wait_startup(self, timeout=RECOVERY_TIMEOUT):
         return self._wait_for_reserve(0, self.startup_seconds, timeout)
 
@@ -470,11 +500,8 @@ class _Track:
                 self.last_served = index - 1
             self._condition.notify_all()
             while not self._stop.is_set():
-                ahead, _ = self._ahead(index)
-                remaining = sum(seg.duration for seg in self.segments[index:])
-                threshold = min(reserve_seconds, remaining)
-                capacity_reached = self._cached(index) and self._next_missing() is None
-                if ahead >= threshold or capacity_reached or (remaining <= 0 and index >= len(self.segments)):
+                _, _, _, ready = self._reserve_state(index, reserve_seconds)
+                if ready:
                     return True
                 if time.monotonic() >= deadline:
                     return False
@@ -621,21 +648,55 @@ class BufferedHlsSession:
         self._server_thread = None
         self.last_access = time.monotonic()
         self._selected_representation = ''
+        self._selected_variant_attrs = {}
+        self._startup_track_ids = []
+        self._startup_complete = False
         self.master = self._register(source_url, 'playlist', metadata={'root': True})
+
+    def _required_startup_tracks(self):
+        if self._startup_track_ids:
+            return [
+                self.tracks[track_id]
+                for track_id in self._startup_track_ids
+                if track_id in self.tracks
+            ]
+        return list(self.tracks.values())
 
     def status(self):
         tracks = list(self.tracks.values())
-        seconds = min((t._ahead()[0] for t in tracks), default=0)
+        required = self._required_startup_tracks()
+        states = [track._reserve_state(0, track.startup_seconds) for track in required]
+        seconds = min((state[0] for state in states), default=0)
+        ratios = []
+        for ahead, _, threshold, ready in states:
+            if ready:
+                ratios.append(1.0)
+            elif threshold > 0:
+                ratios.append(min(1.0, ahead / threshold))
+            else:
+                ratios.append(0.0)
+        percent = 100 if self.ready else min(99, int(min(ratios, default=0.0) * 100))
+        stalled = any(track.failed for track in required)
+        message = (
+            'Buffer ready — starting playback…'
+            if self.ready
+            else 'Buffering stalled; retrying…'
+            if stalled
+            else 'Filling buffer…'
+            if tracks
+            else 'Preparing stream…'
+        )
         return {
             'ready': self.ready, 'error': self.error, 'local_url': self.local_url,
             'choices': self.choices if not self.choice_event.is_set() else [],
-            'message': 'Filling buffer…' if tracks else 'Preparing stream…',
-            'percent': min(99, int(seconds * 100 / self.startup_seconds)),
+            'message': message,
+            'percent': percent,
             'cached_ahead_bytes': sum(t.ahead_bytes() for t in tracks),
             'buffered_seconds': seconds,
             'cached_segments_ahead': sum(t._ahead()[1] for t in tracks),
             'buffer_capacity_mb': self.max_bytes // (1024 * 1024),
             'recovering': any(t.recovering for t in tracks),
+            'startup_tracks': len(required),
         }
 
     def fail(self, message, error_type='PlaybackError'):
@@ -643,26 +704,89 @@ class BufferedHlsSession:
             self.error = message
             self._event('buffer_failure', error_type=error_type)
 
+    def _prepare_associated_media(self):
+        # Audio/video rendition groups are part of the playable stream.
+        # Preload the selected/default member so readiness means Kodi can read
+        # picture and sound immediately. Subtitle groups intentionally do not
+        # gate startup.
+        for rendition_type, attribute in (('audio', 'AUDIO'), ('video', 'VIDEO')):
+            group_id = (self._selected_variant_attrs.get(attribute) or '').strip()
+            if not group_id:
+                continue
+            candidates = [
+                resource for resource in list(self.resources.values())
+                if resource.kind == 'playlist'
+                and resource.metadata.get('rendition_type') == rendition_type
+                and resource.metadata.get('group_id') == group_id
+            ]
+            if not candidates:
+                continue
+            chosen = next(
+                (resource for resource in candidates if resource.metadata.get('default')),
+                next(
+                    (resource for resource in candidates if resource.metadata.get('autoselect')),
+                    candidates[0],
+                ),
+            )
+            self.serve(chosen.id)
+
     def prepare(self):
         try:
             self.serve(self.master.id)
             variants = [r for r in list(self.resources.values()) if r.metadata.get('representation')]
             if variants:
                 self.serve(variants[0].id)
+            self._prepare_associated_media()
             if self._stop.is_set():
                 return
+
             tracks = list(self.tracks.values())
             if not tracks or not any(t.segments for t in tracks):
                 raise RuntimeError('Stream contains no playable media segments')
-            for track in tracks:
-                if not track.wait_startup(RECOVERY_TIMEOUT):
-                    raise TimeoutError('Unable to fill the startup buffer within 20 seconds')
+            self._startup_track_ids = [track.id for track in tracks]
+
+            # One global deadline governs the complete playable reserve.
+            deadline = time.monotonic() + STARTUP_TIMEOUT
+            while not self._stop.is_set():
+                required = self._required_startup_tracks()
+                states = [
+                    track._reserve_state(0, track.startup_seconds)
+                    for track in required
+                ]
+                if states and all(state[3] for state in states):
+                    break
+                if time.monotonic() >= deadline:
+                    failures = [
+                        '{}: {}'.format(track.id, track.failed)
+                        for track in required if track.failed
+                    ]
+                    detail = '; '.join(failures[:2])
+                    raise TimeoutError(
+                        'Startup reserve incomplete{}'.format(
+                            ': ' + detail if detail else ''
+                        )
+                    )
+                self._stop.wait(0.1)
+
+            if self._stop.is_set():
+                return
+            self._startup_complete = True
+            for track in list(self.tracks.values()):
+                with track._condition:
+                    track._condition.notify_all()
             self.ready = True
             self.last_access = time.monotonic()
             self._event('buffer_startup_ready', **{k: v for k, v in self.status().items()
-                        if k in {'buffered_seconds', 'cached_ahead_bytes', 'buffer_capacity_mb'}})
+                        if k in {'buffered_seconds', 'cached_ahead_bytes',
+                                 'buffer_capacity_mb', 'startup_tracks'}})
+        except PlaybackCancelled:
+            return
         except Exception as exc:
-            self.fail('Unable to prepare stream ({}). Try again or choose a lower quality.'.format(type(exc).__name__), type(exc).__name__)
+            detail = str(exc).strip()
+            message = 'Unable to prepare stream: {}'.format(type(exc).__name__)
+            if detail:
+                message += ': ' + detail
+            self.fail(message + '. Try again or choose a lower quality.', type(exc).__name__)
 
     @property
     def local_url(self):
@@ -980,6 +1104,7 @@ class BufferedHlsSession:
         else:
             selected = max(range(len(variants)), key=lambda i: max(0, _int(variants[i][2].get('BANDWIDTH'))))
         keep = variants[selected]
+        self._selected_variant_attrs = dict(keep[2])
         discarded = {n for v in variants if v != keep for n in (v[0], v[1])}
         self._event('buffer_quality_selected', quality_behavior=self.quality,
                     advertised_bandwidth=_int(keep[2].get('BANDWIDTH')),
@@ -1000,7 +1125,14 @@ class BufferedHlsSession:
             attrs = _attributes(line.split(':', 1)[1] if ':' in line else '')
             if tag in {'#EXT-X-MEDIA', '#EXT-X-I-FRAME-STREAM-INF'}:
                 kind = 'playlist'
-                metadata['rendition_type'] = attrs.get('TYPE', '').lower()
+                metadata.update({
+                    'rendition_type': attrs.get('TYPE', '').lower(),
+                    'group_id': attrs.get('GROUP-ID', ''),
+                    'name': attrs.get('NAME', ''),
+                    'language': attrs.get('LANGUAGE', ''),
+                    'default': attrs.get('DEFAULT', '').upper() == 'YES',
+                    'autoselect': attrs.get('AUTOSELECT', '').upper() == 'YES',
+                })
             elif tag == '#EXT-X-KEY':
                 kind = 'key'
             elif tag == '#EXT-X-MAP':
@@ -1295,7 +1427,7 @@ class BufferedHlsManager:
             if not re.fullmatch('[a-f0-9]{24}', request_id):
                 continue
             cancel = os.path.join(self.control, 'cancel-' + request_id + '.json')
-            if time.time() - created > STARTUP_TIMEOUT or os.path.exists(cancel):
+            if time.time() - created > CONTROL_TIMEOUT or os.path.exists(cancel):
                 continue
             self.stop_active('replaced')
             session = BufferedHlsSession(
@@ -1326,8 +1458,8 @@ class BufferedHlsManager:
                 self.stop_active('cancelled')
             else:
                 elapsed = time.monotonic() - session.created_at
-                if not session.ready and elapsed > STARTUP_TIMEOUT and not (session.choices and not session.choice_event.is_set()):
-                    session.fail('Stream preparation timed out. Please retry playback.', 'StartupTimeout')
+                if not session.ready and elapsed > CONTROL_TIMEOUT and not (session.choices and not session.choice_event.is_set()):
+                    session.fail('Stream preparation did not return a result in time. Please retry playback.', 'ControlTimeout')
                 if session.ready and not session.started_playback and time.monotonic() - session.last_access > 30:
                     session.fail('Kodi did not start the prepared stream. Please retry playback.', 'PlayerStartTimeout')
                 response = os.path.join(self.control, 'response-' + request_id + '.json')

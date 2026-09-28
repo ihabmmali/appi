@@ -1,11 +1,11 @@
 ---
 id: HLS-8
 role: implementation
-status: ready
+status: active
 delivery: unreleased
 verification: failed
-owner: unassigned
-base_commit: unset
+owner: GPT-5.6 Sol release/0.7.19
+base_commit: c7a344ae2afa1160adb7daf522092c89b46105bf
 artifact: none
 ---
 # HLS-8 — Repair 0.7.18 Buffered Look Ahead preparation and runtime failure
@@ -53,6 +53,8 @@ Progress must reflect playback readiness rather than only bytes/tasks scheduled.
 Reported by the user on 2026-09-27 while testing 0.7.18. On 2026-09-27 the user explicitly committed this repair for the next release and identified robust Buffered Look Ahead Playback as the primary release focus. HLS-8 is committed release scope.
 
 ## Evidence
+
+2026-09-27 implementation session: assigned to GPT-5.6 Sol on `release/0.7.19` from base `c7a344ae2afa1160adb7daf522092c89b46105bf`. User authorization covers implementation, integration and publication of the committed next-release scope. Source/test changes are isolated on the release branch; HLS-8 preserves playback modes 0–2.
 Regular playback works on at least one file where Buffered Look Ahead reaches roughly 90% preparation and then times out, isolating the observed failure to the buffered path.
 
 ## Outcome and next action

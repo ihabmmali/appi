@@ -1,11 +1,11 @@
 ---
 id: LANG-3
 role: implementation
-status: ready
+status: active
 delivery: unreleased
 verification: failed
-owner: unassigned
-base_commit: unset
+owner: GPT-5.6 Sol release/0.7.19
+base_commit: c7a344ae2afa1160adb7daf522092c89b46105bf
 artifact: none
 ---
 # LANG-3 — Preferred language setting is not applied at playback
@@ -44,6 +44,8 @@ Do not reintroduce free-text settings or unsafe empty list values.
 Reported by the user on 2026-09-27 while testing 0.7.18. On 2026-09-27 the user explicitly committed this repair for the next release and identified preferred-language selection as the other primary release focus. LANG-3 is committed release scope.
 
 ## Evidence
+
+2026-09-27 implementation session: assigned to GPT-5.6 Sol on `release/0.7.19` from base `c7a344ae2afa1160adb7daf522092c89b46105bf`. User authorization covers implementation, integration and publication of the committed next-release scope. Source/test changes are isolated on the release branch; HLS-8 preserves playback modes 0–2.
 0.7.18 fixes the 0.7.17 native settings-parser crash and Kodi now remains running, but the selected default language appears to have no effect during playback.
 
 ## Outcome and next action
