@@ -16,7 +16,7 @@ Give Appi proper graphical add-on artwork so Kodi can display a recognizable App
 ## Scope
 Integrate user-supplied artwork into the packaged Kodi add-on using Kodi-compatible asset paths and manifest metadata.
 
-The user selected the first generated Appi design on 2026-09-27. The selected handoff asset is stored at `artwork/appi-icon-selected.png`. Do not substitute a different permanent design unless the user explicitly requests it.
+The user selected the original Appi design on 2026-09-27, then approved a flat-color replacement after Kodi exposed visible gradient banding. The current approved handoff asset is stored at `artwork/appi-icon-selected.png`. Use this flat, low-color version for future integration; do not substitute a different permanent design unless the user explicitly requests it.
 
 When the asset is supplied:
 - preserve the source artwork as appropriate for packaging;
@@ -39,6 +39,8 @@ A fanart/background asset is outside current scope unless the supplied graphics 
 Requested by the user on 2026-09-27. The user stated that Appi needs a graphical icon and that they will supply the graphics. The artwork dependency is satisfied. On 2026-09-27 the user explicitly instructed that all currently tracked changes be committed for the next release. UI-3 is therefore ready and committed release scope.
 
 ## Evidence
+
+2026-09-27 artwork revision: after target-device review showed visible banding in Kodi's rendering of the gradient artwork, the user approved a simplified flat-color version. `artwork/appi-icon-selected.png` has been replaced with the approved flat 512×512 PNG for use by the next integration/release worker. The currently published 0.7.17 package still contains the earlier artwork until a later release explicitly updates `plugin.video.appi/resources/icon.png`.
 
 Published in 0.7.17 through PR #5, merge `18ffae9349b2d225b575cee6a276ea8dcd59143b`. Release/package run 36350783947, post-merge verification 36350856112 and Pages deployment 36350855315 passed. Deployed ZIP hash matched `77dd83244e01bae295d3118073d28b13b2a6d634576cf4ffae84fde14a49b0b1`.
 
