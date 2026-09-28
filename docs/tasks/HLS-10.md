@@ -2,11 +2,11 @@
 id: HLS-10
 role: research
 status: review
-delivery: unreleased
+delivery: released
 verification: partial
 owner: builder-publisher-2026-09-27
 base_commit: 24ac0358640864a0129d97b638ca37c616f6612b
-artifact: none
+artifact: https://ihabmmali.github.io/appi/plugin.video.appi-0.7.20.zip
 ---
 # HLS-10 — Repair Buffered Look Ahead detailed debug overlay
 
@@ -51,5 +51,7 @@ The setting exists and the persistent service re-reads it. The service calls `Bu
 
 Source review confirms the persistent service re-reads `buffered_debug_overlay` and passes ready active-session status into `BufferOverlay.update()`; the overlay still targets fullscreen video window 12005. Because the earlier invisible-overlay observation may not have traversed Buffered Look Ahead, there is insufficient device evidence to change that target. Candidate implementation `4c5363e3220dc16507b308e6ccfa8bbec4eb6d40` guards and logs the exact Window/ControlLabel/addControl/setLabel/removeControl operation while keeping failures non-fatal. Release/package run `36375784976` passed the overlay regression test plus the complete automated suite. Confirmed HLS Fire TV visibility remains pending.
 
+Published through PR #8 / merge `6e6db9bec185ec6b5eea664d27cb7b94f4efa2ef`. Post-merge verification run `36376270017` passed and Pages deployment run `36376269821` completed successfully. Delivery is `https://ihabmmali.github.io/appi/plugin.video.appi-0.7.20.zip`; the verified generated ZIP SHA-256 is `41e1bdec7229d1a0a3d8787427ac9c434fb773e302c7d8f5bae428de0de7755f`. Publication does not establish target-device acceptance.
+
 ## Outcome and next action
-0.7.20 candidate passed automated verification and is ready for integration/publication. Target-device testing must use a positively identified mode-3 HLS session with the detailed toggle enabled and disabled; if still invisible, the new operation-specific log identifies the next repair point.
+0.7.20 is published. Keep this task in review/partial verification until the documented target-device checks are completed; do not treat publication as acceptance.
