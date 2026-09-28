@@ -2,6 +2,16 @@
 
 Each entry records the package shipped, its main user-visible changes, and verification at release time. For the current baseline and next tasks read [PROJECT_STATE.md](PROJECT_STATE.md) and [KNOWN_ISSUES.md](KNOWN_ISSUES.md); the [CHANGELOG.md](CHANGELOG.md) is the implemented feature history.
 
+## 0.7.19 — 2026-09-27
+
+- Committed scope: HLS-8, LANG-3, HLS-9 and UI-4. Base `c7a344ae2afa1160adb7daf522092c89b46105bf`; branch `release/0.7.19`; PR #7.
+- HLS-8: replace optimistic/single-track preparation with a coordinated startup gate. The selected video and associated default audio rendition are prepared before handoff; startup progress is the minimum readiness of required tracks. Independent resources download concurrently under explicit byte reservations rather than sharing one network-wide lock, so a stalled request cannot block every track.
+- HLS-8: retain a 45-second bounded preparation deadline but give the plugin/service mailbox a 65-second control window, preventing the previous same-deadline race. Progress reaches 100% only when the playable reserve is ready; stalled preparation reports retry state and fails explicitly.
+- LANG-3: preferred audio/internal-subtitle application retries for up to 12 seconds after AV start so Kodi/InputStream Adaptive can enumerate streams first. No preference remains inert; missing matches fall back cleanly; saved external/per-title subtitle choices retain precedence.
+- HLS-9: `inputstream.adaptive` is now a required manifest dependency while runtime fallback diagnostics remain intact.
+- UI-4: `plugin.video.appi/resources/icon.png` is the exact current `artwork/appi-icon-selected.png` blob.
+- Existing HLS modes 0–2 are unchanged by the implementation. Automated release/package verification is pending at this candidate stage; target-device acceptance remains separately required for the two reported Buffered Look Ahead episodes and actual language switching.
+
 ## 0.7.18 — 2026-09-27
 
 - Scoped crash hotfix: reopened LANG-2. Base `a0b9eacb23b4816df7ac4c0f60e9c51fb7d1eb79`; branch `release/0.7.18`.

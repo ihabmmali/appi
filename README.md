@@ -18,6 +18,14 @@ Appi is a Kodi video add-on for user-configured movie and TV-show M3U catalogues
 
 Add `https://ihabmmali.github.io/appi/` in Kodi File Manager, then install the current `plugin.video.appi-<version>.zip`.
 
+## 0.7.19 — 2026-09-27
+
+- Buffered Look Ahead now gates handoff on a real contiguous startup reserve for the selected video plus its associated default audio track, with progress based on the least-ready required track.
+- Independent buffered tracks can fetch concurrently under a reserved disk budget, preventing one stalled request from blocking all prefetch work; preparation and control-response deadlines are separated so a late service result cannot race the plugin timeout.
+- Preferred audio/subtitle choices retry briefly after AV start until Kodi exposes its stream list, while external/per-title subtitle behavior retains precedence.
+- InputStream Adaptive is a required installation dependency, and the latest flat/low-color Appi artwork is packaged unchanged.
+- Existing HLS modes 0–2 are intentionally unchanged. Target Fire TV/provider acceptance remains required for Buffered Look Ahead and language selection.
+
 ## 0.7.18 — 2026-09-27
 
 - Fix the 0.7.17 Kodi startup crash trigger: the No preference language options now have a non-empty `none` value, avoiding a null text child in Kodi's native settings parser.
