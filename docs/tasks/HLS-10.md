@@ -3,7 +3,7 @@ id: HLS-10
 role: research
 status: review
 delivery: released
-verification: partial
+verification: failed
 owner: builder-publisher-2026-09-27
 base_commit: 24ac0358640864a0129d97b638ca37c616f6612b
 artifact: https://ihabmmali.github.io/appi/plugin.video.appi-0.7.20.zip
@@ -54,4 +54,10 @@ Source review confirms the persistent service re-reads `buffered_debug_overlay` 
 Published through PR #8 / merge `6e6db9bec185ec6b5eea664d27cb7b94f4efa2ef`. Post-merge verification run `36376270017` passed and Pages deployment run `36376269821` completed successfully. Delivery is `https://ihabmmali.github.io/appi/plugin.video.appi-0.7.20.zip`; the verified generated ZIP SHA-256 is `41e1bdec7229d1a0a3d8787427ac9c434fb773e302c7d8f5bae428de0de7755f`. Publication does not establish target-device acceptance.
 
 ## Outcome and next action
-0.7.20 is published. Keep this task in review/partial verification until the documented target-device checks are completed; do not treat publication as acceptance.
+0.7.20 is published, but target-device verification failed: the detailed overlay remains invisible during confirmed Buffered Look Ahead playback. Preserve this evidence; HLS-14 owns the actual display repair.
+
+
+## 0.7.20 confirmed target-device failure
+The user has now confirmed the detailed debug overlay is still invisible while using Buffered Look Ahead mode itself. The earlier uncertainty about whether the test item bypassed Buffered Look Ahead is therefore resolved.
+
+The 0.7.20 logging-only follow-up did not satisfy the functional requirement. HLS-10 remains released but failed verification. [HLS-14](HLS-14.md) owns the actual overlay implementation repair.

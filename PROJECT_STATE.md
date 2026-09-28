@@ -15,12 +15,13 @@ Updated: 2026-09-27. Start with [AGENTS.md](AGENTS.md) for role routing.
 
 - **0.7.20 is published.** Shipped scope: AUDIO-1, HLS-10 and HLS-11. Automated candidate, post-merge and Pages checks passed; all three tasks remain review/partial until target-device acceptance.
 - AUDIO-1 candidate repair leaves the established ISA handoff unchanged and makes preferred-audio selection stable/revalidated and non-mutating for No preference/no-match/already-selected cases. Automated verification passed; audible Fire TV acceptance remains pending.
-- HLS-10 source review confirms the setting/service path. 0.7.20 adds exact non-fatal GUI-operation logging without changing the unproven fullscreen window target; known-HLS Fire TV visibility remains pending.
-- HLS-11 shipped in 0.7.20 but failed target-device acceptance: seek/resume still times out. HLS-12 is the successor candidate and replaces stateful recovery with a fresh buffer epoch at every seek/resume target.
+- HLS-10 failed target-device verification: the detailed overlay remains invisible during confirmed Buffered Look Ahead playback. HLS-14 is the successor implementation candidate.
+- HLS-11 shipped in 0.7.20 but failed target-device acceptance: seek/resume still times out. HLS-12 replaces stateful recovery with a fresh buffer epoch at every seek/resume target.
+- HLS-13 is a release-blocking candidate for the core value proposition: 0.7.20 starts after only a 12-second reserve and later divides 70% of configured bytes equally across tracks, so a 128 MB video+audio session gives video only about 44.8 MB. It must become a true high-water/low-water deep reservoir that continuously refills.
 - HLS-8 is shipped/review-partial: the original 0.7.18 preparation/handoff regression has positive device evidence, while focused successor tasks own the remaining overlay and seek defects.
 - LANG-3, HLS-9 and UI-4 are shipped in 0.7.19. LANG-3 target-device verification is now failed because ISA audio is broken; AUDIO-1 owns restoring audio before language-selection acceptance can resume.
 - PLAY-1 remains a backlog Trakt-error investigation. HLS-1 and UI-1 remain backlog investigations.
-- [NEXT_RELEASE.md](NEXT_RELEASE.md): HLS-12 is a release-blocking candidate; no new scope is committed yet. [KNOWN_ISSUES.md](KNOWN_ISSUES.md): full task index.
+- [NEXT_RELEASE.md](NEXT_RELEASE.md): HLS-12 and HLS-13 are release-blocking candidates and HLS-14 is a confirmed overlay candidate; no new scope is committed yet. [KNOWN_ISSUES.md](KNOWN_ISSUES.md): full task index.
 
 ## Context on demand
 
