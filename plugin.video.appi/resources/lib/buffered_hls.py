@@ -626,6 +626,7 @@ class BufferedHlsSession:
         self.created_at = time.monotonic()
         self._prepare_thread = None
         self._download_lock = threading.Lock()
+        self._reserved_bytes = 0
         self._playlist_lock = threading.RLock()
         self._playlist_cache = {}
         self._pins = set()
@@ -1275,54 +1276,23 @@ class BufferedHlsSession:
         return '\n'.join(output) + ('\n' if text.endswith('\n') else ''), track
 
     def _ensure_binary(self, resource, segment=None, track=None):
-        with self._download_lock:
+        # Coordinate duplicate requests per resource, not across the whole
+        # session. Distinct video/audio/key requests may download concurrently
+        # so one stalled upstream response cannot freeze every prefetch track.
+        with resource.condition:
+            while resource.fetching and not self._stop.is_set():
+                resource.condition.wait(timeout=0.1)
+                if resource.path and os.path.isfile(resource.path):
+                    return resource.path
             if self._stop.is_set():
                 raise PlaybackCancelled()
-            return self._download_binary(resource, segment, track)
+            if resource.path and os.path.isfile(resource.path):
+                return resource.path
+            resource.fetching = True
+            resource.error = ''
 
-    def _download_binary(self, resource, segment=None, track=None):
-        if resource.path and os.path.isfile(resource.path):
-            return resource.path
-        resource.fetching = True
-        resource.error = ''
         try:
-            path = os.path.join(self.data_root, '{}.bin'.format(resource.id))
-            segment_limit = max(1, self.max_bytes // max(4, len(self.tracks) * 4))
-            self._enforce_disk_limit(limit=self.max_bytes - segment_limit)
-            if self.disk_bytes() > self.max_bytes - segment_limit:
-                raise RuntimeError('Buffer capacity is temporarily occupied')
-            fetched = _fetch_to_path(
-                resource.upstream_url,
-                path,
-                byte_range=resource.byte_range,
-                stop=self._stop, max_bytes=segment_limit,
-            )
-            resource.path = path
-            resource.content_type = fetched.content_type or resource.content_type
-            fields = {
-                'resource_kind': resource.kind,
-                'latency_ms': fetched.latency_ms,
-                'download_ms': fetched.download_ms,
-                'bytes': fetched.byte_count,
-                'throughput_mbps': fetched.throughput_mbps,
-                'http_status': fetched.status,
-            }
-            if segment is not None:
-                fields.update({
-                    'track_id': track.id if track else resource.metadata.get('track_id'),
-                    'segment_sequence': segment.sequence,
-                    'segment_duration': round(segment.duration, 3),
-                })
-                if track:
-                    ahead, count = track._ahead(segment.index)
-                    fields['buffered_seconds'] = ahead
-                    fields['cached_segments_ahead'] = count
-            self._event(
-                'buffer_segment_download' if segment is not None else 'buffer_resource_download',
-                **fields
-            )
-            self._enforce_disk_limit(protected=path)
-            return path
+            return self._download_binary(resource, segment, track)
         except Exception as exc:
             resource.error = '{}: {}'.format(type(exc).__name__, exc)
             raise
@@ -1330,6 +1300,59 @@ class BufferedHlsSession:
             with resource.condition:
                 resource.fetching = False
                 resource.condition.notify_all()
+
+    def _download_binary(self, resource, segment=None, track=None):
+        if resource.path and os.path.isfile(resource.path):
+            return resource.path
+        path = os.path.join(self.data_root, '{}.bin'.format(resource.id))
+        segment_limit = max(1, self.max_bytes // max(4, len(self.tracks) * 4))
+
+        # Reserve worst-case capacity before releasing the budget lock for the
+        # network transfer. This permits independent tracks to fetch in
+        # parallel without allowing their in-flight writes to overcommit disk.
+        with self._download_lock:
+            self._enforce_disk_limit(limit=self.max_bytes - segment_limit)
+            if self.disk_bytes() + self._reserved_bytes > self.max_bytes - segment_limit:
+                raise RuntimeError('Buffer capacity is temporarily occupied')
+            self._reserved_bytes += segment_limit
+        try:
+            fetched = _fetch_to_path(
+                resource.upstream_url,
+                path,
+                byte_range=resource.byte_range,
+                stop=self._stop, max_bytes=segment_limit,
+            )
+        finally:
+            with self._download_lock:
+                self._reserved_bytes = max(0, self._reserved_bytes - segment_limit)
+
+        resource.path = path
+        resource.content_type = fetched.content_type or resource.content_type
+        fields = {
+            'resource_kind': resource.kind,
+            'latency_ms': fetched.latency_ms,
+            'download_ms': fetched.download_ms,
+            'bytes': fetched.byte_count,
+            'throughput_mbps': fetched.throughput_mbps,
+            'http_status': fetched.status,
+        }
+        if segment is not None:
+            fields.update({
+                'track_id': track.id if track else resource.metadata.get('track_id'),
+                'segment_sequence': segment.sequence,
+                'segment_duration': round(segment.duration, 3),
+            })
+            if track:
+                ahead, count = track._ahead(segment.index)
+                fields['buffered_seconds'] = ahead
+                fields['cached_segments_ahead'] = count
+        self._event(
+            'buffer_segment_download' if segment is not None else 'buffer_resource_download',
+            **fields
+        )
+        with self._download_lock:
+            self._enforce_disk_limit(protected=path)
+        return path
 
     def disk_bytes(self):
         total = 0

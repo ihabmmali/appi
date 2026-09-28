@@ -383,5 +383,54 @@ class BufferedHlsTests(unittest.TestCase):
         self.assertGreater(self.m.CONTROL_TIMEOUT, self.m.STARTUP_TIMEOUT)
 
 
+    def test_distinct_tracks_prefetch_concurrently_without_overcommitting_buffer(self):
+        m = self.m
+        session = m.BufferedHlsSession(
+            'https://up.example/master.m3u8',
+            root=os.path.join(m._test_root, 'parallel'),
+            buffer_mb=32,
+        )
+        session.start()
+        self.addCleanup(lambda: session.stop('test'))
+
+        entered = []
+        entered_lock = threading.Lock()
+        both_entered = threading.Event()
+        release = threading.Event()
+
+        def concurrent_fetch(url, path, timeout=20.0, byte_range='', **kwargs):
+            with entered_lock:
+                entered.append(url)
+                if len(entered) >= 2:
+                    both_entered.set()
+            release.wait(2)
+            Path(path).write_bytes(b'x' * 64)
+            return m._FetchResult(b'', url, 'application/octet-stream', 200, 1.0, 2.0, 64)
+
+        m._fetch_to_path = concurrent_fetch
+        for track_id, suffix in (('video', 'v0.ts'), ('audio', 'a0.aac')):
+            track = m._Track(session, track_id, 30, 6, 6)
+            session.tracks[track_id] = track
+            resource = session._register(
+                'https://up.example/' + suffix,
+                'segment',
+                metadata={'track_id': track_id, 'index': 0, 'sequence': 0},
+            )
+            track.replace_segments([m._Segment(resource, 0, 6.0, 0)])
+
+        self.assertTrue(
+            both_entered.wait(1.0),
+            'independent track downloads were serialized behind one stalled request',
+        )
+        self.assertLessEqual(session._reserved_bytes, session.max_bytes)
+        release.set()
+
+        deadline = time.time() + 2
+        while any(not track._cached(0) for track in session.tracks.values()) and time.time() < deadline:
+            time.sleep(0.01)
+        self.assertTrue(all(track._cached(0) for track in session.tracks.values()))
+        self.assertEqual(session._reserved_bytes, 0)
+
+
 if __name__ == '__main__':
     unittest.main()

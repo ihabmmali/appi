@@ -88,10 +88,11 @@ class AppiPlayer(xbmc.Player):
                     streams = self.getAvailableAudioStreams() or []
                     if streams:
                         index = languages.match_index(audio, streams)
+                        self._audio_language_done = True
                         if index is not None:
                             self.setAudioStream(index)
-                        self._audio_language_done = True
                 except Exception as exc:
+                    self._audio_language_done = False
                     xbmc.log('Appi audio-language selection failed: {}'.format(exc), xbmc.LOGWARNING)
 
         session = self._subtitle_session()
@@ -105,11 +106,12 @@ class AppiPlayer(xbmc.Player):
                     streams = self.getAvailableSubtitleStreams() or []
                     if streams:
                         index = languages.match_index(subtitle, streams)
+                        self._subtitle_language_done = True
                         if index is not None:
                             self.setSubtitleStream(index)
                             self.showSubtitles(True)
-                        self._subtitle_language_done = True
                 except Exception as exc:
+                    self._subtitle_language_done = False
                     xbmc.log('Appi subtitle-language selection failed: {}'.format(exc), xbmc.LOGWARNING)
 
     def apply_pending_languages(self):
