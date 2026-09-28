@@ -3,7 +3,7 @@ id: HLS-14
 role: implementation
 status: review
 delivery: released
-verification: partial
+verification: failed
 owner: builder-publisher-2026-09-28
 base_commit: 4a415f9eaeb48c77ef2fcaa895db90d7e66ab183
 artifact: https://ihabmmali.github.io/appi/plugin.video.appi-0.7.21.zip
@@ -44,7 +44,15 @@ Automated 0.7.21 candidate run `36381180991` passed the skin-independent `Window
 Published in Appi 0.7.21 through PR #10 / merge `d9e0be64681fa2dbe9cc434f81375a9c0992a3e1`. Post-merge verification run `36381516837` and Pages deployment run `36381516378` passed. Published ZIP SHA-256: `0e8c615d40cf9f42e0345c61e11a7b244fc443c8858902d53fffda92c1935c81`. Delivery is released; target-device verification remains partial.
 
 ## Outcome and next action
-Released in 0.7.21. Complete the remaining target-device acceptance documented above; any new defect or repair must be triaged as follow-up work rather than silently reopening this release scope.
+Released in 0.7.21 but failed target-device acceptance: the overlay remains invisible. Preserve HLS-14 as failed delivery evidence; HLS-16 owns the next repair.
 
 
 Implementation session 2026-09-28: activated on `release/0.7.21` from base `4a415f9eaeb48c77ef2fcaa895db90d7e66ab183`; authorized scope is implementation, review, integration and publication of the committed next release.
+
+
+## 0.7.21 target-device failure
+The user confirms that the detailed on-screen debug overlay still does not appear on 0.7.21 even though Buffered Look Ahead itself now appears to work well.
+
+This fails HLS-14's primary acceptance criterion. The modeless `xbmcgui.WindowDialog` replacement is therefore not target-device proven and must not be treated as solved merely because automated lifecycle tests passed.
+
+[HLS-16](HLS-16.md) owns the next overlay repair.

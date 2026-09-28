@@ -101,3 +101,9 @@ Released in 0.7.21. Complete the remaining target-device acceptance documented a
 
 
 Implementation session 2026-09-28: activated on `release/0.7.21` from base `4a415f9eaeb48c77ef2fcaa895db90d7e66ab183`; authorized scope is implementation, review, integration and publication of the committed next release.
+
+
+## 0.7.21 target-device evidence
+The user reports that Buffered Look Ahead **appears to work well now on 0.7.21**. This is positive target-device evidence for the deep-reservoir redesign.
+
+Do not overstate this as full acceptance unless the remaining documented high-bitrate/seek/resume scenarios are explicitly confirmed. The important distinction is that the core buffering behavior is now materially improved on-device, while the detailed overlay remains a separate failed UI path.

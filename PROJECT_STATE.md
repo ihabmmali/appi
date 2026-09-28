@@ -15,13 +15,14 @@ Updated: 2026-09-28. Start with [AGENTS.md](AGENTS.md) for role routing.
 
 - **0.7.21 is published.** Shipped scope: HLS-12, HLS-13, HLS-14 and HLS-15. All four remain review/partial until target-device acceptance.
 - HLS-12 replaces stateful random-access recovery with fresh authoritative buffer epochs for seek and saved-position resume; automated tests cover stale completion rejection, timeline alignment, retry and repeated seek behavior.
-- HLS-13 replaces the fixed 12-second/equal-share model with a shared capacity-driven reservoir: 50% startup target, 80% high-water, 60% low-water, 15% critical reserve, dynamic video/audio allocation, continuous refill, measured throughput and inactivity-based transfer timeout.
-- HLS-14 replaces fullscreen-window control injection with a guarded modeless `WindowDialog` detailed overlay. Fire TV/Kodi visibility still requires device observation.
+- HLS-13 replaces the fixed 12-second/equal-share model with a shared capacity-driven reservoir: 50% startup target, 80% high-water, 60% low-water, 15% critical reserve, dynamic video/audio allocation, continuous refill, measured throughput and inactivity-based transfer timeout. Target-device follow-up is positive: the user reports buffering appears to work well on 0.7.21.
+- HLS-14 failed target-device acceptance: the guarded modeless `WindowDialog` remains invisible on Fire TV despite buffering itself working. HLS-16 is the successor candidate and may replace the rendering mechanism entirely.
 - HLS-15 shows actual active-epoch contiguous playable KB/MB and target during normal preparation/recovery without requiring detailed debug.
 - Existing HLS modes 0–2 were intentionally left unchanged. Buffered mode does not automatically downgrade quality and reports measured throughput deficit when reserve is critical.
 - AUDIO-1, HLS-10 and HLS-11 remain review records for the 0.7.20 behavior they shipped; HLS-12/HLS-14 supersede the unresolved Buffered Look Ahead seek/overlay directions in 0.7.21.
 - PLAY-1 remains a backlog Trakt-error investigation. HLS-1 and UI-1 remain backlog investigations.
-- [NEXT_RELEASE.md](NEXT_RELEASE.md): no scope is currently committed. [KNOWN_ISSUES.md](KNOWN_ISSUES.md): full task index.
+- UI-5 is a candidate to remove the redundant nested About action and show installed version directly in the About settings pane.
+- [NEXT_RELEASE.md](NEXT_RELEASE.md): HLS-16 and UI-5 are candidates; no scope is currently committed. [KNOWN_ISSUES.md](KNOWN_ISSUES.md): full task index.
 
 ## Context on demand
 

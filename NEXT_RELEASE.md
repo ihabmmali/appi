@@ -2,12 +2,14 @@
 
 Planning status: open. Version: not assigned. Current baseline and fallback: [PROJECT_STATE.md](PROJECT_STATE.md).
 
-0.7.21 is published. No next-release scope is currently committed. HLS-12, HLS-13, HLS-14 and HLS-15 remain in review for target-device acceptance of the shipped 0.7.21 behavior; any follow-up repair must be triaged and explicitly committed.
+0.7.21 is published. No next-release scope is currently committed. HLS-16 and UI-5 are current candidates. HLS-12, HLS-13, HLS-14 and HLS-15 remain in review for target-device acceptance of the shipped 0.7.21 behavior; any follow-up repair must be triaged and explicitly committed.
 
 ## Proposed scope
 
 | Task | Selection | Priority | Reason |
 | --- | --- | --- | --- |
+| [HLS-16](docs/tasks/HLS-16.md) | candidate | confirmed overlay regression | 0.7.21 buffering appears to work well, but the replacement WindowDialog debug overlay is still invisible on Fire TV |
+| [UI-5](docs/tasks/UI-5.md) | candidate | settings UX | Remove the redundant About-inside-About click and show installed version directly |
 | [PLAY-1](docs/tasks/PLAY-1.md) | backlog | investigation | Resume persistence is working; only investigate the playback-start Trakt API error |
 | [HLS-1](docs/tasks/HLS-1.md) | backlog | investigation | Use buffered-mode/diagnostic evidence to diagnose any underlying provider stalls that remain |
 | [UI-1](docs/tasks/UI-1.md) | backlog | investigation | Skin comparison needed |
@@ -22,6 +24,8 @@ Planning status: open. Version: not assigned. Current baseline and fallback: [PR
 6. Copy shipped task IDs and scope changes into RELEASE_NOTES, then reset this planning file for the next cycle.
 
 ## Scope decisions
+
+2026-09-28: 0.7.21 target-device follow-up is positive for the deep Buffered Look Ahead behavior: the user reports buffering appears to work well. HLS-13 gains positive device evidence but remains review/partial until its full documented scenarios are confirmed. HLS-14 fails target-device acceptance because its modeless WindowDialog detailed overlay remains invisible; HLS-16 is the successor candidate and may replace the rendering mechanism entirely. UI-5 also captures the earlier settings usability report that About currently contains a redundant nested About action before the version is shown.
 
 2026-09-28: Appi 0.7.21 published through PR #10 / merge `d9e0be64681fa2dbe9cc434f81375a9c0992a3e1`. Final strengthened candidate run `36381180991` passed 94 tests (1 skipped), workflow validation and deterministic package inspection; final pre-integration evidence run `36381370108` also passed with no generated artifact drift. Post-merge verification run `36381516837` and Pages deployment run `36381516378` passed. Shipped scope: HLS-12, HLS-13, HLS-14 and HLS-15. Their delivery is released while target-device verification remains review/partial. Planning is reset; no next-release scope is committed.
 
