@@ -1,11 +1,11 @@
 ---
 id: HLS-11
 role: implementation
-status: ready
+status: active
 delivery: unreleased
 verification: failed
-owner: unassigned
-base_commit: unset
+owner: builder-publisher-2026-09-27
+base_commit: 24ac0358640864a0129d97b638ca37c616f6612b
 artifact: none
 ---
 # HLS-11 — Repair multi-variant HLS seek, resume-point and recovery timeout
@@ -67,6 +67,8 @@ Do not reduce selected quality merely to hide a seek-state defect. Quality fallb
 Reported by the user on 2026-09-27 while testing published Appi 0.7.19. On 2026-09-27 the user explicitly instructed that all current candidates be committed. HLS-11 is therefore committed release scope and a release blocker.
 
 ## Evidence
+Implementation/research session opened on branch `release/0.7.20` from base `24ac0358640864a0129d97b638ca37c616f6612b`; user authorization includes implementation, integration and publication of the committed next-release scope.
+
 0.7.19 source re-centres a track on a non-sequential segment request and waits for a recovery reserve with `RECOVERY_TIMEOUT = 20.0`.
 
 On the target device, streams that expose multiple resolution choices—clear evidence of multi-variant HLS masters—prepare rapidly and play well from time 0. Manual seeks fail, and starting/resuming from an existing non-zero playback point also fails. After a seek timeout, resuming consistently plays briefly, displays **Appi buffering**, stutters and exits with a buffering-failed timeout. This isolates the remaining problem to random-access/recovery state much more strongly than to initial bandwidth, master parsing or rendition selection.

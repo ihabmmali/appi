@@ -1,11 +1,11 @@
 ---
 id: AUDIO-1
 role: implementation
-status: ready
+status: active
 delivery: unreleased
 verification: failed
-owner: unassigned
-base_commit: unset
+owner: builder-publisher-2026-09-27
+base_commit: 24ac0358640864a0129d97b638ca37c616f6612b
 artifact: none
 ---
 # AUDIO-1 — Restore audio for InputStream Adaptive playback
@@ -72,6 +72,8 @@ Do not remove the preferred-language feature as a permanent workaround unless ev
 Reported by the user on 2026-09-27 while testing published Appi 0.7.19. The user confirmed the same media regains audio after reverting to Appi 0.7.8. On 2026-09-27 the user explicitly instructed that all current candidates be committed. AUDIO-1 is therefore committed release scope and a release blocker.
 
 ## Evidence
+Implementation/research session opened on branch `release/0.7.20` from base `24ac0358640864a0129d97b638ca37c616f6612b`; user authorization includes implementation, integration and publication of the committed next-release scope.
+
 Known-working Appi 0.7.8 source commit: `d66db9724417bd44d6ece91ea01a903ced29b9d8`.
 
 In 0.7.8, `_configure_hls()` already used InputStream Adaptive for manual/adaptive modes, but the service did not contain `getAvailableAudioStreams()`, `setAudioStream()`, or preferred-audio retry logic.
