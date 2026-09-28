@@ -18,6 +18,14 @@ Appi is a Kodi video add-on for user-configured movie and TV-show M3U catalogues
 
 Add `https://ihabmmali.github.io/appi/` in Kodi File Manager, then install the current `plugin.video.appi-<version>.zip`.
 
+## 0.7.21 — 2026-09-28
+
+- Buffered Look Ahead now uses the configured storage as a real rolling reservoir: startup fills a meaningful byte target, video and audio share capacity dynamically, and continuous high/low-water refill protects the selected rendition from intermittent provider stalls when average provider throughput is sufficient.
+- Forward/backward seeks and saved non-zero starts create a fresh playback epoch at the requested timeline. Older in-flight work cannot publish into the new epoch, and required tracks rebuild a contiguous target reserve before playback continues.
+- The normal preparation/recovery UI shows actual playable KB/MB instead of only a percentage. The optional detailed overlay uses a skin-independent Kodi dialog and adds seconds ahead, water state, epoch, selected bitrate and measured provider throughput.
+- Slow transfers that continue making progress are no longer killed by a total 10-second wall-clock deadline. A bounded inactivity timeout still terminates genuinely stalled requests.
+- Existing playback modes 0–2 are unchanged. Automated verification and target Fire TV/provider acceptance are tracked separately.
+
 ## 0.7.20 — 2026-09-27
 
 - Preferred-audio application now waits for a stable Kodi/ISA stream enumeration, rechecks it before using an index, leaves No preference/no-match playback untouched, and avoids redundant switching when Kodi already has the requested language selected.
