@@ -18,6 +18,14 @@ Appi is a Kodi video add-on for user-configured movie and TV-show M3U catalogues
 
 Add `https://ihabmmali.github.io/appi/` in Kodi File Manager, then install the current `plugin.video.appi-<version>.zip`.
 
+## 0.7.20 — 2026-09-27
+
+- Preferred-audio application now waits for a stable Kodi/ISA stream enumeration, rechecks it before using an index, leaves No preference/no-match playback untouched, and avoids redundant switching when Kodi already has the requested language selected.
+- Buffered Look Ahead now coordinates forward/backward seeks and cold saved-point starts across video/audio tracks, immediately prioritizes the requested segment, and keeps bounded recovery timeouts retriable instead of tearing down the whole session.
+- Generic buffered failures no longer advise lowering quality without evidence that quality/throughput is causal.
+- The detailed overlay keeps the existing fullscreen-window target but now logs the exact Kodi GUI operation if creation, update or teardown fails.
+- Modes 0–2 retain their existing playback handoff. Automated candidate run `36375784976` passed; target Fire TV acceptance remains required.
+
 ## 0.7.19 — 2026-09-27
 
 - Buffered Look Ahead now gates handoff on a real contiguous startup reserve for the selected video plus its associated default audio track, with progress based on the least-ready required track.
