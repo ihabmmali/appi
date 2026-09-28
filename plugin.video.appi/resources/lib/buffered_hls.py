@@ -516,7 +516,7 @@ class _Track:
         return previous
 
     def _next_missing(self):
-        if self._stop.is_set() or self.session._stop.is_set():
+        if self.session._stop.is_set():
             return None
         if self.epoch != self.session.epoch:
             return None
@@ -1696,15 +1696,23 @@ class BufferedHlsSession:
         # This is only a per-transfer admission ceiling, not a per-track
         # reservoir allocation. Video and audio share the session dynamically.
         segment_limit = min(
-            max(4 * 1024 * 1024, self.max_bytes // 4),
-            64 * 1024 * 1024,
+            max(8 * 1024 * 1024, self.max_bytes // 4),
+            32 * 1024 * 1024,
+        )
+        # Reserve a small admission allowance rather than the whole per-file
+        # safety ceiling. Reserving the worst possible segment size prevented
+        # the playable reservoir from ever reaching high-water on 32/64 MB
+        # configurations even when real segments were much smaller.
+        reservation_bytes = min(
+            4 * 1024 * 1024,
+            max(2 * 1024 * 1024, self.max_bytes // 16),
         )
 
         with self._download_lock:
-            self._enforce_disk_limit(limit=max(0, self.max_bytes - segment_limit))
-            if self.disk_bytes() + self._reserved_bytes > self.max_bytes - segment_limit:
+            self._enforce_disk_limit(limit=max(0, self.max_bytes - reservation_bytes))
+            if self.disk_bytes() + self._reserved_bytes > self.max_bytes - reservation_bytes:
                 raise RuntimeError('Buffer capacity is temporarily occupied')
-            self._reserved_bytes += segment_limit
+            self._reserved_bytes += reservation_bytes
         try:
             fetched = _fetch_to_path(
                 resource.upstream_url,
@@ -1715,11 +1723,11 @@ class BufferedHlsSession:
             )
         except Exception:
             with self._download_lock:
-                self._reserved_bytes = max(0, self._reserved_bytes - segment_limit)
+                self._reserved_bytes = max(0, self._reserved_bytes - reservation_bytes)
             raise
 
         with self._download_lock:
-            self._reserved_bytes = max(0, self._reserved_bytes - segment_limit)
+            self._reserved_bytes = max(0, self._reserved_bytes - reservation_bytes)
             if epoch != self.epoch:
                 try:
                     os.remove(path)

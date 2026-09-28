@@ -86,7 +86,7 @@ class BufferedReleaseTests(unittest.TestCase):
         session.prepare()
         track = next(iter(session.tracks.values()))
         self.assertTrue(until(lambda: track._cached(0)))
-        track._wait_for_reserve = lambda *a: self.fail('cached segment must not block')
+        session._wait_reservoir = lambda *a: self.fail('sequential cached segment must not block')
         self.assertTrue(track.serve(0))
 
     def test_missing_seek_fails_within_bound_without_fallback_network_wait(self):
@@ -97,7 +97,7 @@ class BufferedReleaseTests(unittest.TestCase):
         resource = track.segments[30].resource
         if resource.path and os.path.exists(resource.path):
             os.remove(resource.path)
-        track._wait_for_reserve = lambda *args: False
+        session._wait_reservoir = lambda *args: False
         started = time.monotonic()
         with self.assertRaises(TimeoutError):
             track.serve(30)

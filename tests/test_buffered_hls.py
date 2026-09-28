@@ -487,9 +487,13 @@ class BufferedHlsTests(unittest.TestCase):
             )
             segments.append(m._Segment(resource, index, 6.0, index))
         track.replace_segments(segments)
-        target = track.segments[4].resource
-        target.path = os.path.join(session.data_root, 'target.bin')
-        Path(target.path).write_bytes(b'target')
+        # The fresh-epoch path must build a contiguous reserve. Cache the
+        # short VOD remainder so the target epoch can become ready without
+        # weakening the new reserve gate.
+        for index in (4, 5):
+            target = track.segments[index].resource
+            target.path = os.path.join(session.data_root, 'target-{}.bin'.format(index))
+            Path(target.path).write_bytes(b'target')
 
         path = track.serve(4)
         self.assertEqual(path, target.path)
