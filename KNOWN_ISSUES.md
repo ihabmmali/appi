@@ -11,7 +11,7 @@ Updated: 2026-09-27. Each linked task is the canonical requirements/status/evide
 | LANG-1 | review | review | [Default audio and subtitle languages](docs/tasks/LANG-1.md) |
 | LANG-2 | review | implementation | [Common-language selection lists for audio and subtitles](docs/tasks/LANG-2.md) |
 | LANG-3 | review | implementation | [Preferred language setting is not applied at playback](docs/tasks/LANG-3.md) |
-| AUDIO-1 | ready | implementation | [Restore audio for InputStream Adaptive playback](docs/tasks/AUDIO-1.md) |
+| AUDIO-1 | review | implementation | [Restore audio for InputStream Adaptive playback](docs/tasks/AUDIO-1.md) |
 | DIAG-1 | review | review | [Export bounded playback diagnostics](docs/tasks/DIAG-1.md) |
 | DIAG-2 | review | review | [Causal HLS playback telemetry](docs/tasks/DIAG-2.md) |
 | HLS-1 | proposed | research | [Investigate repeated HLS stalls](docs/tasks/HLS-1.md) |
@@ -23,8 +23,8 @@ Updated: 2026-09-27. Each linked task is the canonical requirements/status/evide
 | HLS-7 | review | implementation | [Stabilize Buffered Look Ahead startup, seeking and failure handling](docs/tasks/HLS-7.md) |
 | HLS-8 | review | implementation | [Repair 0.7.18 Buffered Look Ahead preparation and runtime failure](docs/tasks/HLS-8.md) |
 | HLS-9 | review | implementation | [Make InputStream Adaptive a prerequisite dependency](docs/tasks/HLS-9.md) |
-| HLS-10 | ready | research | [Verify/repair Buffered Look Ahead detailed debug overlay](docs/tasks/HLS-10.md) |
-| HLS-11 | ready | implementation | [Repair multi-variant HLS seek, resume-point and recovery timeout](docs/tasks/HLS-11.md) |
+| HLS-10 | review | research | [Verify/repair Buffered Look Ahead detailed debug overlay](docs/tasks/HLS-10.md) |
+| HLS-11 | review | implementation | [Repair multi-variant HLS seek, resume-point and recovery timeout](docs/tasks/HLS-11.md) |
 | SUB-1 | review | review | [Restore downloaded subtitle persistence across playback sessions](docs/tasks/SUB-1.md) |
 | PLAY-1 | proposed | research | [Investigate playback-start Trakt API error](docs/tasks/PLAY-1.md) |
 | UI-1 | proposed | research | [Playback Program Settings visibility](docs/tasks/UI-1.md) |

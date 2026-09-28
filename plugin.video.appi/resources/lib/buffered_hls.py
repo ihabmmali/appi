@@ -27,9 +27,13 @@ STALE_SESSION_SECONDS = 90.0
 MAX_SESSION_BYTES = 384 * 1024 * 1024
 DEFAULT_BUFFER_MB = 128
 STARTUP_TIMEOUT = 45.0
-_USER_AGENT = 'Kodi Appi Buffered/0.7.19'
+_USER_AGENT = 'Kodi Appi Buffered/0.7.20'
 _URI_RE = re.compile(r'URI=(?P<quoted>"(?P<qvalue>[^"]*)"|(?P<uvalue>[^,]*))', re.IGNORECASE)
 _ATTR_RE = re.compile(r'([A-Z0-9-]+)=(?:"([^"]*)"|([^,]*))', re.IGNORECASE)
+
+
+class RecoveryTimeout(TimeoutError):
+    """A bounded random-access refill miss that Kodi may safely retry."""
 
 
 def _root_path():
@@ -417,6 +421,30 @@ class _Track:
                 break
         return total
 
+    def timeline_offset(self, index):
+        index = max(0, min(int(index), len(self.segments)))
+        return sum(segment.duration for segment in self.segments[:index])
+
+    def index_for_offset(self, offset):
+        if not self.segments:
+            return 0
+        target = max(0.0, float(offset))
+        elapsed = 0.0
+        for segment in self.segments:
+            end = elapsed + segment.duration
+            if target < end:
+                return segment.index
+            elapsed = end
+        return self.segments[-1].index
+
+    def recenter(self, index):
+        index = max(0, min(int(index), max(0, len(self.segments) - 1)))
+        with self._condition:
+            previous = self.last_served
+            self.last_served = index - 1
+            self._condition.notify_all()
+        return previous
+
     def _next_missing(self):
         start = max(0, self.last_served + 1)
 
@@ -518,20 +546,12 @@ class _Track:
         if index < 0 or index >= len(self.segments):
             raise IndexError('HLS segment index outside playlist')
         expected = self.last_served + 1
-        if self.last_served >= 0 and index != expected:
-            self.session._event(
-                'buffer_seek_recenter',
-                track_id=self.id,
-                from_index=self.last_served,
-                to_index=index,
-            )
-            with self._condition:
-                self.last_served = index - 1
-                self._condition.notify_all()
+        is_seek = index != expected
+        if is_seek:
+            reason = 'cold-resume' if self.last_served < 0 and index > 0 else 'seek'
+            self.session._coordinate_seek(self, index, reason=reason)
 
         ahead, count = self._ahead(index)
-        remaining = sum(seg.duration for seg in self.segments[index:])
-        threshold = min(self.recovery_seconds, remaining)
         if not self._cached(index):
             self.recovering = True
             self.session._event(
@@ -540,19 +560,56 @@ class _Track:
                 buffered_seconds=ahead,
                 cached_segments_ahead=count,
                 requested_index=index,
+                random_access=is_seek,
             )
-            recovered = self._wait_for_reserve(index, self.recovery_seconds, RECOVERY_TIMEOUT)
-            self.recovering = False
-            if not recovered:
-                raise TimeoutError('Unable to refill the stream buffer within 20 seconds')
-            new_ahead, new_count = self._ahead(index)
-            self.session._event(
-                'buffer_recovery' if recovered else 'buffer_recovery_timeout',
-                track_id=self.id,
-                buffered_seconds=new_ahead,
-                cached_segments_ahead=new_count,
-                requested_index=index,
-            )
+            recovered = False
+            try:
+                # A seek target has priority over obsolete sequential lookahead.
+                # Fetch it directly while the prefetch worker re-centres on the
+                # same window; independent resources/tracks may still progress.
+                try:
+                    self.session._ensure_binary(
+                        self.segments[index].resource,
+                        segment=self.segments[index],
+                        track=self,
+                    )
+                except Exception as exc:
+                    # A single upstream miss is not fatal. The prefetch worker
+                    # may retry it within the bounded recovery window.
+                    self.session._event(
+                        'buffer_seek_target_error' if is_seek else 'buffer_target_error',
+                        track_id=self.id,
+                        requested_index=index,
+                        error_type=type(exc).__name__,
+                    )
+                recovered = self._wait_for_reserve(
+                    index, self.recovery_seconds, RECOVERY_TIMEOUT
+                )
+                new_ahead, new_count = self._ahead(index)
+                if not recovered:
+                    self.session._event(
+                        'buffer_recovery_timeout',
+                        track_id=self.id,
+                        buffered_seconds=new_ahead,
+                        cached_segments_ahead=new_count,
+                        requested_index=index,
+                        random_access=is_seek,
+                    )
+                    raise RecoveryTimeout(
+                        'Unable to refill the requested playback position '
+                        'within {:.0f} seconds'.format(RECOVERY_TIMEOUT)
+                    )
+                self.failed = ''
+                self.session._event(
+                    'buffer_recovery',
+                    track_id=self.id,
+                    buffered_seconds=new_ahead,
+                    cached_segments_ahead=new_count,
+                    requested_index=index,
+                    random_access=is_seek,
+                )
+            finally:
+                self.recovering = False
 
         if not self._cached(index):
             self.session._ensure_binary(
@@ -662,6 +719,29 @@ class BufferedHlsSession:
                 if track_id in self.tracks
             ]
         return list(self.tracks.values())
+
+    def _coordinate_seek(self, source_track, source_index, reason='seek'):
+        """Re-centre every playable track on the requested media timeline."""
+        target_seconds = source_track.timeline_offset(source_index)
+        for track in list(self.tracks.values()):
+            if not track.segments:
+                continue
+            target_index = (
+                source_index
+                if track is source_track
+                else track.index_for_offset(target_seconds)
+            )
+            previous = track.recenter(target_index)
+            self._event(
+                'buffer_seek_recenter',
+                track_id=track.id,
+                source_track_id=source_track.id,
+                from_index=previous,
+                to_index=target_index,
+                requested_index=source_index,
+                timeline_seconds=round(target_seconds, 3),
+                reason=reason,
+            )
 
     def status(self):
         tracks = list(self.tracks.values())
@@ -787,7 +867,7 @@ class BufferedHlsSession:
             message = 'Unable to prepare stream: {}'.format(type(exc).__name__)
             if detail:
                 message += ': ' + detail
-            self.fail(message + '. Try again or choose a lower quality.', type(exc).__name__)
+            self.fail(message + '. Please retry playback.', type(exc).__name__)
 
     @property
     def local_url(self):
@@ -927,8 +1007,25 @@ class BufferedHlsSession:
                         session._pins.discard(path)
                 except (BrokenPipeError, ConnectionResetError):
                     pass
+                except RecoveryTimeout as exc:
+                    # A bounded seek/refill miss is request-scoped, not a fatal
+                    # session error. Keep the re-centred prefetch workers alive
+                    # so Kodi can retry the same position as data arrives.
+                    session._event(
+                        'buffer_request_retry',
+                        error_type=type(exc).__name__,
+                    )
+                    try:
+                        self.send_error(503, 'Buffer refilling; retry request')
+                    except Exception:
+                        pass
                 except Exception as exc:
-                    session.fail('Buffered stream failed ({}). Please retry playback.'.format(type(exc).__name__), type(exc).__name__)
+                    session.fail(
+                        'Buffered stream failed ({}). Please retry playback.'.format(
+                            type(exc).__name__
+                        ),
+                        type(exc).__name__,
+                    )
                     try:
                         self.send_error(502)
                     except Exception:

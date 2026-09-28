@@ -2,6 +2,14 @@
 
 Implemented features, grouped by add-on version. A version listed here means its source/package was published in the repository; it does not by itself certify device testing. For details and earlier 0.7.x entries, see [README.md](README.md). This file is the concise ongoing release history; [RELEASE_NOTES.md](RELEASE_NOTES.md) records what each package shipped and how it was verified.
 
+## 0.7.20 — 2026-09-27
+
+- Harden preferred-audio selection against InputStream Adaptive startup churn: No preference is inert, stream lists must stabilize and be revalidated before selection, and the current Kodi audio stream is checked when available so an already-correct stream is not redundantly switched.
+- Rework Buffered Look Ahead random access so cold non-zero resume starts and later seeks coordinate video/audio cursors by timeline, prioritize the requested segment, and keep bounded recovery timeouts request-scoped/retriable rather than failing the entire buffered session.
+- Make recovery-timeout telemetry reachable and remove unconditional lower-quality advice from generic buffered preparation failures.
+- Keep the detailed-overlay rendering target unchanged while adding operation-specific non-fatal logging for Kodi GUI lifecycle failures.
+- Existing HLS modes 0–2 remain unchanged. Automated release/package run `36375784976` passed; target-device acceptance remains required.
+
 ## 0.7.19 — 2026-09-27
 
 - Rework Buffered Look Ahead startup around a coordinated playable-reserve gate: the selected video and associated default audio rendition must both have contiguous startup media before Kodi receives the localhost URL, and progress reports the least-ready required track rather than optimistic aggregate work.

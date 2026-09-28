@@ -432,5 +432,138 @@ class BufferedHlsTests(unittest.TestCase):
         self.assertEqual(session._reserved_bytes, 0)
 
 
+    def test_coordinated_seek_recenters_video_and_audio_by_timeline(self):
+        m = self.m
+        session = m.BufferedHlsSession(
+            'https://up.example/master.m3u8',
+            root=os.path.join(m._test_root, 'coordinated-seek'),
+        )
+        tracks = []
+        for track_id, count, duration in (('video', 6, 6.0), ('audio', 12, 3.0)):
+            track = m._Track(session, track_id, 30, 6, 6)
+            track._stop.set()
+            tracks.append(track)
+            session.tracks[track_id] = track
+            segments = []
+            for index in range(count):
+                resource = session._register(
+                    'https://up.example/{}/{}.bin'.format(track_id, index),
+                    'segment',
+                    metadata={
+                        'track_id': track_id,
+                        'index': index,
+                        'sequence': index,
+                    },
+                )
+                segments.append(m._Segment(resource, index, duration, index))
+            track.replace_segments(segments)
+        video, audio = tracks
+        video.last_served = 1
+        audio.last_served = 3
+
+        session._coordinate_seek(video, 4, reason='seek')
+        self.assertEqual(video.last_served, 3)
+        # Video index 4 begins at 24 s; 3 s audio segments therefore re-centre
+        # at audio index 8, with last_served one segment behind the target.
+        self.assertEqual(audio.last_served, 7)
+        names = [name for name, _ in session.drain_events()]
+        self.assertEqual(names.count('buffer_seek_recenter'), 2)
+
+    def test_cold_resume_nonzero_request_is_treated_as_random_access(self):
+        m = self.m
+        session = m.BufferedHlsSession(
+            'https://up.example/media.m3u8',
+            root=os.path.join(m._test_root, 'cold-resume'),
+        )
+        track = m._Track(session, 'video', 30, 6, 6)
+        track._stop.set()
+        session.tracks['video'] = track
+        segments = []
+        for index in range(6):
+            resource = session._register(
+                'https://up.example/s{}.ts'.format(index),
+                'segment',
+                metadata={'track_id':'video','index':index,'sequence':index},
+            )
+            segments.append(m._Segment(resource, index, 6.0, index))
+        track.replace_segments(segments)
+        target = track.segments[4].resource
+        target.path = os.path.join(session.data_root, 'target.bin')
+        Path(target.path).write_bytes(b'target')
+
+        path = track.serve(4)
+        self.assertEqual(path, target.path)
+        self.assertEqual(track.last_served, 4)
+        events = session.drain_events()
+        recenter = [fields for name, fields in events if name == 'buffer_seek_recenter']
+        self.assertTrue(recenter)
+        self.assertEqual(recenter[0].get('reason'), 'cold-resume')
+
+    def test_recovery_timeout_keeps_session_retriable_and_clears_recovering_state(self):
+        m = self.m
+        m.RECOVERY_TIMEOUT = 0.2
+        session = m.BufferedHlsSession(
+            'https://up.example/media.m3u8',
+            root=os.path.join(m._test_root, 'retry-after-timeout'),
+        )
+        session._startup_complete = True
+        track = m._Track(session, 'video', 3, 1, 1)
+        session.tracks['video'] = track
+        segments = []
+        for index in range(5):
+            resource = session._register(
+                'https://up.example/s{}.ts'.format(index),
+                'segment',
+                metadata={'track_id':'video','index':index,'sequence':index},
+            )
+            segments.append(m._Segment(resource, index, 1.0, index))
+        track.replace_segments(segments)
+
+        def failing_fetch(url, path, **kwargs):
+            raise RuntimeError('temporary upstream miss')
+
+        m._fetch_to_path = failing_fetch
+        with self.assertRaises(m.RecoveryTimeout):
+            track.serve(3)
+        self.assertFalse(track.recovering)
+        self.assertFalse(session.error)
+        self.assertEqual(track.last_served, 2)
+        names = [name for name, _ in session.drain_events()]
+        self.assertIn('buffer_recovery_timeout', names)
+
+        payloads = {'/s{}.ts'.format(i): bytes([65 + i]) * 32 for i in range(5)}
+        _install_fake_fetch(m, payloads)
+        m.RECOVERY_TIMEOUT = 2.0
+        path = track.serve(3)
+        self.assertTrue(os.path.isfile(path))
+        self.assertEqual(track.last_served, 3)
+        self.assertFalse(session.error)
+        track.stop()
+
+    def test_repeated_forward_and_backward_seek_reprioritizes_next_missing(self):
+        m = self.m
+        session = m.BufferedHlsSession(
+            'https://up.example/media.m3u8',
+            root=os.path.join(m._test_root, 'repeated-seek'),
+        )
+        track = m._Track(session, 'video', 30, 6, 6)
+        track._stop.set()
+        session.tracks['video'] = track
+        segments = []
+        for index in range(10):
+            resource = session._register(
+                'https://up.example/s{}.ts'.format(index),
+                'segment',
+                metadata={'track_id':'video','index':index,'sequence':index},
+            )
+            segments.append(m._Segment(resource, index, 3.0, index))
+        track.replace_segments(segments)
+
+        session._coordinate_seek(track, 7, reason='seek')
+        self.assertEqual(track._next_missing(), 7)
+        session._coordinate_seek(track, 2, reason='seek')
+        self.assertEqual(track._next_missing(), 2)
+
+
 if __name__ == '__main__':
     unittest.main()

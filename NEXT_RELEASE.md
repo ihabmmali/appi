@@ -1,8 +1,8 @@
 # Next Appi release
 
-Planning status: committed. Version: not assigned. Current baseline and fallback: [PROJECT_STATE.md](PROJECT_STATE.md).
+Planning status: release candidate. Version: 0.7.20. Current baseline and fallback: [PROJECT_STATE.md](PROJECT_STATE.md).
 
-0.7.19 is published and is the current repository package. Target-device testing is positive for initial Buffered Look Ahead preparation/playback and the simple startup windows, but detailed-overlay visibility and seek/recovery remain broken. Preferred-language application shipped in 0.7.19 and still needs target-device confirmation.
+0.7.19 remains the published repository package while 0.7.20 is an automated-gate-passed release candidate on `release/0.7.20`. Candidate artifact commit `1ca52ad0b55a3f3e19acd8e4b288d8d13fe57ab4`; target-device acceptance remains separate.
 
 ## Proposed scope
 
@@ -25,6 +25,9 @@ Planning status: committed. Version: not assigned. Current baseline and fallback
 6. Copy shipped task IDs and scope changes into RELEASE_NOTES, then reset this planning file for the next cycle.
 
 ## Scope decisions
+
+2026-09-27: 0.7.20 candidate passed corrected release/package run `36375784976` after the first gate caught and the branch fixed an overlay test-isolation regression. AUDIO-1 and HLS-11 candidate repairs are implemented without changing HLS modes 0–2. HLS-10 adds operation-specific overlay logging while retaining the existing window target until a confirmed HLS device test supplies evidence to change it. Artifact commit `1ca52ad0b55a3f3e19acd8e4b288d8d13fe57ab4`; target-device verification remains pending.
+
 
 2026-09-27: user explicitly instructed that **all current candidates be committed**. AUDIO-1, HLS-10 and HLS-11 are now committed next-release scope. AUDIO-1 and HLS-11 are release-blocking playback regressions. HLS-10 is committed as an investigation-first verify/repair task: it must first reproduce the detailed-overlay failure on a confirmed Buffered Look Ahead HLS session before changing the overlay implementation. Existing backlog items remain backlog.
 

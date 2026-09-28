@@ -2,6 +2,16 @@
 
 Each entry records the package shipped, its main user-visible changes, and verification at release time. For the current baseline and next tasks read [PROJECT_STATE.md](PROJECT_STATE.md) and [KNOWN_ISSUES.md](KNOWN_ISSUES.md); the [CHANGELOG.md](CHANGELOG.md) is the implemented feature history.
 
+## 0.7.20 — 2026-09-27
+
+- Candidate scope: AUDIO-1, HLS-10 and HLS-11. Base `24ac0358640864a0129d97b638ca37c616f6612b`; branch `release/0.7.20`; implementation `4c5363e3220dc16507b308e6ccfa8bbec4eb6d40`.
+- AUDIO-1 preserves the original native/manual/adaptive HLS handoff and hardens only preferred-audio mutation: stable/revalidated stream enumeration, inert No preference/no-match behavior, and a best-effort current-stream check that avoids redundant `setAudioStream()` calls.
+- HLS-11 coordinates random access across active tracks, prioritizes the requested target, keeps recovery timeouts request-scoped/retriable, and removes generic lower-quality advice where throughput has not been established as causal.
+- HLS-10 retains window 12005 pending a confirmed HLS target-device reproduction and adds exact non-fatal logging for Window, ControlLabel, addControl, setLabel and removeControl.
+- First gate run `36375728261` was correctly blocked by an existing pure-overlay test because the new module imported `xbmc` outside Kodi. The compatibility correction kept runtime logging intact; corrected release/package run `36375784976` then passed 87 tests (1 skipped), tracker validation, deterministic rebuild and package/index inspection.
+- Deterministic artifact commit: `1ca52ad0b55a3f3e19acd8e4b288d8d13fe57ab4`. ZIP SHA-256: `41e1bdec7229d1a0a3d8787427ac9c434fb773e302c7d8f5bae428de0de7755f`.
+- Target-device acceptance remains separately required for audible ISA playback, multi-variant HLS seek/resume and enabled/disabled debug-overlay visibility.
+
 ## 0.7.19 — 2026-09-27
 
 - Target-device regression: InputStream Adaptive playback is completely silent in manual selection and other ISA playback on 0.7.19 even though Kodi still displays audio-stream details; reverting the same media/device to 0.7.8 restores audible playback. AUDIO-1 tracks this. The newer preferred-audio selection service is a primary regression boundary to A/B test, but cause is not yet established.

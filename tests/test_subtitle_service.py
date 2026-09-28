@@ -67,6 +67,9 @@ player.onAVStarted(); assert state['set'], state
 subtitle_store.clear_session(); state['set'].clear(); state['show'].clear()
 subtitle_store.prepare_session('movies','m:language', subtitle_mode='global')
 player.onAVStarted()
+assert state['audio'] == [], state
+player._audio_stream_snapshot_at -= 2
+player.apply_pending_languages()
 assert state['audio'][-1] == 1, state
 assert state['subtitle_stream'][-1] == 1, state
 subtitle_store.clear_session(); state['set'].clear(); state['show'].clear()
