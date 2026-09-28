@@ -107,7 +107,15 @@ class BufferedReleaseTests(unittest.TestCase):
         master = ('#EXTM3U\n#EXT-X-MEDIA:TYPE=AUDIO,GROUP-ID="a",URI="audio.m3u8"\n'
             '#EXT-X-STREAM-INF:BANDWIDTH=1000000,RESOLUTION=640x360,AUDIO="a"\nlow.m3u8\n'
             '#EXT-X-STREAM-INF:BANDWIDTH=8000000,RESOLUTION=1920x1080,AUDIO="a"\nhigh.m3u8\n')
-        self.payloads.update({'/media.m3u8':master.encode(), '/low.m3u8':self.media(4), '/high.m3u8':self.media(4)})
+        self.payloads.update({
+            '/media.m3u8': master.encode(),
+            '/low.m3u8': self.media(4),
+            '/high.m3u8': self.media(4),
+            # 0.7.19 intentionally opens the selected variant's associated
+            # audio rendition during preparation, so the fixture must model
+            # the audio playlist that the master advertises.
+            '/audio.m3u8': self.media(4),
+        })
         for quality, expected in [('highest','high'), ('prompt','low')]:
             session = self.session(quality=quality)
             worker = threading.Thread(target=session.prepare)
