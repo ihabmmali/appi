@@ -266,5 +266,171 @@ class BufferedHlsTests(unittest.TestCase):
         self.assertEqual(self.m._byterange('100', 149), ('150-249', 249))
 
 
+    def test_startup_waits_for_video_and_default_audio_with_truthful_progress(self):
+        m = self.m
+        master = (
+            '#EXTM3U\n'
+            '#EXT-X-MEDIA:TYPE=AUDIO,GROUP-ID="aud",NAME="English",LANGUAGE="eng",'
+            'DEFAULT=YES,AUTOSELECT=YES,URI="audio.m3u8"\n'
+            '#EXT-X-STREAM-INF:BANDWIDTH=6000000,RESOLUTION=1920x1080,AUDIO="aud"\n'
+            'video.m3u8\n'
+        )
+        media = (
+            '#EXTM3U\n#EXT-X-TARGETDURATION:6\n'
+            '#EXTINF:6,\nv0.ts\n#EXTINF:6,\nv1.ts\n#EXTINF:6,\nv2.ts\n'
+            '#EXT-X-ENDLIST\n'
+        )
+        audio = (
+            '#EXTM3U\n#EXT-X-TARGETDURATION:6\n'
+            '#EXTINF:6,\na0.aac\n#EXTINF:6,\na1.aac\n#EXTINF:6,\na2.aac\n'
+            '#EXT-X-ENDLIST\n'
+        )
+        payloads = {
+            '/master.m3u8': master.encode(), '/video.m3u8': media.encode(),
+            '/audio.m3u8': audio.encode(),
+            '/v0.ts': b'v' * 128, '/v1.ts': b'v' * 128, '/v2.ts': b'v' * 128,
+            '/a0.aac': b'a' * 64, '/a1.aac': b'a' * 64, '/a2.aac': b'a' * 64,
+        }
+        _install_fake_fetch(m, payloads)
+        original = m._fetch_to_path
+        audio_gate = threading.Event()
+
+        def gated(url, path, **kwargs):
+            if urlparse(url.split('|', 1)[0]).path.startswith('/a'):
+                audio_gate.wait(2)
+            return original(url, path, **kwargs)
+
+        m._fetch_to_path = gated
+        session = m.BufferedHlsSession(
+            'https://up.example/master.m3u8',
+            root=os.path.join(m._test_root, 'associated-audio'),
+        )
+        session.start()
+        self.addCleanup(lambda: session.stop('test'))
+        worker = threading.Thread(target=session.prepare)
+        worker.start()
+
+        deadline = time.time() + 2
+        while len(session._startup_track_ids) < 2 and time.time() < deadline:
+            time.sleep(0.01)
+        self.assertEqual(len(session._startup_track_ids), 2)
+
+        deadline = time.time() + 2
+        while time.time() < deadline:
+            required = session._required_startup_tracks()
+            if any(t._ahead(0)[0] >= 12 for t in required):
+                break
+            time.sleep(0.01)
+        status = session.status()
+        self.assertFalse(status['ready'])
+        self.assertEqual(status['percent'], 0)
+        self.assertEqual(status['startup_tracks'], 2)
+
+        audio_gate.set()
+        worker.join(3)
+        self.assertFalse(worker.is_alive())
+        self.assertTrue(session.ready, session.error)
+        self.assertEqual(session.status()['percent'], 100)
+
+    def test_near_complete_startup_failure_does_not_handoff(self):
+        m = self.m
+        m.STARTUP_TIMEOUT = 0.35
+        media = (
+            '#EXTM3U\n#EXT-X-TARGETDURATION:6\n'
+            '#EXTINF:5.4,\ns0.ts\n#EXTINF:5.4,\ns1.ts\n#EXTINF:5.4,\ns2.ts\n'
+            '#EXT-X-ENDLIST\n'
+        )
+        payloads = {
+            '/media.m3u8': media.encode(),
+            '/s0.ts': b'0' * 64, '/s1.ts': b'1' * 64, '/s2.ts': b'2' * 64,
+        }
+        _install_fake_fetch(m, payloads)
+        original = m._fetch_to_path
+
+        def fail_third(url, path, **kwargs):
+            if urlparse(url.split('|', 1)[0]).path == '/s2.ts':
+                raise RuntimeError('simulated third-segment stall')
+            return original(url, path, **kwargs)
+
+        m._fetch_to_path = fail_third
+        session = m.BufferedHlsSession(
+            'https://up.example/media.m3u8',
+            root=os.path.join(m._test_root, 'near-complete'),
+        )
+        session.start()
+        self.addCleanup(lambda: session.stop('test'))
+        worker = threading.Thread(target=session.prepare)
+        worker.start()
+
+        observed = None
+        deadline = time.time() + 1
+        while time.time() < deadline:
+            status = session.status()
+            if 85 <= status['percent'] <= 95:
+                observed = status
+                break
+            time.sleep(0.01)
+        self.assertIsNotNone(observed, session.status())
+        self.assertFalse(observed['ready'])
+        self.assertLess(observed['percent'], 100)
+
+        worker.join(2)
+        self.assertFalse(worker.is_alive())
+        self.assertFalse(session.ready)
+        self.assertIn('Startup reserve incomplete', session.error)
+
+    def test_control_deadline_exceeds_preparation_deadline(self):
+        self.assertGreater(self.m.CONTROL_TIMEOUT, self.m.STARTUP_TIMEOUT)
+
+
+    def test_distinct_tracks_prefetch_concurrently_without_overcommitting_buffer(self):
+        m = self.m
+        session = m.BufferedHlsSession(
+            'https://up.example/master.m3u8',
+            root=os.path.join(m._test_root, 'parallel'),
+            buffer_mb=32,
+        )
+        session.start()
+        self.addCleanup(lambda: session.stop('test'))
+
+        entered = []
+        entered_lock = threading.Lock()
+        both_entered = threading.Event()
+        release = threading.Event()
+
+        def concurrent_fetch(url, path, timeout=20.0, byte_range='', **kwargs):
+            with entered_lock:
+                entered.append(url)
+                if len(entered) >= 2:
+                    both_entered.set()
+            release.wait(2)
+            Path(path).write_bytes(b'x' * 64)
+            return m._FetchResult(b'', url, 'application/octet-stream', 200, 1.0, 2.0, 64)
+
+        m._fetch_to_path = concurrent_fetch
+        for track_id, suffix in (('video', 'v0.ts'), ('audio', 'a0.aac')):
+            track = m._Track(session, track_id, 30, 6, 6)
+            session.tracks[track_id] = track
+            resource = session._register(
+                'https://up.example/' + suffix,
+                'segment',
+                metadata={'track_id': track_id, 'index': 0, 'sequence': 0},
+            )
+            track.replace_segments([m._Segment(resource, 0, 6.0, 0)])
+
+        self.assertTrue(
+            both_entered.wait(1.0),
+            'independent track downloads were serialized behind one stalled request',
+        )
+        self.assertLessEqual(session._reserved_bytes, session.max_bytes)
+        release.set()
+
+        deadline = time.time() + 2
+        while any(not track._cached(0) for track in session.tracks.values()) and time.time() < deadline:
+            time.sleep(0.01)
+        self.assertTrue(all(track._cached(0) for track in session.tracks.values()))
+        self.assertEqual(session._reserved_bytes, 0)
+
+
 if __name__ == '__main__':
     unittest.main()

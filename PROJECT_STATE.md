@@ -13,11 +13,11 @@ Updated: 2026-09-27. Start with [AGENTS.md](AGENTS.md) for role routing.
 
 ## Current work
 
-- **0.7.18 is published and repository verification passed.** Target-device startup acceptance now passes, but functional acceptance does not: Buffered Look Ahead fails preparation/playback on tested episodes and default language selection appears ineffective.
+- **0.7.18 remains the published baseline. 0.7.19 is the verified release candidate on `release/0.7.19` / PR #7.** Corrected release/package run 36370407423 passed 81 tests plus tracker/build/package inspection and produced artifact commit `f25cfffb099eaa43f3865c5ac2a227d4958a7a2d` (ZIP SHA-256 `1bee04f63b79a4654ff0dcf8e8db94ee89e709d16091722f38283c1b01bf2f4d`). Target-device acceptance remains pending for Buffered Look Ahead and language selection.
 - Shipped 0.7.17 scope remains HLS-7, HLS-6, LANG-2, UI-2 and UI-3. Their separate device acceptance items remain review/partial where documented.
 - Buffered mode has the intended preparation/configuration features in source, but 0.7.18 target-device testing shows no/erratic preparation progress, playback failure, timeout near 90%, and retry-dependent success. HLS-8 tracks the repair. Modes 0–2 retain their previous configuration paths.
 - LANG-3 tracks preferred-language settings that appear to have no runtime effect. HLS-9 is committed to make InputStream Adaptive a required prerequisite. PLAY-1 is downgraded to a backlog Trakt-error investigation; the suspected resume-point regression was withdrawn after longer playback confirmed Kodi remembers the resume point. HLS-4 and DIAG-2 retain their separate outstanding device acceptance checks. HLS-1 and UI-1 remain backlog investigations.
-- [NEXT_RELEASE.md](NEXT_RELEASE.md): committed scope is HLS-8, LANG-3, HLS-9 and UI-4. HLS-8/LANG-3 are release blockers; PLAY-1 is backlog. [KNOWN_ISSUES.md](KNOWN_ISSUES.md): full task index.
+- [NEXT_RELEASE.md](NEXT_RELEASE.md): 0.7.19 release-candidate scope is HLS-8, LANG-3, HLS-9 and UI-4. HLS-8/LANG-3 remain device-acceptance blockers after publication; PLAY-1 is backlog. [KNOWN_ISSUES.md](KNOWN_ISSUES.md): full task index.
 
 ## Context on demand
 

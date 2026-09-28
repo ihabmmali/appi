@@ -1,6 +1,7 @@
 import re
 import unittest
 import xml.etree.ElementTree as ET
+import zipfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -12,11 +13,28 @@ STRINGS = PLUGIN / 'resources' / 'language' / 'resource.language.en_gb' / 'strin
 class SettingsLocalizationTests(unittest.TestCase):
     def test_stable_browser_and_download_batch_features_are_packaged(self):
         addon = ET.parse(PLUGIN / 'addon.xml').getroot()
-        self.assertEqual(addon.attrib.get('version'), '0.7.18')
+        self.assertEqual(addon.attrib.get('version'), '0.7.19')
+        isa = addon.find("./requires/import[@addon='inputstream.adaptive']")
+        self.assertIsNotNone(isa)
+        self.assertNotEqual(isa.attrib.get('optional'), 'true')
         helper = addon.find("./requires/import[@addon='plugin.video.themoviedb.helper']")
         self.assertIsNotNone(helper)
         self.assertNotEqual(helper.attrib.get('optional'), 'true')
         self.assertEqual(helper.attrib.get('version'), '0.0.0')
+
+    def test_release_zip_has_required_isa_and_exact_revised_icon(self):
+        package = PLUGIN / 'plugin.video.appi-0.7.19.zip'
+        self.assertTrue(package.is_file(), package)
+        with zipfile.ZipFile(package, 'r') as archive:
+            manifest = ET.fromstring(archive.read('plugin.video.appi/addon.xml'))
+            isa = manifest.find("./requires/import[@addon='inputstream.adaptive']")
+            self.assertIsNotNone(isa)
+            self.assertNotEqual(isa.attrib.get('optional'), 'true')
+            packaged_icon = archive.read('plugin.video.appi/resources/icon.png')
+        self.assertEqual(
+            packaged_icon,
+            (ROOT / 'artwork' / 'appi-icon-selected.png').read_bytes(),
+        )
         self.assertFalse((PLUGIN / 'resources' / 'lib' / 'browser.py').exists())
         self.assertFalse((PLUGIN / 'resources' / 'skins').exists())
         self.assertTrue((PLUGIN / 'resources' / 'lib' / 'downloads.py').is_file())

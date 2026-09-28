@@ -2,6 +2,14 @@
 
 Implemented features, grouped by add-on version. A version listed here means its source/package was published in the repository; it does not by itself certify device testing. For details and earlier 0.7.x entries, see [README.md](README.md). This file is the concise ongoing release history; [RELEASE_NOTES.md](RELEASE_NOTES.md) records what each package shipped and how it was verified.
 
+## 0.7.19 — 2026-09-27
+
+- Rework Buffered Look Ahead startup around a coordinated playable-reserve gate: the selected video and associated default audio rendition must both have contiguous startup media before Kodi receives the localhost URL, and progress reports the least-ready required track rather than optimistic aggregate work.
+- Allow independent buffered tracks/resources to fetch concurrently while reserving disk capacity up front, so one stalled audio/key/media request cannot serialize and freeze every look-ahead download. Keep mode 3 isolated; native Kodi, manual InputStream Adaptive and adaptive-bitrate modes remain unchanged.
+- Separate the 45-second preparation deadline from a 65-second plugin/service control-response window, make preparation/retry state visible, and keep failures bounded and session-isolated.
+- Retry preferred audio/subtitle selection for up to 12 seconds after AV start while Kodi enumerates tracks, preserving No preference and saved/per-title subtitle precedence.
+- Make InputStream Adaptive a required dependency and package the revised flat Appi icon exactly.
+
 ## 0.7.18 — 2026-09-27
 
 - Fix the 0.7.17 Kodi startup crash trigger: the No preference language options now have a non-empty `none` value, avoiding a null text child in Kodi's native settings parser.

@@ -35,6 +35,9 @@ class AppiPlayer(xbmc.Player):
         self._search_opened_key = None
         self._buffered_manager = buffered_manager
         self._buffered_token = None
+        self._language_deadline = 0.0
+        self._audio_language_done = True
+        self._subtitle_language_done = True
 
     def _subtitle_session(self):
         return subtitle_store.load_session() or {}
@@ -42,7 +45,7 @@ class AppiPlayer(xbmc.Player):
     def _apply_session_subtitles(self):
         session = self._subtitle_session()
         if not session:
-            return
+            return False
         mode = session.get('subtitle_mode') or 'global'
         key = session.get('key')
 
@@ -53,51 +56,84 @@ class AppiPlayer(xbmc.Player):
                     xbmc.executebuiltin('ActivateWindow(subtitlesearch)')
                 except Exception as exc:
                     xbmc.log('Appi could not open subtitle search: {}'.format(exc), xbmc.LOGWARNING)
-            return
+            return True
 
         if mode == 'off':
-            return
+            return True
         if mode == 'global' and not _enabled('auto_saved_subtitles', True):
-            return
+            return False
 
         path = subtitle_store.last_saved_subtitle(session.get('catalog', ''), session.get('ref', ''))
         if path:
             try:
                 self.setSubtitles(path)
                 self.showSubtitles(True)
+                return True
             except Exception as exc:
                 xbmc.log('Appi could not restore saved subtitles: {}'.format(exc), xbmc.LOGWARNING)
+        return False
+
+    def _begin_preferred_languages(self):
+        self._language_deadline = time.monotonic() + 12.0
+        self._audio_language_done = False
+        self._subtitle_language_done = False
 
     def _apply_preferred_languages(self):
         audio = languages.preference(ADDON, 'audio')
-        if audio:
-            try:
-                index = languages.match_index(audio, self.getAvailableAudioStreams())
-                if index is not None:
-                    self.setAudioStream(index)
-            except Exception as exc:
-                xbmc.log('Appi audio-language selection failed: {}'.format(exc), xbmc.LOGWARNING)
+        if not self._audio_language_done:
+            if not audio:
+                self._audio_language_done = True
+            else:
+                try:
+                    streams = self.getAvailableAudioStreams() or []
+                    if streams:
+                        index = languages.match_index(audio, streams)
+                        self._audio_language_done = True
+                        if index is not None:
+                            self.setAudioStream(index)
+                except Exception as exc:
+                    self._audio_language_done = False
+                    xbmc.log('Appi audio-language selection failed: {}'.format(exc), xbmc.LOGWARNING)
 
         session = self._subtitle_session()
         mode = session.get('subtitle_mode') or 'global'
         subtitle = languages.preference(ADDON, 'subtitle')
-        if subtitle and mode == 'global':
-            try:
-                index = languages.match_index(subtitle, self.getAvailableSubtitleStreams())
-                if index is not None:
-                    self.setSubtitleStream(index)
-                    self.showSubtitles(True)
-            except Exception as exc:
-                xbmc.log('Appi subtitle-language selection failed: {}'.format(exc), xbmc.LOGWARNING)
+        if not self._subtitle_language_done:
+            if not subtitle or mode != 'global':
+                self._subtitle_language_done = True
+            else:
+                try:
+                    streams = self.getAvailableSubtitleStreams() or []
+                    if streams:
+                        index = languages.match_index(subtitle, streams)
+                        self._subtitle_language_done = True
+                        if index is not None:
+                            self.setSubtitleStream(index)
+                            self.showSubtitles(True)
+                except Exception as exc:
+                    self._subtitle_language_done = False
+                    xbmc.log('Appi subtitle-language selection failed: {}'.format(exc), xbmc.LOGWARNING)
+
+    def apply_pending_languages(self):
+        if self._audio_language_done and self._subtitle_language_done:
+            return
+        if time.monotonic() > self._language_deadline:
+            self._audio_language_done = True
+            self._subtitle_language_done = True
+            return
+        self._apply_preferred_languages()
 
     def onAVStarted(self):
         if self._buffered_manager:
             self._buffered_token = self._buffered_manager.playback_started(self.getPlayingFile())
+        self._begin_preferred_languages()
         self._apply_preferred_languages()
         diagnostics.player_started(self)
-        self._apply_session_subtitles()
+        if self._apply_session_subtitles():
+            self._subtitle_language_done = True
 
     def onAVChange(self):
+        self.apply_pending_languages()
         if _enabled('persist_subtitles', True):
             try:
                 subtitle_store.capture_temp_changes()
@@ -118,6 +154,9 @@ class AppiPlayer(xbmc.Player):
         diagnostics.finish(result)
         session = playback_history.finish_session()
         self._search_opened_key = None
+        self._language_deadline = 0.0
+        self._audio_language_done = True
+        self._subtitle_language_done = True
         return session
 
     def onPlayBackStopped(self):
@@ -173,6 +212,8 @@ def run():
                                            'cached_segments_ahead', 'buffer_capacity_mb'}})
         except Exception as exc:
             xbmc.log('Appi buffered HLS service failed: {}'.format(exc), xbmc.LOGWARNING)
+        if playing:
+            player.apply_pending_languages()
         if playing and _enabled('persist_subtitles', True):
             try:
                 subtitle_store.capture_temp_changes()
@@ -224,7 +265,7 @@ def run():
             except Exception as exc:
                 xbmc.log('Appi metadata worker failed: {}'.format(exc), xbmc.LOGWARNING)
             next_metadata_poll = now + 2.0
-        if monitor.waitForAbort(2.0):
+        if monitor.waitForAbort(0.25 if buffered_manager.active else 1.0):
             break
     overlay.close()
     buffered_manager.shutdown(diagnostics.event)
