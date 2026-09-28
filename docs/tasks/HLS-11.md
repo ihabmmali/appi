@@ -64,7 +64,7 @@ Do not reduce selected quality merely to hide a seek-state defect. Quality fallb
 - Target-device verification uses at least one positively identified multi-variant HLS master and covers: start from time 0, manual forward seek, manual backward seek, fresh playback from a saved non-zero resume point, and the post-timeout resume sequence.
 
 ## Authorization
-Reported by the user on 2026-09-27 while testing published Appi 0.7.19. This task is logged as a ready candidate and is not committed to a future release unless explicitly included under AGENTS.md.
+Reported by the user on 2026-09-27 while testing published Appi 0.7.19. On 2026-09-27 the user explicitly instructed that all current candidates be committed. HLS-11 is therefore committed release scope and a release blocker.
 
 ## Evidence
 0.7.19 source re-centres a track on a non-sequential segment request and waits for a recovery reserve with `RECOVERY_TIMEOUT = 20.0`.
@@ -72,4 +72,4 @@ Reported by the user on 2026-09-27 while testing published Appi 0.7.19. This tas
 On the target device, streams that expose multiple resolution choices—clear evidence of multi-variant HLS masters—prepare rapidly and play well from time 0. Manual seeks fail, and starting/resuming from an existing non-zero playback point also fails. After a seek timeout, resuming consistently plays briefly, displays **Appi buffering**, stutters and exits with a buffering-failed timeout. This isolates the remaining problem to random-access/recovery state much more strongly than to initial bandwidth, master parsing or rendition selection.
 
 ## Outcome and next action
-Instrument the requested segment, per-track re-centering, selected rendition/audio association, in-flight downloads, cached-ahead reserve and post-timeout state across both an in-session seek and a cold start from a saved non-zero resume point. Repair recovery so the target is prioritized and a timeout cannot leave the session in a recurring degraded state.
+Committed for the next release. Instrument the requested segment, per-track re-centering, selected rendition/audio association, in-flight downloads, cached-ahead reserve and post-timeout state across both an in-session seek and a cold start from a saved non-zero resume point. Repair recovery so the target is prioritized and a timeout cannot leave the session in a recurring degraded state.

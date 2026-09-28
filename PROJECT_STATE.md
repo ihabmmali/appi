@@ -14,13 +14,13 @@ Updated: 2026-09-27. Start with [AGENTS.md](AGENTS.md) for role routing.
 ## Current work
 
 - **0.7.19 is published.** Known multi-variant HLS masters now prepare and play well from time 0 in Buffered Look Ahead on the target Fire TV; the simple startup windows display.
-- AUDIO-1 is a ready release-blocker candidate: 0.7.19 InputStream Adaptive playback is completely silent in both manual and adaptive use, while 0.7.8 restores audio on the same media/device. Kodi still exposes audio-stream details during silent playback, so discovery is occurring; selection/index/timing or decoder/ISA handoff must be investigated. The newer preferred-audio service logic is a primary A/B boundary, not a presumed cause.
-- HLS-10 is a proposed investigation: the no-overlay observation may have been on a non-HLS item that bypassed Buffered Look Ahead, so it must be repeated on a known HLS buffered session.
-- HLS-11 is a ready candidate because known multi-variant HLS works from time 0 but fails on manual seek and saved-point resume. After a seek failure, resume briefly plays, displays **Appi buffering**, stutters and exits with a buffering-failed timeout.
+- AUDIO-1 is committed as a release blocker: 0.7.19 InputStream Adaptive playback is completely silent in both manual and adaptive use, while 0.7.8 restores audio on the same media/device. Kodi still exposes audio-stream details during silent playback, so discovery is occurring; selection/index/timing or decoder/ISA handoff must be investigated. The newer preferred-audio service logic is a primary A/B boundary, not a presumed cause.
+- HLS-10 is committed as an investigation-first verify/repair task: the no-overlay observation may have been on a non-HLS item that bypassed Buffered Look Ahead, so it must be repeated on a known HLS buffered session.
+- HLS-11 is committed as a release blocker because known multi-variant HLS works from time 0 but fails on manual seek and saved-point resume. After a seek failure, resume briefly plays, displays **Appi buffering**, stutters and exits with a buffering-failed timeout.
 - HLS-8 is shipped/review-partial: the original 0.7.18 preparation/handoff regression has positive device evidence, while focused successor tasks own the remaining overlay and seek defects.
 - LANG-3, HLS-9 and UI-4 are shipped in 0.7.19. LANG-3 target-device verification is now failed because ISA audio is broken; AUDIO-1 owns restoring audio before language-selection acceptance can resume.
 - PLAY-1 remains a backlog Trakt-error investigation. HLS-1 and UI-1 remain backlog investigations.
-- [NEXT_RELEASE.md](NEXT_RELEASE.md): AUDIO-1 and HLS-11 are ready candidates; HLS-10 is a proposed investigation; no new implementation scope is committed. [KNOWN_ISSUES.md](KNOWN_ISSUES.md): full task index.
+- [NEXT_RELEASE.md](NEXT_RELEASE.md): Committed next-release scope is AUDIO-1, HLS-10 and HLS-11. AUDIO-1 and HLS-11 are release blockers; HLS-10 must first verify the overlay on a known HLS buffered session. [KNOWN_ISSUES.md](KNOWN_ISSUES.md): full task index.
 
 ## Context on demand
 

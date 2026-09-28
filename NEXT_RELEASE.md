@@ -1,6 +1,6 @@
 # Next Appi release
 
-Planning status: open. Version: not assigned. Current baseline and fallback: [PROJECT_STATE.md](PROJECT_STATE.md).
+Planning status: committed. Version: not assigned. Current baseline and fallback: [PROJECT_STATE.md](PROJECT_STATE.md).
 
 0.7.19 is published and is the current repository package. Target-device testing is positive for initial Buffered Look Ahead preparation/playback and the simple startup windows, but detailed-overlay visibility and seek/recovery remain broken. Preferred-language application shipped in 0.7.19 and still needs target-device confirmation.
 
@@ -8,9 +8,9 @@ Planning status: open. Version: not assigned. Current baseline and fallback: [PR
 
 | Task | Selection | Priority | Reason |
 | --- | --- | --- | --- |
-| [AUDIO-1](docs/tasks/AUDIO-1.md) | candidate | release-blocking playback regression | ISA video plays and audio streams are visible in Kodi, but output is silent in 0.7.19; reverting to 0.7.8 restores audio |
-| [HLS-10](docs/tasks/HLS-10.md) | candidate | overlay investigation | Confirm detailed overlay behavior on a known HLS buffered session; earlier no-overlay case may have bypassed Buffered Look Ahead |
-| [HLS-11](docs/tasks/HLS-11.md) | candidate | playback regression | Known multi-variant HLS plays from time 0 but fails on manual seek and saved-point resume; recovery then loops into timeout |
+| [AUDIO-1](docs/tasks/AUDIO-1.md) | committed | release-blocking playback regression | ISA video plays and audio streams are visible in Kodi, but output is silent in 0.7.19; reverting to 0.7.8 restores audio |
+| [HLS-10](docs/tasks/HLS-10.md) | committed | overlay investigation | Confirm detailed overlay behavior on a known HLS buffered session; earlier no-overlay case may have bypassed Buffered Look Ahead |
+| [HLS-11](docs/tasks/HLS-11.md) | committed | playback regression | Known multi-variant HLS plays from time 0 but fails on manual seek and saved-point resume; recovery then loops into timeout |
 | [PLAY-1](docs/tasks/PLAY-1.md) | backlog | investigation | Resume persistence is working; only investigate the playback-start Trakt API error |
 | [HLS-1](docs/tasks/HLS-1.md) | backlog | investigation | Use buffered-mode/diagnostic evidence to diagnose any underlying provider stalls that remain |
 | [UI-1](docs/tasks/UI-1.md) | backlog | investigation | Skin comparison needed |
@@ -25,6 +25,8 @@ Planning status: open. Version: not assigned. Current baseline and fallback: [PR
 6. Copy shipped task IDs and scope changes into RELEASE_NOTES, then reset this planning file for the next cycle.
 
 ## Scope decisions
+
+2026-09-27: user explicitly instructed that **all current candidates be committed**. AUDIO-1, HLS-10 and HLS-11 are now committed next-release scope. AUDIO-1 and HLS-11 are release-blocking playback regressions. HLS-10 is committed as an investigation-first verify/repair task: it must first reproduce the detailed-overlay failure on a confirmed Buffered Look Ahead HLS session before changing the overlay implementation. Existing backlog items remain backlog.
 
 2026-09-27: AUDIO-1 added as a ready release-blocker candidate after the user confirmed that 0.7.19 is silent whenever InputStream Adaptive is used (manual selection and other ISA playback), while reverting the same media/device to 0.7.8 restores audible playback. Kodi still displays the audio-stream details during the silent state, so audio discovery is occurring; the newer preferred-audio service logic is a primary A/B regression boundary but is not assumed causal without evidence.
 
@@ -108,4 +110,4 @@ Planning status: open. Version: not assigned. Current baseline and fallback: [PR
 
 ## Readiness
 
-No new implementation scope is committed. AUDIO-1 and HLS-11 are ready release-blocker candidates. HLS-10 is a proposed overlay investigation pending confirmation on a known HLS buffered session. LANG-3 is shipped but failed target-device verification because ISA audio must be restored before preferred-language selection can be accepted.
+Committed next-release scope: AUDIO-1, HLS-10 and HLS-11. AUDIO-1 and HLS-11 are release blockers. HLS-10 is a committed investigation-first verify/repair task. LANG-3 remains a shipped failed-verification dependency of AUDIO-1 and must be re-verified after audio is restored.

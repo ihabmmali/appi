@@ -69,7 +69,7 @@ Do not remove the preferred-language feature as a permanent workaround unless ev
 - Target-device verification repeats the same item on 0.7.8 and the repaired build and records available audio streams, displayed stream details, selected index, playback mode and audible result.
 
 ## Authorization
-Reported by the user on 2026-09-27 while testing published Appi 0.7.19. The user confirmed the same media regains audio after reverting to Appi 0.7.8. This task is logged as a ready release-blocker candidate and is not committed to a future release unless explicitly included under AGENTS.md.
+Reported by the user on 2026-09-27 while testing published Appi 0.7.19. The user confirmed the same media regains audio after reverting to Appi 0.7.8. On 2026-09-27 the user explicitly instructed that all current candidates be committed. AUDIO-1 is therefore committed release scope and a release blocker.
 
 ## Evidence
 Known-working Appi 0.7.8 source commit: `d66db9724417bd44d6ece91ea01a903ced29b9d8`.
@@ -81,4 +81,4 @@ In 0.7.19, `subtitle_service.AppiPlayer` starts preferred-language handling on `
 The unchanged core ISA handoff plus the newly introduced service-side audio selection makes that feature boundary especially important to test first. Kodi's ability to display audio stream details while output remains silent is additional evidence that discovery alone is not the missing step.
 
 ## Outcome and next action
-Use a known item that is silent in 0.7.19 and audible in 0.7.8. First A/B the 0.7.19 build with preferred-audio manipulation bypassed while leaving InputStream configuration unchanged. Repair the first proven regression rather than refactoring the working 0.7.8 ISA architecture.
+Committed for the next release. Use a known item that is silent in 0.7.19 and audible in 0.7.8. First A/B the 0.7.19 build with preferred-audio manipulation bypassed while leaving InputStream configuration unchanged. Repair the first proven regression rather than refactoring the working 0.7.8 ISA architecture.

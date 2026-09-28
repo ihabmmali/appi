@@ -1,7 +1,7 @@
 ---
 id: HLS-10
 role: research
-status: proposed
+status: ready
 delivery: unreleased
 verification: pending
 owner: unassigned
@@ -42,10 +42,10 @@ Do not require diagnostics export to be enabled.
 - Target-device verification confirms enabled and disabled behavior.
 
 ## Authorization
-Reported by the user on 2026-09-27 while testing published Appi 0.7.19. Subsequent testing introduced uncertainty about whether the no-overlay stream actually traversed Buffered Look Ahead. This is therefore a proposed investigation, not yet a confirmed implementation defect or committed release scope.
+Reported by the user on 2026-09-27 while testing published Appi 0.7.19. Subsequent testing introduced uncertainty about whether the no-overlay stream actually traversed Buffered Look Ahead. This remains an investigation-first task because the earlier no-overlay observation is not yet conclusive, but on 2026-09-27 the user explicitly instructed that all current candidates be committed. HLS-10 is therefore committed release scope.
 
 ## Evidence
 The setting exists and the persistent service re-reads it. The service calls `BufferOverlay.update()` for a ready buffered session while playing; `buffered_ui.py` injects a label into Kodi window 12005. Appi's playback path invokes `buffered_hls.request_playback()` only when the selected stream is classified as HLS and mode 3 is active. Therefore the earlier no-overlay observation is inconclusive until repeated on a known HLS buffered session.
 
 ## Outcome and next action
-Repeat the overlay test on a known multi-variant HLS stream with Buffered Look Ahead active. If the overlay is still absent, instrument and repair the runtime overlay path without changing the buffering engine.
+Committed for the next release. Repeat the overlay test on a known multi-variant HLS stream with Buffered Look Ahead active. If the overlay is still absent, instrument and repair the runtime overlay path without changing the buffering engine.
