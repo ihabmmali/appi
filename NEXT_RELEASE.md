@@ -10,7 +10,7 @@ Planning status: open. Version: not assigned. Current baseline and fallback: [PR
 | --- | --- | --- | --- |
 | [HLS-16](docs/tasks/HLS-16.md) | candidate | confirmed overlay regression | 0.7.21 buffering appears to work well, but the replacement WindowDialog debug overlay is still invisible on Fire TV |
 | [HLS-17](docs/tasks/HLS-17.md) | candidate | buffering status UX | Startup window shows the intentional 50% startup target; label it separately from configured total capacity while preserving the working 0.7.21 algorithm |
-| [HLS-18](docs/tasks/HLS-18.md) | candidate | buffering configuration | Make startup fill percentage configurable with a 50% default while preserving the rest of the proven 0.7.21 reservoir algorithm |
+| [HLS-18](docs/tasks/HLS-18.md) | candidate | buffering configuration | Expose all behavior-affecting Buffered Look Ahead thresholds, including during-playback watermarks, while defaulting exactly to the proven 0.7.21 values |
 | [UI-5](docs/tasks/UI-5.md) | candidate | settings UX | Remove the redundant About-inside-About click and show installed version directly |
 | [PLAY-1](docs/tasks/PLAY-1.md) | backlog | investigation | Resume persistence is working; only investigate the playback-start Trakt API error |
 | [HLS-1](docs/tasks/HLS-1.md) | backlog | investigation | Use buffered-mode/diagnostic evidence to diagnose any underlying provider stalls that remain |
@@ -27,7 +27,7 @@ Planning status: open. Version: not assigned. Current baseline and fallback: [PR
 
 ## Scope decisions
 
-2026-09-28: HLS-18 added at user request to make startup fill percentage configurable while preserving the working 0.7.21 reservoir algorithm. Default remains 50%; only startup target calculation may change. The 80% high-water, 60% low-water, 15% critical reserve, shared-capacity/refill behavior, epoch handling and quality behavior remain preservation constraints.
+2026-09-28: HLS-18 was broadened at user request: all behavior-affecting Buffered Look Ahead thresholds, including during-playback high/low/critical watermarks and relevant timing/seek/prefetch thresholds, must be configurable. Defaults remain exactly the working 0.7.21 values (including 50/80/60/15 watermarks), so the default behavior is preserved. The algorithmic structure, shared-capacity model, epoch handling and quality behavior remain preservation constraints.
 
 2026-09-28: HLS-17 added after target-device checks confirmed exact 50% startup targets at 126→63 MB, 128→64 MB and 256→128 MB. This is not the buffer setting being ignored: 0.7.21 intentionally starts at 50% and refills toward 80% high-water. HLS-17 is UI clarification only, and the working HLS-13 reservoir algorithm is now a preservation constraint unless the user explicitly authorizes an algorithm change.
 
