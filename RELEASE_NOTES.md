@@ -4,6 +4,8 @@ Each entry records the package shipped, its main user-visible changes, and verif
 
 ## 0.7.19 — 2026-09-27
 
+- Target-device regression: InputStream Adaptive playback is completely silent in manual selection and other ISA playback on 0.7.19 even though Kodi still displays audio-stream details; reverting the same media/device to 0.7.8 restores audible playback. AUDIO-1 tracks this. The newer preferred-audio selection service is a primary regression boundary to A/B test, but cause is not yet established.
+
 - Published through PR #7 / merge `f495858b2e8c1f146802c04b8533334ee8b36b79`; the repository install index lists 0.7.19 as current.
 - Target-device follow-up: positively identified multi-variant HLS masters prepare and play well from time 0. Manual seeking and starting from a saved non-zero playback point still fail; after a seek timeout, resume briefly plays, displays **Appi buffering**, stutters and exits with another buffering-failed timeout (HLS-11). The earlier no-overlay observation is not yet conclusive because that test item may not have traversed Buffered Look Ahead; HLS-10 now requires confirmation on a known HLS buffered session.
 

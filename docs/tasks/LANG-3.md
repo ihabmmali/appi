@@ -3,7 +3,7 @@ id: LANG-3
 role: implementation
 status: review
 delivery: released
-verification: partial
+verification: failed
 owner: GPT-5.6 Sol release/0.7.19
 base_commit: c7a344ae2afa1160adb7daf522092c89b46105bf
 artifact: plugin.video.appi/plugin.video.appi-0.7.19.zip
@@ -51,4 +51,10 @@ Automated release/package run 36370407423 passed. New runtime coverage verifies 
 0.7.18 fixes the 0.7.17 native settings-parser crash and Kodi now remains running, but the selected default language appears to have no effect during playback.
 
 ## Outcome and next action
-Implementation is in review with automated verification passing. Target-device acceptance must confirm the chosen audio and internal-subtitle language on real Kodi/ISA streams, including a title where stream enumeration is delayed after AV start and one saved/per-title subtitle override.
+Published in 0.7.19, but target-device verification is failed because ISA audio is now broken/absent. AUDIO-1 must first restore reliable audio, then LANG-3 must be re-verified for actual preferred-language selection without muting playback.
+
+
+## 0.7.19 InputStream audio regression evidence
+Target-device testing now shows a more serious problem than the original "preference does not apply" report: InputStream Adaptive playback has broken/absent audio in 0.7.19, both with manual quality selection and other ISA use. Reverting to 0.7.8 restores audio.
+
+This does not prove LANG-3 caused the regression, but 0.7.19's preferred-audio retry/selection logic is absent from 0.7.8 and must be A/B tested before modifying the proven InputStream configuration. [AUDIO-1](AUDIO-1.md) owns the audio-loss regression. LANG-3 target-device verification is failed until audio remains functional while language preference behavior is verified.
