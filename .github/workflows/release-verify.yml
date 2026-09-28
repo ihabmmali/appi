@@ -3,7 +3,6 @@ name: release-verify
 on:
   push:
     branches:
-      - main
       - 'release/**'
   workflow_dispatch:
 
@@ -11,14 +10,13 @@ permissions:
   contents: read
 
 jobs:
-  # Full verification runs only for main, explicit manual runs, or a release
-  # packaging commit. Ordinary release-branch worker commits are intentionally
-  # skipped so in-progress work does not generate failure-notification noise.
+  # Full verification runs only for explicit manual runs or a release
+  # packaging commit. Main and ordinary release-branch maintenance commits do
+  # not run this gate; release candidates are verified before packaging.
   verify:
     if: >-
       ${{
         github.event_name == 'workflow_dispatch' ||
-        github.ref == 'refs/heads/main' ||
         (github.event_name == 'push' &&
          startsWith(github.ref, 'refs/heads/release/') &&
          contains(github.event.head_commit.message, '[package]'))
