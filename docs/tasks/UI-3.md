@@ -55,3 +55,7 @@ Implemented, self-reviewed, integrated and published in 0.7.17. Target-device ac
 
 ## Implementation session — 2026-09-27
 User authorized implementation, testing, integration and publication in this session. Base 6d36d9a52733fbe6f3ded3ba5ee335cb779883e3. One worker owns the scoped source/settings/tests and shared release records; no concurrent worker changes observed. Target 0.7.17. Modes 0–2 must remain unchanged.
+
+
+## Successor artwork revision
+The user later replaced the approved handoff artwork with a newer flat Kodi-friendly PNG on `main`. The handoff blob now differs from the packaged `resources/icon.png`, so [UI-4](UI-4.md) owns integrating that newer artwork into the next release without rewriting UI-3's historical 0.7.17 delivery record.

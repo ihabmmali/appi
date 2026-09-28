@@ -27,6 +27,7 @@ Updated: 2026-09-27. Each linked task is the canonical requirements/status/evide
 | UI-1 | proposed | research | [Playback Program Settings visibility](docs/tasks/UI-1.md) |
 | UI-2 | review | implementation | [About / installed Appi version](docs/tasks/UI-2.md) |
 | UI-3 | review | implementation | [Appi add-on artwork / icon](docs/tasks/UI-3.md) |
+| UI-4 | ready | implementation | [Integrate revised Appi artwork](docs/tasks/UI-4.md) |
 | FRAMEWORK-1 | done | implementation | [Lifecycle pilot setup](docs/tasks/FRAMEWORK-1.md) |
 
 Use [NEXT_RELEASE.md](NEXT_RELEASE.md) to select release scope. A candidate is not an implementation commitment. Follow [triage](docs/workflows/triage.md) to add/change a task.

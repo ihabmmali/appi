@@ -16,8 +16,8 @@ Updated: 2026-09-27. Start with [AGENTS.md](AGENTS.md) for role routing.
 - **0.7.18 is published and repository verification passed.** Target-device startup acceptance now passes, but functional acceptance does not: Buffered Look Ahead fails preparation/playback on tested episodes and default language selection appears ineffective.
 - Shipped 0.7.17 scope remains HLS-7, HLS-6, LANG-2, UI-2 and UI-3. Their separate device acceptance items remain review/partial where documented.
 - Buffered mode has the intended preparation/configuration features in source, but 0.7.18 target-device testing shows no/erratic preparation progress, playback failure, timeout near 90%, and retry-dependent success. HLS-8 tracks the repair. Modes 0–2 retain their previous configuration paths.
-- LANG-3 tracks preferred-language settings that appear to have no runtime effect. HLS-9 tracks making InputStream Adaptive a required prerequisite. PLAY-1 is downgraded to a backlog Trakt-error investigation; the suspected resume-point regression was withdrawn after longer playback confirmed Kodi remembers the resume point. HLS-4 and DIAG-2 retain their separate outstanding device acceptance checks. HLS-1 and UI-1 remain backlog investigations.
-- [NEXT_RELEASE.md](NEXT_RELEASE.md): committed scope is HLS-8 and LANG-3, both release blockers. HLS-9 remains a candidate; PLAY-1 is backlog. [KNOWN_ISSUES.md](KNOWN_ISSUES.md): full task index.
+- LANG-3 tracks preferred-language settings that appear to have no runtime effect. HLS-9 is committed to make InputStream Adaptive a required prerequisite. PLAY-1 is downgraded to a backlog Trakt-error investigation; the suspected resume-point regression was withdrawn after longer playback confirmed Kodi remembers the resume point. HLS-4 and DIAG-2 retain their separate outstanding device acceptance checks. HLS-1 and UI-1 remain backlog investigations.
+- [NEXT_RELEASE.md](NEXT_RELEASE.md): committed scope is HLS-8, LANG-3, HLS-9 and UI-4. HLS-8/LANG-3 are release blockers; PLAY-1 is backlog. [KNOWN_ISSUES.md](KNOWN_ISSUES.md): full task index.
 
 ## Context on demand
 

@@ -2,7 +2,7 @@
 
 Planning status: committed. Version: not assigned. Current baseline and fallback: [PROJECT_STATE.md](PROJECT_STATE.md).
 
-0.7.18 is published. Target-device testing confirms the Kodi startup crash is fixed, but Buffered Look Ahead and preferred-language application still fail acceptance. The next release is committed with a focused scope: robust Buffered Look Ahead Playback repair and preferred-language application repair.
+0.7.18 is published. Target-device testing confirms the Kodi startup crash is fixed, but Buffered Look Ahead and preferred-language application still fail acceptance. The next release is committed with all currently tracked changes: robust Buffered Look Ahead repair, preferred-language repair, required InputStream Adaptive dependency, and revised artwork integration.
 
 ## Proposed scope
 
@@ -10,7 +10,8 @@ Planning status: committed. Version: not assigned. Current baseline and fallback
 | --- | --- | --- | --- |
 | [HLS-8](docs/tasks/HLS-8.md) | committed | release blocker | Repair Buffered Look Ahead preparation/progress/handoff failures seen on 0.7.18 |
 | [LANG-3](docs/tasks/LANG-3.md) | committed | release blocker | Preferred audio/subtitle language selection appears to have no effect at playback |
-| [HLS-9](docs/tasks/HLS-9.md) | candidate | dependency requirement | Make InputStream Adaptive a required Appi prerequisite because supported modes use it |
+| [HLS-9](docs/tasks/HLS-9.md) | committed | dependency requirement | Make InputStream Adaptive a required Appi prerequisite because supported modes use it |
+| [UI-4](docs/tasks/UI-4.md) | committed | artwork update | Integrate the latest user-uploaded flat Appi icon into the packaged add-on |
 | [PLAY-1](docs/tasks/PLAY-1.md) | backlog | investigation | Resume persistence is working; only investigate the playback-start Trakt API error |
 | [HLS-1](docs/tasks/HLS-1.md) | backlog | investigation | Use DIAG-2/HLS-5 target-device evidence to diagnose any repeated stalls that remain |
 | [UI-1](docs/tasks/UI-1.md) | backlog | investigation | Skin comparison needed |
@@ -25,6 +26,8 @@ Planning status: committed. Version: not assigned. Current baseline and fallback
 6. Copy shipped task IDs and scope changes into RELEASE_NOTES, then reset this planning file for the next cycle.
 
 ## Scope decisions
+
+2026-09-27: user explicitly instructed that **all changes be committed to the next release** after uploading revised artwork. HLS-9 is promoted from candidate to committed scope. UI-4 is created and committed to package the newly uploaded artwork, which currently differs from the icon in the add-on resources. Existing committed blockers HLS-8 and LANG-3 remain in scope. Backlog investigations remain backlog.
 
 2026-09-27: user explicitly committed the next release to focus mainly on HLS-8 and LANG-3. HLS-8 is the primary release blocker for a robust Buffered Look Ahead implementation; LANG-3 is the other release blocker for preferred-language application. HLS-9 remains a candidate dependency improvement and is not part of the committed core scope. PLAY-1 is moved to backlog because the suspected resume regression was withdrawn after longer playback confirmed Kodi stores the resume point; only the Trakt API notification remains to investigate.
 
@@ -98,4 +101,4 @@ Planning status: committed. Version: not assigned. Current baseline and fallback
 
 ## Readiness
 
-Committed scope: HLS-8 and LANG-3. Both are release blockers and require target-device acceptance before publication. HLS-9 remains a candidate dependency improvement; PLAY-1 and the older HLS-1/UI-1 investigations are backlog.
+Committed scope: HLS-8, LANG-3, HLS-9 and UI-4. HLS-8 and LANG-3 remain release blockers requiring target-device acceptance before publication. PLAY-1 and the older HLS-1/UI-1 investigations remain backlog.

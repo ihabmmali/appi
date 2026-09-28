@@ -31,7 +31,7 @@ Retain graceful runtime diagnostics for unexpected disabled/broken dependency st
 - Target-device verification confirms InputStream Adaptive is present/resolved after a clean Appi installation or upgrade.
 
 ## Authorization
-Requested by the user on 2026-09-27: if InputStream Adaptive is used, it must be a prerequisite dependency. This task is recorded as ready planning work but is not committed release scope unless explicitly included under AGENTS.md.
+Requested by the user on 2026-09-27: if InputStream Adaptive is used, it must be a prerequisite dependency. On 2026-09-27 the user explicitly instructed that all tracked changes be committed to the next release. HLS-9 is therefore committed release scope.
 
 ## Evidence
 Current 0.7.18 `plugin.video.appi/addon.xml` declares:
@@ -39,4 +39,4 @@ Current 0.7.18 `plugin.video.appi/addon.xml` declares:
 while Appi has manual InputStream Adaptive and adaptive bitrate playback modes.
 
 ## Outcome and next action
-Make InputStream Adaptive a required packaged dependency and verify dependency resolution on the target Kodi installation.
+Committed for the next release. Make InputStream Adaptive a required packaged dependency and verify dependency resolution on the target Kodi installation.
