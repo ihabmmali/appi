@@ -8,6 +8,7 @@ Planning status: open. Version: not assigned. Current baseline and fallback: [PR
 
 | Task | Selection | Priority | Reason |
 | --- | --- | --- | --- |
+| [HLS-12](docs/tasks/HLS-12.md) | candidate | release-blocking playback redesign | 0.7.20 still times out; replace stateful seek recovery with a fresh buffer epoch at every seek/resume target |
 | [PLAY-1](docs/tasks/PLAY-1.md) | backlog | investigation | Resume persistence is working; only investigate the playback-start Trakt API error |
 | [HLS-1](docs/tasks/HLS-1.md) | backlog | investigation | Use buffered-mode/diagnostic evidence to diagnose any underlying provider stalls that remain |
 | [UI-1](docs/tasks/UI-1.md) | backlog | investigation | Skin comparison needed |
@@ -22,6 +23,8 @@ Planning status: open. Version: not assigned. Current baseline and fallback: [PR
 6. Copy shipped task IDs and scope changes into RELEASE_NOTES, then reset this planning file for the next cycle.
 
 ## Scope decisions
+
+2026-09-28: published 0.7.20 failed target-device acceptance for HLS-11: Buffered Look Ahead still times out on seek/resume. HLS-12 replaces the recovery direction entirely. Each seek or saved-point start must create a fresh buffer epoch at the target, invalidate/cancel prior work, prepare aligned video/audio reserve there, and only then resume. Do not attempt another timeout increase or incremental re-centering patch. HLS-12 is a candidate pending explicit release commitment.
 
 2026-09-27: Appi 0.7.20 published through PR #8 / merge `6e6db9bec185ec6b5eea664d27cb7b94f4efa2ef`. Post-merge verification run `36376270017` and Pages deployment run `36376269821` passed. Shipped scope: AUDIO-1, HLS-10 and HLS-11. Their delivery is released while target-device verification remains review/partial. The planning file is reset; no next-release scope is committed.
 
@@ -113,4 +116,4 @@ Planning status: open. Version: not assigned. Current baseline and fallback: [PR
 
 ## Readiness
 
-No next-release scope is committed. Current published baseline is 0.7.20. PLAY-1, HLS-1 and UI-1 remain backlog investigations; target-device acceptance for shipped AUDIO-1, HLS-10 and HLS-11 remains tracked in their canonical task records.
+No next-release scope is committed. Current published baseline is 0.7.20, whose HLS-11 seek/resume repair failed target-device acceptance. HLS-12 is the new release-blocking candidate. PLAY-1, HLS-1 and UI-1 remain backlog investigations; target-device acceptance for shipped AUDIO-1, HLS-10 and HLS-11 remains tracked in their canonical task records.

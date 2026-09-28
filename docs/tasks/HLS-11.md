@@ -3,7 +3,7 @@ id: HLS-11
 role: implementation
 status: review
 delivery: released
-verification: partial
+verification: failed
 owner: builder-publisher-2026-09-27
 base_commit: 24ac0358640864a0129d97b638ca37c616f6612b
 artifact: https://ihabmmali.github.io/appi/plugin.video.appi-0.7.20.zip
@@ -78,4 +78,4 @@ Candidate implementation `4c5363e3220dc16507b308e6ccfa8bbec4eb6d40` treats any n
 Published through PR #8 / merge `6e6db9bec185ec6b5eea664d27cb7b94f4efa2ef`. Post-merge verification run `36376270017` passed and Pages deployment run `36376269821` completed successfully. Delivery is `https://ihabmmali.github.io/appi/plugin.video.appi-0.7.20.zip`; the verified generated ZIP SHA-256 is `41e1bdec7229d1a0a3d8787427ac9c434fb773e302c7d8f5bae428de0de7755f`. Publication does not establish target-device acceptance.
 
 ## Outcome and next action
-0.7.20 is published. Keep this task in review/partial verification until the documented target-device checks are completed; do not treat publication as acceptance.
+Published in 0.7.20 but failed target-device acceptance. Preserve the evidence here; do not iterate further on the same stateful re-centering design. HLS-12 owns the replacement fresh-epoch seek/resume architecture.
