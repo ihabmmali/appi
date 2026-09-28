@@ -1322,12 +1322,19 @@ class BufferedHlsSession:
                 byte_range=resource.byte_range,
                 stop=self._stop, max_bytes=segment_limit,
             )
-        finally:
+        except Exception:
             with self._download_lock:
                 self._reserved_bytes = max(0, self._reserved_bytes - segment_limit)
+            raise
 
-        resource.path = path
-        resource.content_type = fetched.content_type or resource.content_type
+        # Publish the completed file while the budget lock still protects it
+        # from another admission/eviction pass.
+        with self._download_lock:
+            self._reserved_bytes = max(0, self._reserved_bytes - segment_limit)
+            resource.path = path
+            resource.content_type = fetched.content_type or resource.content_type
+            self._enforce_disk_limit(protected=path)
+
         fields = {
             'resource_kind': resource.kind,
             'latency_ms': fetched.latency_ms,
@@ -1350,8 +1357,6 @@ class BufferedHlsSession:
             'buffer_segment_download' if segment is not None else 'buffer_resource_download',
             **fields
         )
-        with self._download_lock:
-            self._enforce_disk_limit(protected=path)
         return path
 
     def disk_bytes(self):
