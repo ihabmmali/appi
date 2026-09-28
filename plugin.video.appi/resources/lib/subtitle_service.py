@@ -1,3 +1,4 @@
+import json
 import time
 from urllib.parse import urlencode
 
@@ -38,6 +39,8 @@ class AppiPlayer(xbmc.Player):
         self._language_deadline = 0.0
         self._audio_language_done = True
         self._subtitle_language_done = True
+        self._audio_stream_snapshot = ()
+        self._audio_stream_snapshot_at = 0.0
 
     def _subtitle_session(self):
         return subtitle_store.load_session() or {}
@@ -77,20 +80,112 @@ class AppiPlayer(xbmc.Player):
         self._language_deadline = time.monotonic() + 12.0
         self._audio_language_done = False
         self._subtitle_language_done = False
+        self._audio_stream_snapshot = ()
+        self._audio_stream_snapshot_at = 0.0
+
+    def _current_audio_stream(self):
+        """Best-effort current Kodi audio state without mutating playback."""
+        execute = getattr(xbmc, 'executeJSONRPC', None)
+        if not execute:
+            return {}
+        try:
+            active = json.loads(execute(json.dumps({
+                'jsonrpc': '2.0',
+                'id': 1,
+                'method': 'Player.GetActivePlayers',
+            }))).get('result') or []
+            player = next((value for value in active if value.get('type') == 'video'), None)
+            if not player:
+                return {}
+            result = json.loads(execute(json.dumps({
+                'jsonrpc': '2.0',
+                'id': 1,
+                'method': 'Player.GetProperties',
+                'params': {
+                    'playerid': player.get('playerid'),
+                    'properties': ['currentaudiostream'],
+                },
+            }))).get('result') or {}
+            current = result.get('currentaudiostream') or {}
+            return current if isinstance(current, dict) else {}
+        except Exception as exc:
+            xbmc.log(
+                'Appi audio-language current-stream query failed: {}'.format(exc),
+                xbmc.LOGWARNING,
+            )
+            return {}
 
     def _apply_preferred_languages(self):
         audio = languages.preference(ADDON, 'audio')
         if not self._audio_language_done:
             if not audio:
+                # No preference is deliberately inert: do not touch Kodi/ISA's
+                # working default audio stream.
                 self._audio_language_done = True
+                self._audio_stream_snapshot = ()
             else:
                 try:
-                    streams = self.getAvailableAudioStreams() or []
+                    streams = tuple(self.getAvailableAudioStreams() or [])
+                    now = time.monotonic()
                     if streams:
-                        index = languages.match_index(audio, streams)
-                        self._audio_language_done = True
-                        if index is not None:
-                            self.setAudioStream(index)
+                        if streams != self._audio_stream_snapshot:
+                            # InputStream Adaptive can expose a provisional
+                            # stream list during AV start. Never act on an index
+                            # until the exact list has remained stable across a
+                            # service poll boundary.
+                            self._audio_stream_snapshot = streams
+                            self._audio_stream_snapshot_at = now
+                        elif now - self._audio_stream_snapshot_at >= 0.75:
+                            index = languages.match_index(audio, streams)
+                            current = self._current_audio_stream()
+                            current_label = (
+                                current.get('language')
+                                or current.get('name')
+                                or ''
+                            )
+                            current_index = current.get('index')
+                            if index is None:
+                                # A stable list with no match must leave the
+                                # currently audible stream untouched.
+                                self._audio_language_done = True
+                                xbmc.log(
+                                    'Appi audio preference has no match; '
+                                    'leaving current stream unchanged',
+                                    getattr(xbmc, 'LOGDEBUG', 0),
+                                )
+                            elif (
+                                languages.normalize(current_label) == languages.normalize(audio)
+                                or current_index == index
+                            ):
+                                # Avoid a redundant setAudioStream() call. This
+                                # is especially important for ISA, where forcing
+                                # the already-selected rendition during startup
+                                # can disrupt decoder/rendition handoff.
+                                self._audio_language_done = True
+                                xbmc.log(
+                                    'Appi audio preference already selected '
+                                    '(index={}); no stream switch'.format(current_index),
+                                    getattr(xbmc, 'LOGDEBUG', 0),
+                                )
+                            else:
+                                # Re-read immediately before using the index so
+                                # a changing ISA list can never turn a formerly
+                                # valid match into a stale setAudioStream call.
+                                confirmed = tuple(self.getAvailableAudioStreams() or [])
+                                if confirmed != streams:
+                                    self._audio_stream_snapshot = confirmed
+                                    self._audio_stream_snapshot_at = now
+                                elif 0 <= index < len(confirmed):
+                                    xbmc.log(
+                                        'Appi audio preference switching stable '
+                                        'stream list: available={} current_index={} '
+                                        'target_index={}'.format(
+                                            list(confirmed), current_index, index
+                                        ),
+                                        getattr(xbmc, 'LOGDEBUG', 0),
+                                    )
+                                    self.setAudioStream(index)
+                                    self._audio_language_done = True
                 except Exception as exc:
                     self._audio_language_done = False
                     xbmc.log('Appi audio-language selection failed: {}'.format(exc), xbmc.LOGWARNING)
@@ -157,6 +252,8 @@ class AppiPlayer(xbmc.Player):
         self._language_deadline = 0.0
         self._audio_language_done = True
         self._subtitle_language_done = True
+        self._audio_stream_snapshot = ()
+        self._audio_stream_snapshot_at = 0.0
         return session
 
     def onPlayBackStopped(self):
