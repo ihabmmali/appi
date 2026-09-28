@@ -90,3 +90,7 @@ Requested by the user on 2026-09-28 after confirming that 0.7.21's buffering alg
 
 ## Outcome and next action
 Move all behavior-affecting Buffered Look Ahead tuning thresholds into validated settings, preserving the 0.7.21 constants as defaults and keeping the proven algorithmic structure intact.
+
+
+## HLS-19 recovery controls
+HLS-19 may add retry/recovery tuning settings (overall recovery timeout, retry delay/attempts/backoff, recovery reserve target). These controls are independent of HLS-13's normal reservoir thresholds and must not silently alter them.

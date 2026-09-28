@@ -2,7 +2,7 @@
 
 Planning status: open. Version: not assigned. Current baseline and fallback: [PROJECT_STATE.md](PROJECT_STATE.md).
 
-0.7.21 is published. No next-release scope is currently committed. HLS-16, HLS-17, HLS-18, UI-5 and UI-6 are current candidates. HLS-12, HLS-13, HLS-14 and HLS-15 remain in review for target-device acceptance of the shipped 0.7.21 behavior; any follow-up repair must be triaged and explicitly committed.
+0.7.21 is published. No next-release scope is currently committed. HLS-16, HLS-17, HLS-18, HLS-19, UI-5 and UI-6 are current candidates. HLS-12, HLS-13, HLS-14 and HLS-15 remain in review for target-device acceptance of the shipped 0.7.21 behavior; any follow-up repair must be triaged and explicitly committed.
 
 ## Proposed scope
 
@@ -11,6 +11,7 @@ Planning status: open. Version: not assigned. Current baseline and fallback: [PR
 | [HLS-16](docs/tasks/HLS-16.md) | candidate | confirmed overlay regression | 0.7.21 buffering appears to work well, but the replacement WindowDialog debug overlay is still invisible on Fire TV |
 | [HLS-17](docs/tasks/HLS-17.md) | candidate | buffering status UX | Startup window shows the intentional 50% startup target; label it separately from configured total capacity while preserving the working 0.7.21 algorithm |
 | [HLS-18](docs/tasks/HLS-18.md) | candidate | buffering configuration | Expose all behavior-affecting Buffered Look Ahead thresholds, including during-playback watermarks, while defaulting exactly to the proven 0.7.21 values |
+| [HLS-19](docs/tasks/HLS-19.md) | candidate | buffering resilience | Add configurable Appi-owned retry/recovery for true buffer depletion without changing the working 0.7.21 reservoir algorithm |
 | [UI-5](docs/tasks/UI-5.md) | candidate | settings UX | Remove the redundant About-inside-About click and show installed version directly |
 | [UI-6](docs/tasks/UI-6.md) | candidate | artwork/cache UX | 0.7.21 source contains the approved flat icon, but Kodi still shows an older graphic; force a new artwork resource path to bypass texture caching |
 | [PLAY-1](docs/tasks/PLAY-1.md) | backlog | investigation | Resume persistence is working; only investigate the playback-start Trakt API error |
@@ -27,6 +28,8 @@ Planning status: open. Version: not assigned. Current baseline and fallback: [PR
 6. Copy shipped task IDs and scope changes into RELEASE_NOTES, then reset this planning file for the next cycle.
 
 ## Scope decisions
+
+2026-09-28: HLS-19 added at user request after 0.7.21 showed terminal failure when provider delay outlasts the playable reserve. The recovery layer must be isolated from the working HLS-13 reservoir: healthy-provider startup/refill/watermark/track-balancing/quality behavior is a protected non-regression baseline. Appi should own configurable retry/recovery instead of relying on Kodi to retry an HTTP 503 after the current hard-coded 20-second recovery wait.
 
 2026-09-28: UI-6 added after 0.7.21 target-device observation that Kodi appears to show the original Appi graphic again. Source inspection of the exact 0.7.21 artifact commit shows the approved flat handoff and packaged `resources/icon.png` are byte-identical, and the builder packages that source directly. The likely remaining boundary is Kodi artwork caching against the unchanged `resources/icon.png` path. UI-6 will preserve the approved PNG bytes but version the manifest-referenced icon filename to force a cache miss.
 

@@ -126,3 +126,7 @@ Target-device observations confirm the 50% startup target exactly: 126 MB config
 
 ## Configurability boundary
 [HLS-18](HLS-18.md) may parameterize only the startup ratio, with a default of 50%. It must not alter the working 0.7.21 high-water (80%), low-water (60%), critical reserve (15%), shared-capacity/refill behavior, transfer handling, epoch logic or quality selection.
+
+
+## Recovery-layer preservation boundary
+[HLS-19](HLS-19.md) is explicitly constrained to wrap this released 0.7.21 reservoir with depletion/stall recovery. It must not change healthy-provider startup/refill/watermark/track-balancing/quality behavior merely to add resilience.
