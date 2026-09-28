@@ -39,6 +39,7 @@ Updated: 2026-09-28. Each linked task is the canonical requirements/status/evide
 | UI-3 | review | implementation | [Appi add-on artwork / icon](docs/tasks/UI-3.md) |
 | UI-4 | review | implementation | [Integrate revised Appi artwork](docs/tasks/UI-4.md) |
 | UI-5 | ready | implementation | [Remove redundant nested About action and show installed version directly](docs/tasks/UI-5.md) |
+| UI-6 | ready | implementation | [Force Kodi to refresh the approved Appi icon](docs/tasks/UI-6.md) |
 | FRAMEWORK-1 | done | implementation | [Lifecycle pilot setup](docs/tasks/FRAMEWORK-1.md) |
 
 Use [NEXT_RELEASE.md](NEXT_RELEASE.md) to select release scope. A candidate is not an implementation commitment. Follow [triage](docs/workflows/triage.md) to add/change a task.

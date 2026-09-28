@@ -24,7 +24,8 @@ Updated: 2026-09-28. Start with [AGENTS.md](AGENTS.md) for role routing.
 - AUDIO-1, HLS-10 and HLS-11 remain review records for the 0.7.20 behavior they shipped; HLS-12/HLS-14 supersede the unresolved Buffered Look Ahead seek/overlay directions in 0.7.21.
 - PLAY-1 remains a backlog Trakt-error investigation. HLS-1 and UI-1 remain backlog investigations.
 - UI-5 is a candidate to remove the redundant nested About action and show installed version directly in the About settings pane.
-- [NEXT_RELEASE.md](NEXT_RELEASE.md): HLS-16, HLS-17, HLS-18 and UI-5 are candidates; no scope is currently committed. [KNOWN_ISSUES.md](KNOWN_ISSUES.md): full task index.
+- UI-6 is a candidate to force-refresh the approved flat Appi icon by changing the manifest-referenced artwork filename. The exact 0.7.21 artifact source already contains the approved icon bytes, so Kodi texture caching is the leading explanation for the older graphic still appearing.
+- [NEXT_RELEASE.md](NEXT_RELEASE.md): HLS-16, HLS-17, HLS-18, UI-5 and UI-6 are candidates; no scope is currently committed. [KNOWN_ISSUES.md](KNOWN_ISSUES.md): full task index.
 
 ## Context on demand
 
