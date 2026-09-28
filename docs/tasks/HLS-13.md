@@ -122,3 +122,7 @@ Current 0.7.21 policy:
 - critical reserve: 15%.
 
 Target-device observations confirm the 50% startup target exactly: 126 MB configured -> 63 MB shown, 128 MB -> 64 MB, and 256 MB -> 128 MB. The configured capacity is therefore not being ignored.
+
+
+## Configurability boundary
+[HLS-18](HLS-18.md) may parameterize only the startup ratio, with a default of 50%. It must not alter the working 0.7.21 high-water (80%), low-water (60%), critical reserve (15%), shared-capacity/refill behavior, transfer handling, epoch logic or quality selection.
