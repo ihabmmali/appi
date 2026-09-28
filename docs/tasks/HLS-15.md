@@ -1,12 +1,12 @@
 ---
 id: HLS-15
 role: implementation
-status: ready
+status: review
 delivery: unreleased
-verification: pending
-owner: unassigned
-base_commit: unset
-artifact: none
+verification: partial
+owner: builder-publisher-2026-09-28
+base_commit: 4a415f9eaeb48c77ef2fcaa895db90d7e66ab183
+artifact: plugin.video.appi/plugin.video.appi-0.7.21.zip
 ---
 # HLS-15 — Show actual buffered KB/MB in the normal preparation/recovery UI
 
@@ -60,5 +60,10 @@ Requested explicitly by the user on 2026-09-28: the initial buffering informatio
 ## Evidence
 Published 0.7.20 shows a simple preparation window/progress bar but does not give the user a useful numeric view of the actual buffered reserve. This makes it difficult to distinguish real reservoir growth from a stalled or misleading percentage.
 
+Automated 0.7.21 candidate run `36381180991` passed numeric contiguous-playable byte/target reporting for startup and recovery UI, including KB/MB formatting. Target-device observation of the preparation/recovery text remains required.
+
 ## Outcome and next action
 Committed for the next release. Wire the simple preparation/recovery UI directly to HLS-13/HLS-12's active-epoch playable-reserve byte metrics and display those bytes as KB/MB throughout filling and recovery.
+
+
+Implementation session 2026-09-28: activated on `release/0.7.21` from base `4a415f9eaeb48c77ef2fcaa895db90d7e66ab183`; authorized scope is implementation, review, integration and publication of the committed next release.

@@ -2,6 +2,14 @@
 
 Implemented features, grouped by add-on version. A version listed here means its source/package was published in the repository; it does not by itself certify device testing. For details and earlier 0.7.x entries, see [README.md](README.md). This file is the concise ongoing release history; [RELEASE_NOTES.md](RELEASE_NOTES.md) records what each package shipped and how it was verified.
 
+## 0.7.21 — 2026-09-28
+
+- Replace Buffered Look Ahead's fixed 12-second/equal-share cache with a configured-capacity producer/consumer reservoir. Startup now fills 50% of the configured bytes (or the complete remaining short VOD), background prefetch continues toward an 80% high-water mark, and refill resumes below a 60% low-water mark without statically splitting capacity between video and audio.
+- Replace mutable seek re-centering with authoritative buffer epochs. Every discontinuous seek or cold non-zero resume aligns required tracks to the requested timeline, invalidates obsolete transfers, prioritizes the target, and rebuilds a fresh contiguous playable reserve before the request is released.
+- Treat media-transfer timeout as a no-progress/inactivity bound rather than a total wall-clock deadline, while retaining explicit cancellation and bounded startup/recovery waits.
+- Make the normal preparation/recovery text show actual contiguous playable KB/MB and its current target. Detailed buffer debug now uses a skin-independent modeless Kodi dialog and also reports playable seconds, water state, epoch, selected bitrate and measured provider throughput when available.
+- Keep Native Kodi, InputStream Adaptive manual selection and InputStream Adaptive ABR modes unchanged. Automated release verification is required before publication; target Fire TV acceptance remains separate.
+
 ## 0.7.20 — 2026-09-27
 
 - Harden preferred-audio selection against InputStream Adaptive startup churn: No preference is inert, stream lists must stabilize and be revalidated before selection, and the current Kodi audio stream is checked when available so an already-correct stream is not redundantly switched.

@@ -1,8 +1,8 @@
 # Next Appi release
 
-Planning status: committed. Version: not assigned. Current baseline and fallback: [PROJECT_STATE.md](PROJECT_STATE.md).
+Planning status: committed. Version: 0.7.21. Current baseline and fallback: [PROJECT_STATE.md](PROJECT_STATE.md).
 
-0.7.20 is published. No next-release scope is currently committed. AUDIO-1, HLS-10 and HLS-11 remain in review for target-device acceptance; any follow-up repair must be triaged and explicitly committed rather than silently carried into a new release.
+0.7.20 is published. The committed 0.7.21 scope is HLS-12, HLS-13, HLS-14 and HLS-15. AUDIO-1, HLS-10 and HLS-11 remain in review for their separate 0.7.20 target-device acceptance.
 
 ## Proposed scope
 

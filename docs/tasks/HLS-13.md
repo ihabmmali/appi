@@ -1,12 +1,12 @@
 ---
 id: HLS-13
 role: implementation
-status: ready
+status: review
 delivery: unreleased
-verification: failed
-owner: unassigned
-base_commit: unset
-artifact: none
+verification: partial
+owner: builder-publisher-2026-09-28
+base_commit: 4a415f9eaeb48c77ef2fcaa895db90d7e66ab183
+artifact: plugin.video.appi/plugin.video.appi-0.7.21.zip
 ---
 # HLS-13 — Implement true deep-reservoir Buffered Look Ahead playback
 
@@ -14,6 +14,9 @@ artifact: none
 Make Buffered Look Ahead deliver its intended advantage over ordinary HLS playback: prefetch enough of the selected rendition ahead of Kodi, then continuously maintain a deep playable reservoir so intermittent provider stalls do not interrupt playback.
 
 The feature is intended for VOD HLS where provider delivery is bursty or intermittently stalls. It cannot violate throughput physics: if the provider's sustained average delivery rate remains below the selected rendition's consumption rate for long enough, any finite buffer will eventually drain. In that case Appi must report the measured limitation accurately rather than pretending a larger timeout can solve it.
+
+## Scope
+Replace Buffered Look Ahead's startup and steady-state cache policy with a capacity-driven producer/consumer reservoir, including shared video/audio capacity, high/low/critical watermarks, continuous refill, progress-aware transfer timeout and truthful reservoir/throughput telemetry. Integrate the reservoir with HLS-12 epochs without changing modes 0–2.
 
 ## Current 0.7.20 design problem
 The current code does not use the configured buffer as a true startup reservoir.
@@ -89,5 +92,10 @@ Current 0.7.20 source uses a 12-second startup reserve and, after startup, caps 
 
 The user reports that lowering the selected buffered rendition makes playback work, while that same lower rendition already works in ordinary InputStream Adaptive mode. The intended Buffered Look Ahead value therefore remains unproven for the higher bitrate.
 
+Automated 0.7.21 candidate run `36381180991` passed shared-capacity/deep-reservoir, high/low-water hysteresis, cached-reserve stall masking, measured sustained-deficit reporting and slow-but-progressing transfer coverage. The deterministic package uses capacity-driven startup/refill with no automatic quality downgrade. The problematic higher-bitrate target-device stream still requires acceptance.
+
 ## Outcome and next action
 Committed for the next release. Replace shallow-start/equal-share caching with a real high-water/low-water producer-consumer reservoir and verify it against the problematic higher-bitrate stream, not merely a lower rendition that already works without buffering.
+
+
+Implementation session 2026-09-28: activated on `release/0.7.21` from base `4a415f9eaeb48c77ef2fcaa895db90d7e66ab183`; authorized scope is implementation, review, integration and publication of the committed next release.

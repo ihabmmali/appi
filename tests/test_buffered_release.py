@@ -86,7 +86,7 @@ class BufferedReleaseTests(unittest.TestCase):
         session.prepare()
         track = next(iter(session.tracks.values()))
         self.assertTrue(until(lambda: track._cached(0)))
-        track._wait_for_reserve = lambda *a: self.fail('cached segment must not block')
+        session._wait_reservoir = lambda *a: self.fail('sequential cached segment must not block')
         self.assertTrue(track.serve(0))
 
     def test_missing_seek_fails_within_bound_without_fallback_network_wait(self):
@@ -97,7 +97,7 @@ class BufferedReleaseTests(unittest.TestCase):
         resource = track.segments[30].resource
         if resource.path and os.path.exists(resource.path):
             os.remove(resource.path)
-        track._wait_for_reserve = lambda *args: False
+        session._wait_reservoir = lambda *args: False
         started = time.monotonic()
         with self.assertRaises(TimeoutError):
             track.serve(30)
@@ -225,10 +225,152 @@ class BufferedReleaseTests(unittest.TestCase):
         worker.start()
         self.assertTrue(until(lambda: bool(session.tracks)))
         self.assertFalse(session.ready)
-        self.assertEqual(session.status()['message'], 'Filling buffer…')
+        status = session.status()
+        self.assertIn('Filling buffer', status['message'])
+        self.assertTrue('KB' in status['message'] or 'MB' in status['message'])
+        self.assertGreater(status['buffer_target_bytes'], 0)
         gate.set()
         worker.join(3)
         self.assertTrue(session.ready)
+
+    def test_deep_reservoir_uses_shared_capacity_not_equal_track_slices(self):
+        master = ('#EXTM3U\n'
+            '#EXT-X-MEDIA:TYPE=AUDIO,GROUP-ID="a",DEFAULT=YES,URI="audio.m3u8"\n'
+            '#EXT-X-STREAM-INF:BANDWIDTH=6000000,AUDIO="a"\nvideo.m3u8\n')
+        media = lambda prefix, size: ('#EXTM3U\n#EXT-X-TARGETDURATION:2\n' + ''.join(
+            '#EXTINF:2,\n%s%d.bin\n' % (prefix, i) for i in range(80)) + '#EXT-X-ENDLIST\n').encode()
+        self.payloads.update({
+            '/media.m3u8': master.encode(),
+            '/video.m3u8': media('v', 0),
+            '/audio.m3u8': media('a', 0),
+        })
+        for i in range(80):
+            self.payloads['/v%d.bin' % i] = b'v' * (1024 * 1024)
+            self.payloads['/a%d.bin' % i] = b'a' * (32 * 1024)
+        _install_fake_fetch(self.m, self.payloads)
+        session = self.session(buffer_mb=64)
+        session.prepare()
+        self.assertTrue(session.ready, session.error)
+        self.assertGreaterEqual(session.status()['cached_ahead_bytes'], session.startup_target_bytes)
+        self.assertTrue(until(lambda: session.status()['cached_ahead_bytes'] >= session.high_water_bytes, 5))
+        tracks = list(session.tracks.values())
+        large = max(track.ahead_bytes() for track in tracks)
+        small = min(track.ahead_bytes() for track in tracks)
+        self.assertGreater(large, small * 8)
+        self.assertLessEqual(session.disk_bytes(), session.max_bytes)
+
+    def test_seek_starts_new_epoch_and_late_old_download_is_ignored(self):
+        session = self.session(buffer_mb=32)
+        session.prepare()
+        track = next(iter(session.tracks.values()))
+        old_epoch = session.epoch
+        resource = track.segments[20].resource
+        # The tiny short-VOD fixture is fully cached by preparation. Stop its
+        # worker and remove one known segment so this test owns a real in-flight
+        # old-epoch transfer deterministically.
+        track.stop()
+        if resource.path and os.path.exists(resource.path):
+            os.remove(resource.path)
+        resource.path = ''
+        original = self.m._fetch_to_path
+        gate = threading.Event()
+        started = threading.Event()
+
+        def delayed(url, path, **kwargs):
+            if resource.upstream_url.split('|', 1)[0] in url:
+                started.set()
+                gate.wait(2)
+            return original(url, path, **kwargs)
+
+        self.m._fetch_to_path = delayed
+        holder = {}
+        def old_download():
+            try:
+                holder['path'] = session._ensure_binary(
+                    resource, segment=track.segments[20], track=track, epoch=old_epoch
+                )
+            except Exception as exc:
+                holder['error'] = exc
+        worker = threading.Thread(target=old_download)
+        worker.start()
+        self.assertTrue(started.wait(1))
+        new_epoch = session._coordinate_seek(track, 30, reason='seek')
+        self.assertGreater(new_epoch, old_epoch)
+        gate.set()
+        worker.join(3)
+        self.assertFalse(worker.is_alive())
+        self.assertIn('error', holder)
+        self.assertFalse(resource.path and os.path.isfile(resource.path))
+        status = session.status()
+        self.assertEqual(status['epoch_id'], new_epoch)
+        self.assertGreaterEqual(status['stale_jobs_cancelled_or_ignored'], 1)
+
+    def test_status_reports_numeric_playable_bytes_and_watermarks(self):
+        session = self.session(buffer_mb=32)
+        worker = threading.Thread(target=session.prepare)
+        worker.start()
+        self.assertTrue(until(lambda: bool(session.tracks)))
+        self.assertTrue(until(lambda: session.status()['cached_ahead_bytes'] > 0))
+        status = session.status()
+        self.assertGreater(status['buffer_target_bytes'], 0)
+        self.assertGreater(status['high_water_bytes'], status['low_water_bytes'])
+        self.assertGreater(status['low_water_bytes'], status['critical_water_bytes'])
+        self.assertTrue('KB' in status['message'] or 'MB' in status['message'])
+        worker.join(5)
+        self.assertFalse(worker.is_alive())
+        self.assertTrue(session.ready, session.error)
+
+
+    def test_refill_hysteresis_runs_to_high_water_then_restarts_at_low_water(self):
+        session = self.session(buffer_mb=32)
+        session._startup_complete = True
+        session._epoch_preparing = False
+        session._all_required_cached = lambda: False
+        state = {'bytes': session.high_water_bytes + 1}
+        session._playable_reserve = lambda: (state['bytes'], 30.0, 5)
+        session._refill_active = True
+        self.assertFalse(session._update_refill_state())
+        state['bytes'] = (session.high_water_bytes + session.low_water_bytes) // 2
+        self.assertFalse(session._update_refill_state())
+        state['bytes'] = session.low_water_bytes - 1
+        self.assertTrue(session._update_refill_state())
+
+    def test_cached_reservoir_masks_provider_stall_until_uncached_edge(self):
+        session = self.session(buffer_mb=32)
+        session.prepare()
+        track = next(iter(session.tracks.values()))
+        track.stop()
+        # Keep five contiguous local segments and remove the rest.
+        for segment in track.segments[5:]:
+            if segment.resource.path and os.path.exists(segment.resource.path):
+                os.remove(segment.resource.path)
+            segment.resource.path = ''
+        self.m._fetch_to_path = lambda *a, **k: (_ for _ in ()).throw(
+            TimeoutError('simulated provider stall')
+        )
+        session._wait_reservoir = lambda *args: False
+        for index in range(5):
+            self.assertTrue(os.path.isfile(track.serve(index)))
+        with self.assertRaises(self.m.RecoveryTimeout):
+            track.serve(5)
+
+    def test_critical_sustained_deficit_is_reported_from_measured_evidence(self):
+        session = self.session(buffer_mb=32)
+        session.ready = True
+        session.started_playback = True
+        session._startup_complete = True
+        session._epoch_preparing = False
+        session._selected_variant_attrs = {'BANDWIDTH': '8000000'}
+        session._throughput_samples = [(500000, 1000.0)]  # 4 Mbit/s measured.
+        session._playable_reserve = lambda: (
+            session.critical_water_bytes - 1, 5.0, 2
+        )
+        status = session.status()
+        self.assertEqual(status['buffer_state'], 'critical')
+        self.assertTrue(status['throughput_limited'])
+        self.assertIn('Provider 4.00 Mbit/s', status['limitation_message'])
+        self.assertIn('selected 8.00 Mbit/s', status['message'])
+
 
 
 class ReleaseSettingsTests(unittest.TestCase):
@@ -271,13 +413,17 @@ class ReleaseSettingsTests(unittest.TestCase):
     def test_overlay_is_purely_presentational_and_disabled_is_silent(self):
         sys.modules.setdefault('xbmcgui',types.ModuleType('xbmcgui'))
         m=self.load('buffered_ui')
-        status={'cached_ahead_bytes':3*1048576,'buffer_capacity_mb':64,'buffered_seconds':8.5,'recovering':False}
+        status={'cached_ahead_bytes':3*1048576,'buffer_target_bytes':32*1048576,
+                'high_water_bytes':50*1048576,'buffer_capacity_mb':64,
+                'buffered_seconds':8.5,'recovering':False,'buffer_state':'filling',
+                'epoch_id':1}
         before=dict(status)
         self.assertEqual(m.status_text(status,False,True),'')
-        self.assertIn('3.0 MB / 64 MB | 8.5 s', m.status_text(status,True,True))
+        self.assertIn('3.0 MB / 32.0 MB', m.status_text(status,True,True))
+        self.assertIn('8.5 s ahead', m.status_text(status,True,True))
         self.assertEqual(status,before)
         status['recovering']=True
-        self.assertEqual(m.status_text(status,False,True),'Appi — Buffering…')
+        self.assertEqual(m.status_text(status,False,True),'Appi buffering — 3.0 MB / 32.0 MB')
         self.assertEqual(m.status_text(None,True,True),'')
 
     def test_icon_exact_copy_and_manifest_reference(self):
@@ -359,6 +505,41 @@ class BufferTransferTests(unittest.TestCase):
             manager.poll()
             self.assertIsNone(manager.active)
         self.assertEqual(state['closed'],3)
+
+
+    def test_media_transfer_timeout_is_inactivity_not_total_wall_clock(self):
+        from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+        m = _load_module()
+        class Handler(BaseHTTPRequestHandler):
+            def log_message(self, *args):
+                pass
+            def do_GET(self):
+                payload = b'abcdefgh'
+                self.send_response(200)
+                self.send_header('Content-Length', str(len(payload)))
+                self.end_headers()
+                for value in payload:
+                    self.wfile.write(bytes([value]))
+                    self.wfile.flush()
+                    time.sleep(0.05)
+        server = ThreadingHTTPServer(('127.0.0.1', 0), Handler)
+        threading.Thread(target=server.serve_forever, daemon=True).start()
+        self.addCleanup(server.server_close)
+        self.addCleanup(server.shutdown)
+        with tempfile.TemporaryDirectory() as root:
+            path = os.path.join(root, 'slow-progress.bin')
+            started = time.monotonic()
+            result = m._fetch_to_path(
+                'http://127.0.0.1:%d/media' % server.server_port,
+                path,
+                timeout=0.15,
+                max_bytes=1024,
+            )
+            elapsed = time.monotonic() - started
+            self.assertGreater(elapsed, 0.15)
+            self.assertEqual(Path(path).read_bytes(), b'abcdefgh')
+            self.assertEqual(result.byte_count, 8)
+
 
 class BufferedDecoderTests(unittest.TestCase):
     @unittest.skipUnless(__import__('shutil').which('ffmpeg'), 'ffmpeg is required for real decoder integration')

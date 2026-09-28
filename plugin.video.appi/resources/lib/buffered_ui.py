@@ -1,24 +1,46 @@
-"""Lightweight, non-modal buffer text on Kodi's fullscreen video window."""
+"""Skin-independent Buffered Look Ahead status overlay."""
 try:
     import xbmc
-except ImportError:  # pragma: no cover - Kodi supplies xbmc; tests may not.
+except ImportError:  # pragma: no cover
     xbmc = None
 import xbmcgui
 
 
-WINDOW_FULLSCREEN_VIDEO = 12005
+def _bytes(value):
+    value = max(0, int(value or 0))
+    if value < 1024 * 1024:
+        return '{:.0f} KB'.format(value / 1024.0)
+    return '{:.1f} MB'.format(value / 1048576.0)
 
 
 def status_text(status, debug, playing):
-    if not status:
+    if not status or not playing:
         return ''
-    if debug and playing:
-        return 'Appi buffer: {:.1f} MB / {} MB | {:.1f} s ahead{}'.format(
-            status['cached_ahead_bytes'] / 1048576.0,
-            status['buffer_capacity_mb'], status['buffered_seconds'],
-            ' | Buffering…' if status.get('recovering') else '')
+    current = _bytes(status.get('cached_ahead_bytes', 0))
+    target = _bytes(
+        status.get('buffer_target_bytes')
+        or status.get('high_water_bytes')
+        or int(status.get('buffer_capacity_mb', 0)) * 1048576
+    )
+    if debug:
+        parts = [
+            'Appi buffer: {} / {}'.format(current, target),
+            '{:.1f} s ahead'.format(float(status.get('buffered_seconds') or 0)),
+            str(status.get('buffer_state') or 'unknown'),
+            'epoch {}'.format(status.get('epoch_id', '?')),
+        ]
+        selected = float(status.get('selected_bitrate_mbps') or 0)
+        throughput = float(status.get('throughput_mbps') or 0)
+        if selected:
+            parts.append('{:.2f} Mbit/s selected'.format(selected))
+        if throughput:
+            parts.append('{:.2f} Mbit/s provider'.format(throughput))
+        return ' | '.join(parts)
     if status.get('recovering'):
-        return 'Appi — Buffering…'
+        text = 'Appi buffering — {} / {}'.format(current, target)
+        if status.get('throughput_limited') and status.get('limitation_message'):
+            text += ' | ' + str(status.get('limitation_message'))
+        return text
     return ''
 
 
@@ -40,31 +62,53 @@ class BufferOverlay:
                 )
             self._last_failure = message
 
+    def _create(self):
+        try:
+            window = xbmcgui.WindowDialog()
+        except Exception as exc:
+            self._failure('WindowDialog', exc)
+            return False
+        try:
+            label = xbmcgui.ControlLabel(
+                40, 45, 1180, 55, '',
+                textColor='FFFFFFFF', shadowColor='FF000000'
+            )
+        except Exception as exc:
+            self._failure('ControlLabel', exc)
+            try:
+                window.close()
+            except Exception:
+                pass
+            return False
+        try:
+            window.addControl(label)
+        except Exception as exc:
+            self._failure('addControl', exc)
+            try:
+                window.close()
+            except Exception:
+                pass
+            return False
+        try:
+            window.show()
+        except Exception as exc:
+            self._failure('show', exc)
+            try:
+                window.close()
+            except Exception:
+                pass
+            return False
+        self.window = window
+        self.label = label
+        return True
+
     def update(self, status, debug=False, playing=False):
         text = status_text(status, debug, playing)
         if not text:
             self.close()
             return
-        if self.label is None:
-            try:
-                window = xbmcgui.Window(WINDOW_FULLSCREEN_VIDEO)
-            except Exception as exc:
-                self._failure('Window({})'.format(WINDOW_FULLSCREEN_VIDEO), exc)
-                return
-            try:
-                label = xbmcgui.ControlLabel(
-                    30, 30, 1100, 45, '', textColor='FFFFFFFF'
-                )
-            except Exception as exc:
-                self._failure('ControlLabel', exc)
-                return
-            try:
-                window.addControl(label)
-            except Exception as exc:
-                self._failure('addControl', exc)
-                return
-            self.window = window
-            self.label = label
+        if self.label is None and not self._create():
+            return
         try:
             self.label.setLabel(text)
             self._last_failure = ''
@@ -73,12 +117,12 @@ class BufferOverlay:
             self.close()
 
     def close(self):
-        window, label = self.window, self.label
+        window = self.window
         self.label = None
         self.window = None
-        if label is not None and window is not None:
+        if window is not None:
             try:
-                window.removeControl(label)
+                window.close()
                 self._last_failure = ''
             except Exception as exc:
-                self._failure('removeControl', exc)
+                self._failure('close', exc)

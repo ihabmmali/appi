@@ -1,12 +1,12 @@
 ---
 id: HLS-12
 role: implementation
-status: ready
+status: review
 delivery: unreleased
-verification: failed
-owner: unassigned
-base_commit: unset
-artifact: none
+verification: partial
+owner: builder-publisher-2026-09-28
+base_commit: 4a415f9eaeb48c77ef2fcaa895db90d7e66ab183
+artifact: plugin.video.appi/plugin.video.appi-0.7.21.zip
 ---
 # HLS-12 — Replace Buffered Look Ahead seek/resume with fresh buffer epochs
 
@@ -14,6 +14,9 @@ artifact: none
 Replace the repeatedly failing stateful seek/recovery logic with a simpler deterministic model.
 
 For Buffered Look Ahead VOD, any manual seek or playback start at a saved non-zero resume point must be treated as a **new buffer epoch at the requested target position**. Appi must not try to preserve and recover the old pre-seek queue/session state.
+
+## Scope
+Implement the fresh-epoch random-access design only inside Buffered Look Ahead mode: epoch ownership, stale-work invalidation, cross-track target alignment, target-first fetching, contiguous target reserve, bounded failure and diagnostic evidence. Preserve the three non-buffered HLS playback modes and the user's selected rendition.
 
 ## Why this supersedes HLS-11
 0.7.20 shipped an HLS-11 repair that coordinated track re-centering, reprioritized targets and made recovery misses retriable. It still times out on the target device.
@@ -68,5 +71,10 @@ Published 0.7.20 still times out in Buffered Look Ahead despite HLS-11's coordin
 
 The user has repeatedly observed that initial sequential playback can work while random access fails, making seek/resume state management the persistent failure boundary.
 
+Automated 0.7.21 candidate run `36381180991` passed fresh-epoch coverage for coordinated video/audio timeline alignment, cold non-zero resume, forward/backward/repeated seek behavior, timeout/retry and deliberately late stale-epoch completion. Final target-device acceptance on the previously failing multi-variant stream is still required.
+
 ## Outcome and next action
 Committed for the next release. Implement a clean epoch-based target rebuild for seek/resume rather than another incremental modification of the existing recovery state machine.
+
+
+Implementation session 2026-09-28: activated on `release/0.7.21` from base `4a415f9eaeb48c77ef2fcaa895db90d7e66ab183`; authorized scope is implementation, review, integration and publication of the committed next release.

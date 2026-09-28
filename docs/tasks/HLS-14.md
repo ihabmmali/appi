@@ -1,12 +1,12 @@
 ---
 id: HLS-14
 role: implementation
-status: ready
+status: review
 delivery: unreleased
-verification: failed
-owner: unassigned
-base_commit: unset
-artifact: none
+verification: partial
+owner: builder-publisher-2026-09-28
+base_commit: 4a415f9eaeb48c77ef2fcaa895db90d7e66ab183
+artifact: plugin.video.appi/plugin.video.appi-0.7.21.zip
 ---
 # HLS-14 — Make the detailed Buffered Look Ahead overlay actually visible
 
@@ -39,5 +39,10 @@ Created from confirmed 0.7.20 target-device failure on 2026-09-28. The user expl
 ## Evidence
 HLS-10 shipped additional logging in 0.7.20 but preserved the existing fullscreen-window target. The user has now confirmed that Detailed buffer debug overlay still does nothing while Buffered Look Ahead mode is active.
 
+Automated 0.7.21 candidate run `36381180991` passed the skin-independent `WindowDialog` overlay lifecycle test, including numeric metrics and non-fatal GUI-operation failure handling. Actual visibility on the target Fire TV/Kodi skin remains a required device check.
+
 ## Outcome and next action
 Committed for the next release. Use the HLS-10 logs to identify the failing GUI path, then replace it with a target-device-proven overlay mechanism.
+
+
+Implementation session 2026-09-28: activated on `release/0.7.21` from base `4a415f9eaeb48c77ef2fcaa895db90d7e66ab183`; authorized scope is implementation, review, integration and publication of the committed next release.
