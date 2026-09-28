@@ -265,6 +265,13 @@ class BufferedReleaseTests(unittest.TestCase):
         track = next(iter(session.tracks.values()))
         old_epoch = session.epoch
         resource = track.segments[20].resource
+        # The tiny short-VOD fixture is fully cached by preparation. Stop its
+        # worker and remove one known segment so this test owns a real in-flight
+        # old-epoch transfer deterministically.
+        track.stop()
+        if resource.path and os.path.exists(resource.path):
+            os.remove(resource.path)
+        resource.path = ''
         original = self.m._fetch_to_path
         gate = threading.Event()
         started = threading.Event()

@@ -366,7 +366,11 @@ class BufferedHlsTests(unittest.TestCase):
         deadline = time.time() + 1
         while time.time() < deadline:
             status = session.status()
-            if 85 <= status['percent'] <= 95:
+            if (
+                status['cached_ahead_bytes'] >= 128
+                and not status['ready']
+                and status['message'].startswith('Buffering stalled')
+            ):
                 observed = status
                 break
             time.sleep(0.01)
@@ -377,7 +381,7 @@ class BufferedHlsTests(unittest.TestCase):
         worker.join(2)
         self.assertFalse(worker.is_alive())
         self.assertFalse(session.ready)
-        self.assertIn('Startup reserve incomplete', session.error)
+        self.assertIn('Startup reservoir incomplete', session.error)
 
     def test_control_deadline_exceeds_preparation_deadline(self):
         self.assertGreater(self.m.CONTROL_TIMEOUT, self.m.STARTUP_TIMEOUT)
@@ -496,7 +500,7 @@ class BufferedHlsTests(unittest.TestCase):
             Path(target.path).write_bytes(b'target')
 
         path = track.serve(4)
-        self.assertEqual(path, target.path)
+        self.assertEqual(path, track.segments[4].resource.path)
         self.assertEqual(track.last_served, 4)
         events = session.drain_events()
         recenter = [fields for name, fields in events if name == 'buffer_seek_recenter']
