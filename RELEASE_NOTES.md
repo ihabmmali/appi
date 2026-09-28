@@ -10,6 +10,7 @@ Each entry records the package shipped, its main user-visible changes, and verif
 - HLS-10 retains window 12005 pending a confirmed HLS target-device reproduction and adds exact non-fatal logging for Window, ControlLabel, addControl, setLabel and removeControl.
 - First gate run `36375728261` was correctly blocked by an existing pure-overlay test because the new module imported `xbmc` outside Kodi. The compatibility correction kept runtime logging intact; corrected release/package run `36375784976` then passed 87 tests (1 skipped), tracker validation, deterministic rebuild and package/index inspection.
 - Deterministic artifact commit: `1ca52ad0b55a3f3e19acd8e4b288d8d13fe57ab4`. ZIP SHA-256: `41e1bdec7229d1a0a3d8787427ac9c434fb773e302c7d8f5bae428de0de7755f`.
+- Published through PR #8 / merge `6e6db9bec185ec6b5eea664d27cb7b94f4efa2ef`. Post-merge verification run `36376270017` passed and Pages deployment run `36376269821` completed successfully. Delivery: [plugin.video.appi-0.7.20.zip](https://ihabmmali.github.io/appi/plugin.video.appi-0.7.20.zip).
 - Target-device acceptance remains separately required for audible ISA playback, multi-variant HLS seek/resume and enabled/disabled debug-overlay visibility.
 
 ## 0.7.19 — 2026-09-27
