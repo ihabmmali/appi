@@ -13,14 +13,14 @@ Updated: 2026-09-27. Start with [AGENTS.md](AGENTS.md) for role routing.
 
 ## Current work
 
-- **0.7.19 is published.** Known multi-variant HLS masters now prepare and play well from time 0 in Buffered Look Ahead on the target Fire TV; the simple startup windows display.
-- AUDIO-1 is committed as a release blocker: 0.7.19 InputStream Adaptive playback is completely silent in both manual and adaptive use, while 0.7.8 restores audio on the same media/device. Kodi still exposes audio-stream details during silent playback, so discovery is occurring; selection/index/timing or decoder/ISA handoff must be investigated. The newer preferred-audio service logic is a primary A/B boundary, not a presumed cause.
-- HLS-10 is committed as an investigation-first verify/repair task: the no-overlay observation may have been on a non-HLS item that bypassed Buffered Look Ahead, so it must be repeated on a known HLS buffered session.
-- HLS-11 is committed as a release blocker because known multi-variant HLS works from time 0 but fails on manual seek and saved-point resume. After a seek failure, resume briefly plays, displays **Appi buffering**, stutters and exits with a buffering-failed timeout.
+- **0.7.20 release candidate is verified on `release/0.7.20`.** Corrected release/package run `36375784976` passed and produced deterministic artifact commit `1ca52ad0b55a3f3e19acd8e4b288d8d13fe57ab4` with ZIP SHA-256 `41e1bdec7229d1a0a3d8787427ac9c434fb773e302c7d8f5bae428de0de7755f`. 0.7.19 remains published until integration completes.
+- AUDIO-1 candidate repair leaves the established ISA handoff unchanged and makes preferred-audio selection stable/revalidated and non-mutating for No preference/no-match/already-selected cases. Automated verification passed; audible Fire TV acceptance remains pending.
+- HLS-10 source review confirms the setting/service path. 0.7.20 adds exact non-fatal GUI-operation logging without changing the unproven fullscreen window target; known-HLS Fire TV visibility remains pending.
+- HLS-11 candidate repair coordinates cold-resume/seek re-centering across active media tracks, prioritizes the target, and keeps bounded recovery misses retriable instead of poisoning the session. Automated verification passed; target-device seek/resume remains pending.
 - HLS-8 is shipped/review-partial: the original 0.7.18 preparation/handoff regression has positive device evidence, while focused successor tasks own the remaining overlay and seek defects.
 - LANG-3, HLS-9 and UI-4 are shipped in 0.7.19. LANG-3 target-device verification is now failed because ISA audio is broken; AUDIO-1 owns restoring audio before language-selection acceptance can resume.
 - PLAY-1 remains a backlog Trakt-error investigation. HLS-1 and UI-1 remain backlog investigations.
-- [NEXT_RELEASE.md](NEXT_RELEASE.md): Committed next-release scope is AUDIO-1, HLS-10 and HLS-11. AUDIO-1 and HLS-11 are release blockers; HLS-10 must first verify the overlay on a known HLS buffered session. [KNOWN_ISSUES.md](KNOWN_ISSUES.md): full task index.
+- [NEXT_RELEASE.md](NEXT_RELEASE.md): 0.7.20 candidate scope is AUDIO-1, HLS-10 and HLS-11; automated gate passed and target-device acceptance remains distinct. [KNOWN_ISSUES.md](KNOWN_ISSUES.md): full task index.
 
 ## Context on demand
 
