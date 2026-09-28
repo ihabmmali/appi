@@ -225,10 +225,94 @@ class BufferedReleaseTests(unittest.TestCase):
         worker.start()
         self.assertTrue(until(lambda: bool(session.tracks)))
         self.assertFalse(session.ready)
-        self.assertEqual(session.status()['message'], 'Filling buffer…')
+        status = session.status()
+        self.assertIn('Filling buffer', status['message'])
+        self.assertTrue('KB' in status['message'] or 'MB' in status['message'])
+        self.assertGreater(status['buffer_target_bytes'], 0)
         gate.set()
         worker.join(3)
         self.assertTrue(session.ready)
+
+    def test_deep_reservoir_uses_shared_capacity_not_equal_track_slices(self):
+        master = ('#EXTM3U\n'
+            '#EXT-X-MEDIA:TYPE=AUDIO,GROUP-ID="a",DEFAULT=YES,URI="audio.m3u8"\n'
+            '#EXT-X-STREAM-INF:BANDWIDTH=6000000,AUDIO="a"\nvideo.m3u8\n')
+        media = lambda prefix, size: ('#EXTM3U\n#EXT-X-TARGETDURATION:2\n' + ''.join(
+            '#EXTINF:2,\n%s%d.bin\n' % (prefix, i) for i in range(80)) + '#EXT-X-ENDLIST\n').encode()
+        self.payloads.update({
+            '/media.m3u8': master.encode(),
+            '/video.m3u8': media('v', 0),
+            '/audio.m3u8': media('a', 0),
+        })
+        for i in range(80):
+            self.payloads['/v%d.bin' % i] = b'v' * (1024 * 1024)
+            self.payloads['/a%d.bin' % i] = b'a' * (32 * 1024)
+        _install_fake_fetch(self.m, self.payloads)
+        session = self.session(buffer_mb=64)
+        session.prepare()
+        self.assertTrue(session.ready, session.error)
+        self.assertGreaterEqual(session.status()['cached_ahead_bytes'], session.startup_target_bytes)
+        self.assertTrue(until(lambda: session.status()['cached_ahead_bytes'] >= session.high_water_bytes, 5))
+        tracks = list(session.tracks.values())
+        large = max(track.ahead_bytes() for track in tracks)
+        small = min(track.ahead_bytes() for track in tracks)
+        self.assertGreater(large, small * 8)
+        self.assertLessEqual(session.disk_bytes(), session.max_bytes)
+
+    def test_seek_starts_new_epoch_and_late_old_download_is_ignored(self):
+        session = self.session(buffer_mb=32)
+        session.prepare()
+        track = next(iter(session.tracks.values()))
+        old_epoch = session.epoch
+        resource = track.segments[20].resource
+        original = self.m._fetch_to_path
+        gate = threading.Event()
+        started = threading.Event()
+
+        def delayed(url, path, **kwargs):
+            if resource.upstream_url.split('|', 1)[0] in url:
+                started.set()
+                gate.wait(2)
+            return original(url, path, **kwargs)
+
+        self.m._fetch_to_path = delayed
+        holder = {}
+        def old_download():
+            try:
+                holder['path'] = session._ensure_binary(
+                    resource, segment=track.segments[20], track=track, epoch=old_epoch
+                )
+            except Exception as exc:
+                holder['error'] = exc
+        worker = threading.Thread(target=old_download)
+        worker.start()
+        self.assertTrue(started.wait(1))
+        new_epoch = session._coordinate_seek(track, 30, reason='seek')
+        self.assertGreater(new_epoch, old_epoch)
+        gate.set()
+        worker.join(3)
+        self.assertFalse(worker.is_alive())
+        self.assertIn('error', holder)
+        self.assertFalse(resource.path and os.path.isfile(resource.path))
+        status = session.status()
+        self.assertEqual(status['epoch_id'], new_epoch)
+        self.assertGreaterEqual(status['stale_jobs_cancelled_or_ignored'], 1)
+
+    def test_status_reports_numeric_playable_bytes_and_watermarks(self):
+        session = self.session(buffer_mb=32)
+        worker = threading.Thread(target=session.prepare)
+        worker.start()
+        self.assertTrue(until(lambda: bool(session.tracks)))
+        self.assertTrue(until(lambda: session.status()['cached_ahead_bytes'] > 0))
+        status = session.status()
+        self.assertGreater(status['buffer_target_bytes'], 0)
+        self.assertGreater(status['high_water_bytes'], status['low_water_bytes'])
+        self.assertGreater(status['low_water_bytes'], status['critical_water_bytes'])
+        self.assertTrue('KB' in status['message'] or 'MB' in status['message'])
+        worker.join(5)
+        self.assertFalse(worker.is_alive())
+        self.assertTrue(session.ready, session.error)
+
 
 
 class ReleaseSettingsTests(unittest.TestCase):
@@ -271,13 +355,17 @@ class ReleaseSettingsTests(unittest.TestCase):
     def test_overlay_is_purely_presentational_and_disabled_is_silent(self):
         sys.modules.setdefault('xbmcgui',types.ModuleType('xbmcgui'))
         m=self.load('buffered_ui')
-        status={'cached_ahead_bytes':3*1048576,'buffer_capacity_mb':64,'buffered_seconds':8.5,'recovering':False}
+        status={'cached_ahead_bytes':3*1048576,'buffer_target_bytes':32*1048576,
+                'high_water_bytes':50*1048576,'buffer_capacity_mb':64,
+                'buffered_seconds':8.5,'recovering':False,'buffer_state':'filling',
+                'epoch_id':1}
         before=dict(status)
         self.assertEqual(m.status_text(status,False,True),'')
-        self.assertIn('3.0 MB / 64 MB | 8.5 s', m.status_text(status,True,True))
+        self.assertIn('3.0 MB / 32.0 MB', m.status_text(status,True,True))
+        self.assertIn('8.5 s ahead', m.status_text(status,True,True))
         self.assertEqual(status,before)
         status['recovering']=True
-        self.assertEqual(m.status_text(status,False,True),'Appi — Buffering…')
+        self.assertEqual(m.status_text(status,False,True),'Appi buffering — 3.0 MB / 32.0 MB')
         self.assertEqual(m.status_text(None,True,True),'')
 
     def test_icon_exact_copy_and_manifest_reference(self):

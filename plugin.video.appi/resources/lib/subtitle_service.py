@@ -305,8 +305,15 @@ def run():
                            _enabled('buffered_debug_overlay', False), playing)
             if session and playing:
                 diagnostics.event('buffer_status', **{k: v for k, v in status.items()
-                                  if k in {'cached_ahead_bytes', 'buffered_seconds',
-                                           'cached_segments_ahead', 'buffer_capacity_mb'}})
+                                  if k in {'cached_ahead_bytes', 'buffer_target_bytes',
+                                           'high_water_bytes', 'low_water_bytes',
+                                           'critical_water_bytes', 'buffered_seconds',
+                                           'cached_segments_ahead', 'buffer_capacity_mb',
+                                           'buffer_state', 'buffer_trend',
+                                           'selected_bitrate_mbps', 'throughput_mbps',
+                                           'epoch_id', 'epoch_reason',
+                                           'epoch_target_seconds',
+                                           'stale_jobs_cancelled_or_ignored'}})
         except Exception as exc:
             xbmc.log('Appi buffered HLS service failed: {}'.format(exc), xbmc.LOGWARNING)
         if playing:
