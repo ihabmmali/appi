@@ -1024,6 +1024,23 @@ class BufferedHlsSession:
         self._last_status_bytes = reserve_bytes
         self._last_status_at = now
         selected_bps = self._selected_bitrate_bps()
+        selected_mbps = round(selected_bps / 1000000.0, 3) if selected_bps else 0.0
+        throughput_mbps = self.measured_throughput_mbps()
+        state = self.buffer_state(reserve_bytes)
+        throughput_limited = bool(
+            self.started_playback
+            and state == 'critical'
+            and selected_mbps > 0
+            and throughput_mbps > 0
+            and throughput_mbps < selected_mbps * 0.95
+        )
+        limitation_message = ''
+        if throughput_limited:
+            limitation_message = (
+                'Provider {:.2f} Mbit/s is below selected {:.2f} Mbit/s while reserve is critical'
+                .format(throughput_mbps, selected_mbps)
+            )
+            message = 'Buffer critical — {}'.format(limitation_message)
         return {
             'ready': self.ready, 'error': self.error, 'local_url': self.local_url,
             'choices': self.choices if not self.choice_event.is_set() else [],
@@ -1039,10 +1056,12 @@ class BufferedHlsSession:
             'buffer_capacity_mb': self.max_bytes // (1024 * 1024),
             'recovering': self._epoch_preparing or any(t.recovering for t in tracks),
             'startup_tracks': len(self._required_startup_tracks()),
-            'buffer_state': self.buffer_state(reserve_bytes),
+            'buffer_state': state,
             'buffer_trend': trend,
-            'selected_bitrate_mbps': round(selected_bps / 1000000.0, 3) if selected_bps else 0.0,
-            'throughput_mbps': self.measured_throughput_mbps(),
+            'selected_bitrate_mbps': selected_mbps,
+            'throughput_mbps': throughput_mbps,
+            'throughput_limited': throughput_limited,
+            'limitation_message': limitation_message,
             'epoch_id': self.epoch,
             'epoch_reason': self.epoch_reason,
             'epoch_target_seconds': self.epoch_target_seconds,

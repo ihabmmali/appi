@@ -321,6 +321,57 @@ class BufferedReleaseTests(unittest.TestCase):
         self.assertTrue(session.ready, session.error)
 
 
+    def test_refill_hysteresis_runs_to_high_water_then_restarts_at_low_water(self):
+        session = self.session(buffer_mb=32)
+        session._startup_complete = True
+        session._epoch_preparing = False
+        session._all_required_cached = lambda: False
+        state = {'bytes': session.high_water_bytes + 1}
+        session._playable_reserve = lambda: (state['bytes'], 30.0, 5)
+        session._refill_active = True
+        self.assertFalse(session._update_refill_state())
+        state['bytes'] = (session.high_water_bytes + session.low_water_bytes) // 2
+        self.assertFalse(session._update_refill_state())
+        state['bytes'] = session.low_water_bytes - 1
+        self.assertTrue(session._update_refill_state())
+
+    def test_cached_reservoir_masks_provider_stall_until_uncached_edge(self):
+        session = self.session(buffer_mb=32)
+        session.prepare()
+        track = next(iter(session.tracks.values()))
+        track.stop()
+        # Keep five contiguous local segments and remove the rest.
+        for segment in track.segments[5:]:
+            if segment.resource.path and os.path.exists(segment.resource.path):
+                os.remove(segment.resource.path)
+            segment.resource.path = ''
+        self.m._fetch_to_path = lambda *a, **k: (_ for _ in ()).throw(
+            TimeoutError('simulated provider stall')
+        )
+        session._wait_reservoir = lambda *args: False
+        for index in range(5):
+            self.assertTrue(os.path.isfile(track.serve(index)))
+        with self.assertRaises(self.m.RecoveryTimeout):
+            track.serve(5)
+
+    def test_critical_sustained_deficit_is_reported_from_measured_evidence(self):
+        session = self.session(buffer_mb=32)
+        session.ready = True
+        session.started_playback = True
+        session._startup_complete = True
+        session._epoch_preparing = False
+        session._selected_variant_attrs = {'BANDWIDTH': '8000000'}
+        session._throughput_samples = [(500000, 1000.0)]  # 4 Mbit/s measured.
+        session._playable_reserve = lambda: (
+            session.critical_water_bytes - 1, 5.0, 2
+        )
+        status = session.status()
+        self.assertEqual(status['buffer_state'], 'critical')
+        self.assertTrue(status['throughput_limited'])
+        self.assertIn('Provider 4.00 Mbit/s', status['limitation_message'])
+        self.assertIn('selected 8.00 Mbit/s', status['message'])
+
+
 
 class ReleaseSettingsTests(unittest.TestCase):
     def load(self, name):
@@ -454,6 +505,41 @@ class BufferTransferTests(unittest.TestCase):
             manager.poll()
             self.assertIsNone(manager.active)
         self.assertEqual(state['closed'],3)
+
+
+    def test_media_transfer_timeout_is_inactivity_not_total_wall_clock(self):
+        from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+        m = _load_module()
+        class Handler(BaseHTTPRequestHandler):
+            def log_message(self, *args):
+                pass
+            def do_GET(self):
+                payload = b'abcdefgh'
+                self.send_response(200)
+                self.send_header('Content-Length', str(len(payload)))
+                self.end_headers()
+                for value in payload:
+                    self.wfile.write(bytes([value]))
+                    self.wfile.flush()
+                    time.sleep(0.05)
+        server = ThreadingHTTPServer(('127.0.0.1', 0), Handler)
+        threading.Thread(target=server.serve_forever, daemon=True).start()
+        self.addCleanup(server.server_close)
+        self.addCleanup(server.shutdown)
+        with tempfile.TemporaryDirectory() as root:
+            path = os.path.join(root, 'slow-progress.bin')
+            started = time.monotonic()
+            result = m._fetch_to_path(
+                'http://127.0.0.1:%d/media' % server.server_port,
+                path,
+                timeout=0.15,
+                max_bytes=1024,
+            )
+            elapsed = time.monotonic() - started
+            self.assertGreater(elapsed, 0.15)
+            self.assertEqual(Path(path).read_bytes(), b'abcdefgh')
+            self.assertEqual(result.byte_count, 8)
+
 
 class BufferedDecoderTests(unittest.TestCase):
     @unittest.skipUnless(__import__('shutil').which('ffmpeg'), 'ffmpeg is required for real decoder integration')

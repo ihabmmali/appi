@@ -37,7 +37,10 @@ def status_text(status, debug, playing):
             parts.append('{:.2f} Mbit/s provider'.format(throughput))
         return ' | '.join(parts)
     if status.get('recovering'):
-        return 'Appi buffering — {} / {}'.format(current, target)
+        text = 'Appi buffering — {} / {}'.format(current, target)
+        if status.get('throughput_limited') and status.get('limitation_message'):
+            text += ' | ' + str(status.get('limitation_message'))
+        return text
     return ''
 
 

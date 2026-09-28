@@ -311,6 +311,7 @@ def run():
                                            'cached_segments_ahead', 'buffer_capacity_mb',
                                            'buffer_state', 'buffer_trend',
                                            'selected_bitrate_mbps', 'throughput_mbps',
+                                           'throughput_limited', 'limitation_message',
                                            'epoch_id', 'epoch_reason',
                                            'epoch_target_seconds',
                                            'stale_jobs_cancelled_or_ignored'}})
