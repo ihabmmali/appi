@@ -61,7 +61,7 @@ The implementation should favor deterministic teardown/rebuild over preserving c
 - Target-device acceptance must use the user's previously failing multi-variant HLS stream and demonstrate start, seek, resume-point start and repeated seek without timeout.
 
 ## Authorization
-Created from failed target-device acceptance of published 0.7.20 on 2026-09-28. This is a ready candidate and is not committed to a future release unless the user explicitly includes it under AGENTS.md.
+Created from failed target-device acceptance of published 0.7.20 on 2026-09-28. The user explicitly confirmed seek/resume remains broken and instructed that these Buffered Look Ahead repairs be committed for the next release. HLS-12 is therefore committed release scope and a release blocker.
 
 ## Evidence
 Published 0.7.20 still times out in Buffered Look Ahead despite HLS-11's coordinated re-centering/recovery changes.
@@ -69,4 +69,4 @@ Published 0.7.20 still times out in Buffered Look Ahead despite HLS-11's coordin
 The user has repeatedly observed that initial sequential playback can work while random access fails, making seek/resume state management the persistent failure boundary.
 
 ## Outcome and next action
-Implement a clean epoch-based target rebuild for seek/resume rather than another incremental modification of the existing recovery state machine.
+Committed for the next release. Implement a clean epoch-based target rebuild for seek/resume rather than another incremental modification of the existing recovery state machine.

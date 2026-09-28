@@ -1,6 +1,6 @@
 # Next Appi release
 
-Planning status: open. Version: not assigned. Current baseline and fallback: [PROJECT_STATE.md](PROJECT_STATE.md).
+Planning status: committed. Version: not assigned. Current baseline and fallback: [PROJECT_STATE.md](PROJECT_STATE.md).
 
 0.7.20 is published. No next-release scope is currently committed. AUDIO-1, HLS-10 and HLS-11 remain in review for target-device acceptance; any follow-up repair must be triaged and explicitly committed rather than silently carried into a new release.
 
@@ -8,9 +8,10 @@ Planning status: open. Version: not assigned. Current baseline and fallback: [PR
 
 | Task | Selection | Priority | Reason |
 | --- | --- | --- | --- |
-| [HLS-13](docs/tasks/HLS-13.md) | candidate | release-blocking buffering redesign | Replace 12-second/equal-share buffering with a true deep high-water/low-water reservoir that uses configured capacity to protect higher selected bitrates |
-| [HLS-14](docs/tasks/HLS-14.md) | candidate | confirmed overlay defect | Detailed debug overlay still renders nothing during confirmed Buffered Look Ahead playback on 0.7.20 |
-| [HLS-12](docs/tasks/HLS-12.md) | candidate | release-blocking playback redesign | 0.7.20 still times out; replace stateful seek recovery with a fresh buffer epoch at every seek/resume target |
+| [HLS-13](docs/tasks/HLS-13.md) | committed | release-blocking buffering redesign | Replace 12-second/equal-share buffering with a true deep high-water/low-water reservoir that uses configured capacity to protect higher selected bitrates |
+| [HLS-14](docs/tasks/HLS-14.md) | committed | confirmed overlay defect | Detailed debug overlay still renders nothing during confirmed Buffered Look Ahead playback on 0.7.20 |
+| [HLS-15](docs/tasks/HLS-15.md) | committed | buffering status UX | Normal startup/recovery status must show actual buffered KB/MB, not only a progress bar |
+| [HLS-12](docs/tasks/HLS-12.md) | committed | release-blocking playback redesign | 0.7.20 still times out; replace stateful seek recovery with a fresh buffer epoch at every seek/resume target |
 | [PLAY-1](docs/tasks/PLAY-1.md) | backlog | investigation | Resume persistence is working; only investigate the playback-start Trakt API error |
 | [HLS-1](docs/tasks/HLS-1.md) | backlog | investigation | Use buffered-mode/diagnostic evidence to diagnose any underlying provider stalls that remain |
 | [UI-1](docs/tasks/UI-1.md) | backlog | investigation | Skin comparison needed |
@@ -25,6 +26,8 @@ Planning status: open. Version: not assigned. Current baseline and fallback: [PR
 6. Copy shipped task IDs and scope changes into RELEASE_NOTES, then reset this planning file for the next cycle.
 
 ## Scope decisions
+
+2026-09-28: user explicitly summarized and committed the next Buffered Look Ahead repair scope: HLS-12 (seek/resume still broken), HLS-13 (buffering algorithm/deep-reservoir defect), HLS-14 (detailed debug overlay renders nothing), and new HLS-15 (normal preparation/recovery UI must show actual buffered KB/MB, not just a percentage bar). All four are committed next-release scope; HLS-12 and HLS-13 are release blockers.
 
 2026-09-28: HLS-13 added after source review and target-device testing showed Buffered Look Ahead is not yet acting as the intended deep reservoir. 0.7.20 starts after a fixed 12-second reserve and then divides 70% of configured capacity equally across tracks; with 128 MB and video+audio, video receives only ~44.8 MB. HLS-13 requires startup to build a meaningful configured-capacity reservoir, dynamic track allocation, continuous high-water refill and progress-aware transfer timeouts. It must prove value on the problematic higher bitrate, not merely a lower rendition that ordinary ISA already plays.
 
@@ -122,4 +125,4 @@ Planning status: open. Version: not assigned. Current baseline and fallback: [PR
 
 ## Readiness
 
-No next-release scope is committed. HLS-12 and HLS-13 are release-blocking candidates for seek/resume and true deep-reservoir behavior; HLS-14 is the confirmed overlay-repair candidate. PLAY-1, HLS-1 and UI-1 remain backlog investigations; target-device acceptance for shipped AUDIO-1, HLS-10 and HLS-11 remains tracked in their canonical task records.
+Committed next-release scope: HLS-12, HLS-13, HLS-14 and HLS-15. HLS-12 and HLS-13 are release blockers. HLS-14 must restore the detailed overlay, and HLS-15 must show actual buffered KB/MB in the normal preparation/recovery UI. PLAY-1, HLS-1 and UI-1 remain backlog investigations; target-device acceptance for shipped AUDIO-1, HLS-10 and HLS-11 remains tracked in their canonical task records.

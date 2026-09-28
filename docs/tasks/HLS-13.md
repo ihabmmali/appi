@@ -82,7 +82,7 @@ Treat Buffered Look Ahead as a producer/consumer reservoir, not a shallow proxy 
 - Target-device diagnostics record actual high-water bytes/seconds and measured throughput for both the working lower rendition and the problematic higher rendition.
 
 ## Authorization
-Created from target-device findings on published 0.7.20 on 2026-09-28. The user explicitly challenged whether Buffered Look Ahead is actually delivering a deep enough reservoir to provide an advantage over ordinary playback. This task is a ready release-blocking candidate but is not committed until explicitly included under AGENTS.md.
+Created from target-device findings on published 0.7.20 on 2026-09-28. The user explicitly confirmed the buffering algorithm is defective and instructed that these Buffered Look Ahead repairs be committed for the next release. HLS-13 is therefore committed release scope and a release blocker.
 
 ## Evidence
 Current 0.7.20 source uses a 12-second startup reserve and, after startup, caps each track at 70% of configured capacity divided equally by track count. A 128 MB two-track session therefore gives the video track roughly 44.8 MB of forward cache budget even though audio normally needs far less.
@@ -90,4 +90,4 @@ Current 0.7.20 source uses a 12-second startup reserve and, after startup, caps 
 The user reports that lowering the selected buffered rendition makes playback work, while that same lower rendition already works in ordinary InputStream Adaptive mode. The intended Buffered Look Ahead value therefore remains unproven for the higher bitrate.
 
 ## Outcome and next action
-Replace shallow-start/equal-share caching with a real high-water/low-water producer-consumer reservoir and verify it against the problematic higher-bitrate stream, not merely a lower rendition that already works without buffering.
+Committed for the next release. Replace shallow-start/equal-share caching with a real high-water/low-water producer-consumer reservoir and verify it against the problematic higher-bitrate stream, not merely a lower rendition that already works without buffering.

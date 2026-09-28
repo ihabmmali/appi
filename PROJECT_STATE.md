@@ -15,13 +15,14 @@ Updated: 2026-09-27. Start with [AGENTS.md](AGENTS.md) for role routing.
 
 - **0.7.20 is published.** Shipped scope: AUDIO-1, HLS-10 and HLS-11. Automated candidate, post-merge and Pages checks passed; all three tasks remain review/partial until target-device acceptance.
 - AUDIO-1 candidate repair leaves the established ISA handoff unchanged and makes preferred-audio selection stable/revalidated and non-mutating for No preference/no-match/already-selected cases. Automated verification passed; audible Fire TV acceptance remains pending.
-- HLS-10 failed target-device verification: the detailed overlay remains invisible during confirmed Buffered Look Ahead playback. HLS-14 is the successor implementation candidate.
-- HLS-11 shipped in 0.7.20 but failed target-device acceptance: seek/resume still times out. HLS-12 replaces stateful recovery with a fresh buffer epoch at every seek/resume target.
-- HLS-13 is a release-blocking candidate for the core value proposition: 0.7.20 starts after only a 12-second reserve and later divides 70% of configured bytes equally across tracks, so a 128 MB video+audio session gives video only about 44.8 MB. It must become a true high-water/low-water deep reservoir that continuously refills.
+- HLS-10 failed target-device verification: the detailed overlay remains invisible during confirmed Buffered Look Ahead playback. HLS-14 is committed to repair the actual display path.
+- HLS-11 shipped in 0.7.20 but failed target-device acceptance: seek/resume still times out. HLS-12 is committed for the next release and replaces stateful recovery with a fresh buffer epoch at every seek/resume target.
+- HLS-13 is committed as a release blocker for the core value proposition: 0.7.20 starts after only a 12-second reserve and later divides 70% of configured bytes equally across tracks, so a 128 MB video+audio session gives video only about 44.8 MB. It must become a true high-water/low-water deep reservoir that continuously refills.
 - HLS-8 is shipped/review-partial: the original 0.7.18 preparation/handoff regression has positive device evidence, while focused successor tasks own the remaining overlay and seek defects.
 - LANG-3, HLS-9 and UI-4 are shipped in 0.7.19. LANG-3 target-device verification is now failed because ISA audio is broken; AUDIO-1 owns restoring audio before language-selection acceptance can resume.
 - PLAY-1 remains a backlog Trakt-error investigation. HLS-1 and UI-1 remain backlog investigations.
-- [NEXT_RELEASE.md](NEXT_RELEASE.md): HLS-12 and HLS-13 are release-blocking candidates and HLS-14 is a confirmed overlay candidate; no new scope is committed yet. [KNOWN_ISSUES.md](KNOWN_ISSUES.md): full task index.
+- HLS-15 is committed to make the normal startup/recovery window display actual buffered KB/MB, independent of the optional detailed overlay.
+- [NEXT_RELEASE.md](NEXT_RELEASE.md): committed scope is HLS-12, HLS-13, HLS-14 and HLS-15; HLS-12/HLS-13 are release blockers. [KNOWN_ISSUES.md](KNOWN_ISSUES.md): full task index.
 
 ## Context on demand
 

@@ -34,10 +34,10 @@ This is now a confirmed display defect, not an investigation into whether Buffer
 - Target-device verification includes a screenshot/observation of the visible overlay on a known multi-variant HLS stream.
 
 ## Authorization
-Created from confirmed 0.7.20 target-device failure on 2026-09-28. This is a ready candidate and is not committed until explicitly included under AGENTS.md.
+Created from confirmed 0.7.20 target-device failure on 2026-09-28. The user explicitly confirmed the detailed debug overlay still renders nothing and instructed that these Buffered Look Ahead repairs be committed for the next release. HLS-14 is therefore committed release scope.
 
 ## Evidence
 HLS-10 shipped additional logging in 0.7.20 but preserved the existing fullscreen-window target. The user has now confirmed that Detailed buffer debug overlay still does nothing while Buffered Look Ahead mode is active.
 
 ## Outcome and next action
-Use the HLS-10 logs to identify the failing GUI path, then replace it with a target-device-proven overlay mechanism.
+Committed for the next release. Use the HLS-10 logs to identify the failing GUI path, then replace it with a target-device-proven overlay mechanism.

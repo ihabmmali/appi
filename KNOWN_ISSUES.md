@@ -26,6 +26,7 @@ Updated: 2026-09-27. Each linked task is the canonical requirements/status/evide
 | HLS-10 | review | research | [Verify/repair Buffered Look Ahead detailed debug overlay](docs/tasks/HLS-10.md) |
 | HLS-13 | ready | implementation | [Implement true deep-reservoir Buffered Look Ahead playback](docs/tasks/HLS-13.md) |
 | HLS-14 | ready | implementation | [Make the detailed Buffered Look Ahead overlay actually visible](docs/tasks/HLS-14.md) |
+| HLS-15 | ready | implementation | [Show actual buffered KB/MB in the normal preparation/recovery UI](docs/tasks/HLS-15.md) |
 | HLS-11 | review | implementation | [Repair multi-variant HLS seek, resume-point and recovery timeout](docs/tasks/HLS-11.md) |
 | HLS-12 | ready | implementation | [Replace Buffered Look Ahead seek/resume with fresh buffer epochs](docs/tasks/HLS-12.md) |
 | SUB-1 | review | review | [Restore downloaded subtitle persistence across playback sessions](docs/tasks/SUB-1.md) |
