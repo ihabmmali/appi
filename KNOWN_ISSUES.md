@@ -14,6 +14,7 @@ Updated: 2026-09-28. Each linked task is the canonical requirements/status/evide
 | AUDIO-1 | review | implementation | [Restore audio for InputStream Adaptive playback](docs/tasks/AUDIO-1.md) |
 | DIAG-1 | review | review | [Export bounded playback diagnostics](docs/tasks/DIAG-1.md) |
 | DIAG-2 | review | review | [Causal HLS playback telemetry](docs/tasks/DIAG-2.md) |
+| DOWNLOAD-1 | ready | implementation | [Use the tested fast FFmpeg remux command for generated download scripts](docs/tasks/DOWNLOAD-1.md) |
 | HLS-1 | proposed | research | [Investigate repeated HLS stalls](docs/tasks/HLS-1.md) |
 | HLS-2 | review | review | [Explicit adaptive bitrate HLS mode](docs/tasks/HLS-2.md) |
 | HLS-3 | review | review | [Cancel quality selection without starting playback](docs/tasks/HLS-3.md) |

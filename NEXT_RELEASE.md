@@ -2,7 +2,7 @@
 
 Planning status: committed. Version: not assigned. Current baseline and fallback: [PROJECT_STATE.md](PROJECT_STATE.md).
 
-0.7.21 is published. The next-release scope is committed: HLS-16, HLS-17, HLS-18, HLS-19, HLS-20, HLS-21, UI-5 and UI-6. HLS-12, HLS-13, HLS-14 and HLS-15 remain in review for target-device acceptance of the shipped 0.7.21 behavior; any follow-up repair must be triaged and explicitly committed.
+0.7.21 is published. The next-release scope is committed: HLS-16, HLS-17, HLS-18, HLS-19, HLS-20, HLS-21, UI-5, UI-6 and DOWNLOAD-1. HLS-12, HLS-13, HLS-14 and HLS-15 remain in review for target-device acceptance of the shipped 0.7.21 behavior; any follow-up repair must be triaged and explicitly committed.
 
 ## Proposed scope
 
@@ -14,6 +14,7 @@ Planning status: committed. Version: not assigned. Current baseline and fallback
 | [HLS-19](docs/tasks/HLS-19.md) | committed | buffering resilience | Add configurable Appi-owned retry/recovery for true buffer depletion without changing the working 0.7.21 reservoir algorithm |
 | [HLS-20](docs/tasks/HLS-20.md) | committed | startup latency | Measure reservoir-ready through Kodi AV-start, then remove only proven Appi-side handoff delay while preserving the working 0.7.21 reservoir |
 | [HLS-21](docs/tasks/HLS-21.md) | committed | timeout root cause | Capture a rolling pre-failure reservoir/segment/throughput timeline and prove whether 0.7.21 timeout exits are true buffer exhaustion or another blocking condition |
+| [DOWNLOAD-1](docs/tasks/DOWNLOAD-1.md) | committed | download performance | Generate FFmpeg scripts using explicit first-video/first-audio mapping, stream copy and `-threads 0` per the user's tested faster command |
 | [UI-5](docs/tasks/UI-5.md) | committed | settings UX | Remove the redundant About-inside-About click and show installed version directly |
 | [UI-6](docs/tasks/UI-6.md) | committed | artwork/cache UX | 0.7.21 source contains the approved flat icon, but Kodi still shows an older graphic; force a new artwork resource path to bypass texture caching |
 | [PLAY-1](docs/tasks/PLAY-1.md) | backlog | investigation | Resume persistence is working; only investigate the playback-start Trakt API error |
@@ -30,6 +31,8 @@ Planning status: committed. Version: not assigned. Current baseline and fallback
 6. Copy shipped task IDs and scope changes into RELEASE_NOTES, then reset this planning file for the next cycle.
 
 ## Scope decisions
+
+2026-09-28: DOWNLOAD-1 added and explicitly committed by the user. Generated FFmpeg scripts must follow the tested core command `ffmpeg -i <URL> -map 0:v:0 -map 0:a:0 -c copy -threads 0 <MediaFileName.mp4>`. Current Appi scripts omit explicit mapping and `-threads 0`; the user reports the tested form downloads dramatically faster than the current generated command. Preserve safe quoting and atomic partial-file handling unless measured evidence shows those wrappers interfere with throughput, and verify the change with a same-URL timing comparison.
 
 2026-09-28: user explicitly instructed that **all current candidates, diagnostics or otherwise, be committed for the next release**. Committed scope is HLS-16, HLS-17, HLS-18, HLS-19, HLS-20, HLS-21, UI-5 and UI-6. HLS-16 is an early diagnostic dependency for HLS-19/HLS-21; HLS-21 remains an investigation/evidence task but is nevertheless committed release scope. PLAY-1, HLS-1 and UI-1 remain backlog because they were not candidates. This commitment authorizes release scope selection only; implementation/integration/publication still follow their separate lifecycle authority.
 
@@ -152,4 +155,4 @@ Planning status: committed. Version: not assigned. Current baseline and fallback
 
 ## Readiness
 
-Committed next-release scope: HLS-16, HLS-17, HLS-18, HLS-19, HLS-20, HLS-21, UI-5 and UI-6. HLS-12, HLS-13, HLS-14 and HLS-15 are shipped in 0.7.21 and remain review/partial pending target-device acceptance. PLAY-1, HLS-1 and UI-1 remain backlog investigations; target-device acceptance for earlier shipped tasks remains tracked in their canonical task records.
+Committed next-release scope: HLS-16, HLS-17, HLS-18, HLS-19, HLS-20, HLS-21, UI-5, UI-6 and DOWNLOAD-1. HLS-12, HLS-13, HLS-14 and HLS-15 are shipped in 0.7.21 and remain review/partial pending target-device acceptance. PLAY-1, HLS-1 and UI-1 remain backlog investigations; target-device acceptance for earlier shipped tasks remains tracked in their canonical task records.

@@ -27,9 +27,10 @@ Updated: 2026-09-28. Start with [AGENTS.md](AGENTS.md) for role routing.
 - Existing HLS modes 0–2 were intentionally left unchanged. Buffered mode does not automatically downgrade quality and reports measured throughput deficit when reserve is critical.
 - AUDIO-1, HLS-10 and HLS-11 remain review records for the 0.7.20 behavior they shipped; HLS-12/HLS-14 supersede the unresolved Buffered Look Ahead seek/overlay directions in 0.7.21.
 - PLAY-1 remains a backlog Trakt-error investigation. HLS-1 and UI-1 remain backlog investigations.
+- DOWNLOAD-1 is committed to change generated FFmpeg download scripts to the user's tested fast remux form with explicit first-video/first-audio mapping, `-c copy` and `-threads 0`, while preserving safe script/partial-file handling unless measured otherwise.
 - UI-5 is committed to remove the redundant nested About action and show installed version directly in the About settings pane.
 - UI-6 is committed to force-refresh the approved flat Appi icon by changing the manifest-referenced artwork filename. The exact 0.7.21 artifact source already contains the approved icon bytes, so Kodi texture caching is the leading explanation for the older graphic still appearing.
-- [NEXT_RELEASE.md](NEXT_RELEASE.md): committed next-release scope is HLS-16, HLS-17, HLS-18, HLS-19, HLS-20, HLS-21, UI-5 and UI-6. PLAY-1, HLS-1 and UI-1 remain backlog. [KNOWN_ISSUES.md](KNOWN_ISSUES.md): full task index.
+- [NEXT_RELEASE.md](NEXT_RELEASE.md): committed next-release scope is HLS-16, HLS-17, HLS-18, HLS-19, HLS-20, HLS-21, UI-5, UI-6 and DOWNLOAD-1. PLAY-1, HLS-1 and UI-1 remain backlog. [KNOWN_ISSUES.md](KNOWN_ISSUES.md): full task index.
 
 ## Context on demand
 
