@@ -13,7 +13,7 @@ STRINGS = PLUGIN / 'resources' / 'language' / 'resource.language.en_gb' / 'strin
 class SettingsLocalizationTests(unittest.TestCase):
     def test_stable_browser_and_download_batch_features_are_packaged(self):
         addon = ET.parse(PLUGIN / 'addon.xml').getroot()
-        self.assertEqual(addon.attrib.get('version'), '0.7.21')
+        self.assertEqual(addon.attrib.get('version'), '0.7.22')
         isa = addon.find("./requires/import[@addon='inputstream.adaptive']")
         self.assertIsNotNone(isa)
         self.assertNotEqual(isa.attrib.get('optional'), 'true')
@@ -23,20 +23,22 @@ class SettingsLocalizationTests(unittest.TestCase):
         self.assertEqual(helper.attrib.get('version'), '0.0.0')
 
     def test_release_zip_has_required_isa_and_exact_revised_icon(self):
-        package = PLUGIN / 'plugin.video.appi-0.7.21.zip'
+        package = PLUGIN / 'plugin.video.appi-0.7.22.zip'
         self.assertTrue(package.is_file(), package)
         with zipfile.ZipFile(package, 'r') as archive:
             manifest = ET.fromstring(archive.read('plugin.video.appi/addon.xml'))
             isa = manifest.find("./requires/import[@addon='inputstream.adaptive']")
             self.assertIsNotNone(isa)
             self.assertNotEqual(isa.attrib.get('optional'), 'true')
-            packaged_icon = archive.read('plugin.video.appi/resources/icon.png')
+            icon_path = manifest.findtext('./extension/assets/icon')
+            self.assertEqual(icon_path, 'resources/icon-v2.png')
+            packaged_icon = archive.read('plugin.video.appi/' + icon_path)
         self.assertEqual(
             packaged_icon,
             (ROOT / 'artwork' / 'appi-icon-selected.png').read_bytes(),
         )
         self.assertFalse((PLUGIN / 'resources' / 'lib' / 'browser.py').exists())
-        self.assertFalse((PLUGIN / 'resources' / 'skins').exists())
+        self.assertTrue((PLUGIN / 'resources' / 'skins' / 'Default' / '1080i' / 'AppiBufferOverlay.xml').is_file())
         self.assertTrue((PLUGIN / 'resources' / 'lib' / 'downloads.py').is_file())
         app = (PLUGIN / 'resources' / 'lib' / 'app.py').read_text(encoding='utf-8')
         self.assertIn("'download_ref'", app)
@@ -66,7 +68,7 @@ class SettingsLocalizationTests(unittest.TestCase):
         self.assertIn("'worker_state': worker_state", metadata)
         downloads = (PLUGIN / 'resources' / 'lib' / 'downloads.py').read_text(encoding='utf-8')
         self.assertIn('def generate(catalog, item, show_key=', downloads)
-        self.assertIn('-sn -dn -c copy -f mp4', downloads)
+        self.assertIn('-map 0:v:0 -map 0:a:0 -c copy -threads 0 -sn -dn -f mp4', downloads)
         self.assertIn('xbmcvfs.File', downloads)
         self.assertIn('script_dir=$(CDPATH= cd --', downloads)
         self.assertNotIn('download_output_folder', downloads)
@@ -141,7 +143,7 @@ class SettingsLocalizationTests(unittest.TestCase):
                 'clear_movie_cache', 'clear_tv_cache', 'clear_catalog_caches',
                 'clear_saved_subtitles', 'clear_recent_media',
                 'metadata_status', 'clear_metadata_queue', 'clear_metadata_cache',
-                'download_status', 'export_diagnostics', 'about',
+                'download_status', 'export_diagnostics',
             },
         )
         for scope in ('movies', 'tv', 'catalogs', 'subtitles', 'recent', 'metadata'):

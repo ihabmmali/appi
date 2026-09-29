@@ -1,12 +1,12 @@
 ---
 id: HLS-21
 role: research
-status: ready
+status: review
 delivery: unreleased
-verification: pending
-owner: unassigned
-base_commit: unset
-artifact: none
+verification: partial
+owner: builder-publisher-0.7.22
+base_commit: fd0bd5b08228c34b09de684f7b4b1f865a09e2d2
+artifact: 971d29d4145411e0c78703326246b770c82d95c3
 ---
 # HLS-21 — Prove whether Buffered Look Ahead timeouts are true reservoir depletion
 
@@ -14,6 +14,9 @@ artifact: none
 Determine exactly why Buffered Look Ahead playback on 0.7.21 sometimes freezes, reports a timeout, briefly resumes/catches up, and then exits.
 
 Do not assume that "timeout" means the configured buffer is too small. Prove whether the active epoch's **contiguous playable reserve** actually drains to zero before failure, or whether another condition blocks the next required media despite cached bytes still existing.
+
+## Scope
+Add bounded Buffered Look Ahead failure telemetry and causal classification only. Capture the preceding reservoir/track/transfer timeline, persist it before teardown, and distinguish true depletion from required-track starvation, holes, throughput deficit, recovery-with-progress and lifecycle termination. Do not alter modes 0–2.
 
 ## Target-device symptom
 The user reports repeated failures with this sequence:
@@ -101,6 +104,11 @@ Created from the user's 2026-09-28 target-device observation of repeated runtime
 
 On 2026-09-28 the user explicitly instructed that all current candidates, diagnostics or otherwise, be committed for the next release. HLS-21 is committed next-release scope as the investigation/diagnostic evidence task supporting HLS-19.
 
+## Evidence
+The 0.7.22 implementation records a rolling bounded timeline of playable bytes/seconds, total cache, selected bitrate, measured provider throughput, epoch/reason, recovery state and per-required-track cursor/contiguous reserve/next-segment state. Failure snapshots also retain recent transfer evidence and classify session lifecycle termination, required-track starvation, next-segment holes, recovery timeout with progress, sustained throughput deficit, reservoir exhaustion or unknown.
+
+Automated coverage in the 0.7.22 candidate asserts numeric timeline persistence and classification output. Release gate run `36515421099` passed all 100 unit/smoke tests (1 skipped); the run stopped afterward only because older task records lacked required template headings. Target-device reproduction remains required to determine which classification applies to the user's real failure.
+
 ## Outcome and next action
 Instrument and classify the next runtime timeout before changing buffer-size defaults or reservoir behavior. Preserve the working 0.7.21 producer/consumer algorithm while determining the true failure boundary.
 
@@ -109,3 +117,9 @@ Instrument and classify the next runtime timeout before changing buffer-size def
 The user noted that this root-cause question would have been straightforward to diagnose had the detailed debug overlay already been working. HLS-16 is therefore a practical dependency for efficient HLS-21 target-device validation.
 
 The persisted rolling failure snapshot remains required because the overlay can disappear when playback exits, but the live overlay should expose the same critical metrics during reproduction so reserve exhaustion versus segment-hole/recovery-timeout behavior can be recognized immediately.
+
+
+## 0.7.22 candidate evidence
+0.7.22 candidate persists a bounded pre-failure timeline, recent transfer evidence and causal classification with per-required-track contiguous reserve/next-segment state. Automated numeric snapshot/classification coverage passed; a real target-device failure is still required to identify the user's actual cause.
+
+Final package gate run `36515744781` passed all 100 unit/smoke tests (1 skipped), workflow tracker validation, deterministic rebuild and ZIP/index inspection. Candidate artifact commit: `971d29d4145411e0c78703326246b770c82d95c3`; ZIP SHA-256: `35a50dad9f17f0d0a47c2cea7892d769a1b613ab2743bbbd61a1fc59267ae53f`.

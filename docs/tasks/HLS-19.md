@@ -1,12 +1,12 @@
 ---
 id: HLS-19
 role: implementation
-status: ready
+status: review
 delivery: unreleased
-verification: pending
-owner: unassigned
-base_commit: unset
-artifact: none
+verification: partial
+owner: builder-publisher-0.7.22
+base_commit: fd0bd5b08228c34b09de684f7b4b1f865a09e2d2
+artifact: 971d29d4145411e0c78703326246b770c82d95c3
 ---
 # HLS-19 — Add resilient in-session recovery for depleted or stalled Buffered Look Ahead playback
 
@@ -14,6 +14,9 @@ artifact: none
 Make Buffered Look Ahead recover from transient provider stalls even after the playable reservoir drains, instead of converting a temporary delivery delay into a terminal playback timeout.
 
 **Non-regression constraint:** the working 0.7.21 producer/consumer reservoir is the protected baseline. This task adds a recovery layer around it and must not change normal buffering behavior when the provider is healthy.
+
+## Scope
+Change only Buffered Look Ahead mode 3. Add bounded Appi-owned recovery, explicit transient/terminal classification, configurable recovery controls, pause-safe session lifetime and recovery telemetry while preserving the healthy 0.7.21 reservoir algorithm and HLS modes 0–2.
 
 ## Protected 0.7.21 behavior
 With default settings, HLS-19 must preserve:
@@ -141,3 +144,9 @@ HLS-19 should consume that evidence but remains constrained to add recovery arou
 
 ## HLS-16 observability dependency
 HLS-16 is a practical diagnostic dependency for target-device validation of this recovery work. A working overlay should expose reserve, track starvation, throughput and recovery state while HLS-19 is exercised so recovery failures do not require another blind reproduction cycle.
+
+
+## 0.7.22 candidate evidence
+0.7.22 candidate performs transient depletion retry inside Appi, rebuilds a configurable recovery reserve, returns terminal failure only after policy exhaustion, and removes the old ten-second player-idle retirement path. Automated transient-retry and lifecycle coverage passed; provider-specific stall and long-pause device acceptance remain pending.
+
+Final package gate run `36515744781` passed all 100 unit/smoke tests (1 skipped), workflow tracker validation, deterministic rebuild and ZIP/index inspection. Candidate artifact commit: `971d29d4145411e0c78703326246b770c82d95c3`; ZIP SHA-256: `35a50dad9f17f0d0a47c2cea7892d769a1b613ab2743bbbd61a1fc59267ae53f`.

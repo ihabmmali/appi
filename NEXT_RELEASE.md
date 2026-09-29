@@ -1,6 +1,8 @@
 # Next Appi release
 
-Planning status: committed. Version: not assigned. Current baseline and fallback: [PROJECT_STATE.md](PROJECT_STATE.md).
+Planning status: committed. Version: 0.7.22.
+
+0.7.22 candidate implementation is packaged and in review on `release/0.7.22`. Final gate run `36515744781` passed 100 tests (1 skipped), tracker validation, deterministic build/index inspection and packaging; artifact commit `971d29d4145411e0c78703326246b770c82d95c3`. Current baseline and fallback: [PROJECT_STATE.md](PROJECT_STATE.md).
 
 0.7.21 is published. The next-release scope is committed: HLS-16, HLS-17, HLS-18, HLS-19, HLS-20, HLS-21, UI-5, UI-6 and DOWNLOAD-1. HLS-12, HLS-13, HLS-14 and HLS-15 remain in review for target-device acceptance of the shipped 0.7.21 behavior; any follow-up repair must be triaged and explicitly committed.
 
@@ -166,3 +168,9 @@ These items are explicitly **not** part of the currently committed release. They
 ## Readiness
 
 Committed next-release scope: HLS-16, HLS-17, HLS-18, HLS-19, HLS-20, HLS-21, UI-5, UI-6 and DOWNLOAD-1. HLS-12, HLS-13, HLS-14 and HLS-15 are shipped in 0.7.21 and remain review/partial pending target-device acceptance. PLAY-1, HLS-1 and UI-1 remain backlog investigations; target-device acceptance for earlier shipped tasks remains tracked in their canonical task records.
+
+Final lifecycle verification is pending after review-state evidence.
+
+Publication rebase completed onto current `main`; final package/index verification now also requires 0.7.21 and 0.7.8 to remain visible alongside 0.7.22.
+
+HLS-22 tracker normalization completed after inheriting the future-task record from current `main`; final publication gate rerun requested.

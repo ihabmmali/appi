@@ -1,6 +1,6 @@
 <?xml version='1.0' encoding='utf-8'?>
 <addons>
-  <addon id="plugin.video.appi" name="Appi" version="0.7.21" provider-name="Eyecon">
+  <addon id="plugin.video.appi" name="Appi" version="0.7.22" provider-name="Eyecon">
     <requires>
       <import addon="xbmc.python" version="3.0.1" />
       <import addon="inputstream.adaptive" version="21.0.0" />
@@ -14,7 +14,7 @@
       <summary lang="en_GB">Movies and TV shows from user-configured M3U feeds</summary>
       <description lang="en_GB">Appi caches configurable movie and TV M3U catalogues, provides fast indexed browsing, unified search, recently played lists, lightweight metadata and external FFmpeg download-script generation.</description>
       <assets>
-        <icon>resources/icon.png</icon>
+        <icon>resources/icon-v2.png</icon>
       </assets>
       <platform>all</platform>
       <license>GPL-3.0-or-later</license>

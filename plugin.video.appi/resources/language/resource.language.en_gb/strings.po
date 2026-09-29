@@ -717,3 +717,128 @@ msgstr ""
 msgctxt "#32949"
 msgid "Vietnamese"
 msgstr ""
+
+
+msgctxt "#32950"
+msgid "Advanced Buffered Look Ahead tuning"
+msgstr ""
+
+msgctxt "#32951"
+msgid "Startup fill (%)"
+msgstr ""
+
+msgctxt "#32952"
+msgid "Playable reservoir required before Kodi handoff. Default 50% matches Appi 0.7.21."
+msgstr ""
+
+msgctxt "#32953"
+msgid "High-water (%)"
+msgstr ""
+
+msgctxt "#32954"
+msgid "Refill pauses at this percentage of configured capacity. Default 80%."
+msgstr ""
+
+msgctxt "#32955"
+msgid "Low-water (%)"
+msgstr ""
+
+msgctxt "#32956"
+msgid "Refill restarts at this percentage of configured capacity. Default 60%."
+msgstr ""
+
+msgctxt "#32957"
+msgid "Critical reserve (%)"
+msgstr ""
+
+msgctxt "#32958"
+msgid "Reserve level considered critical for diagnostics and recovery. Default 15%."
+msgstr ""
+
+msgctxt "#32959"
+msgid "Media inactivity timeout (s)"
+msgstr ""
+
+msgctxt "#32960"
+msgid "Maximum no-progress interval for an individual media transfer. Default 15 seconds."
+msgstr ""
+
+msgctxt "#32961"
+msgid "Startup preparation timeout (s)"
+msgstr ""
+
+msgctxt "#32962"
+msgid "Overall time allowed to build the startup reservoir. Default 180 seconds."
+msgstr ""
+
+msgctxt "#32963"
+msgid "Seek reserve (s)"
+msgstr ""
+
+msgctxt "#32964"
+msgid "Approximate playable reserve rebuilt after a seek. Default 12 seconds."
+msgstr ""
+
+msgctxt "#32965"
+msgid "Minimum seek reserve (MB)"
+msgstr ""
+
+msgctxt "#32966"
+msgid "Minimum byte reserve rebuilt after a seek. Default 4 MB."
+msgstr ""
+
+msgctxt "#32967"
+msgid "Track prefetch lead (s)"
+msgstr ""
+
+msgctxt "#32968"
+msgid "Maximum lead one required track may gain over the least-ready track. Default 24 seconds."
+msgstr ""
+
+msgctxt "#32969"
+msgid "Recovery timeout (s)"
+msgstr ""
+
+msgctxt "#32970"
+msgid "Overall Appi-owned recovery window after playable media is depleted. Default 60 seconds."
+msgstr ""
+
+msgctxt "#32971"
+msgid "Segment retry delay (ms)"
+msgstr ""
+
+msgctxt "#32972"
+msgid "Delay between transient provider retries. Default 500 ms."
+msgstr ""
+
+msgctxt "#32973"
+msgid "Maximum recovery retries"
+msgstr ""
+
+msgctxt "#32974"
+msgid "Maximum transient retries during recovery. 0 means retry until the overall recovery timeout."
+msgstr ""
+
+msgctxt "#32975"
+msgid "Recovery reserve (s)"
+msgstr ""
+
+msgctxt "#32976"
+msgid "Approximate playable reserve rebuilt before releasing a depleted request. Default 6 seconds."
+msgstr ""
+
+msgctxt "#32977"
+msgid "Paused-session retention (minutes)"
+msgstr ""
+
+msgctxt "#32978"
+msgid "How long a paused buffered session may be retained. 0 keeps it until Kodi reports stop/end/error."
+msgstr ""
+
+msgctxt "#32979"
+msgid "Installed version"
+msgstr ""
+
+msgctxt "#32980"
+msgid "Version read from the installed Appi add-on metadata. This field is read-only."
+msgstr ""

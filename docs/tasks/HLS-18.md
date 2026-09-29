@@ -1,12 +1,12 @@
 ---
 id: HLS-18
 role: implementation
-status: ready
+status: review
 delivery: unreleased
-verification: pending
-owner: unassigned
-base_commit: unset
-artifact: none
+verification: partial
+owner: builder-publisher-0.7.22
+base_commit: fd0bd5b08228c34b09de684f7b4b1f865a09e2d2
+artifact: 971d29d4145411e0c78703326246b770c82d95c3
 ---
 # HLS-18 — Make Buffered Look Ahead algorithm thresholds configurable
 
@@ -94,3 +94,9 @@ Move all behavior-affecting Buffered Look Ahead tuning thresholds into validated
 
 ## HLS-19 recovery controls
 HLS-19 may add retry/recovery tuning settings (overall recovery timeout, retry delay/attempts/backoff, recovery reserve target). These controls are independent of HLS-13's normal reservoir thresholds and must not silently alter them.
+
+
+## 0.7.22 candidate evidence
+0.7.22 candidate exposes validated advanced Buffered Look Ahead settings with defaults matching the 0.7.21 reservoir thresholds/timing. Invalid watermark ordering falls back to safe defaults. Automated settings/default validation passed; target-device tuning acceptance remains pending.
+
+Final package gate run `36515744781` passed all 100 unit/smoke tests (1 skipped), workflow tracker validation, deterministic rebuild and ZIP/index inspection. Candidate artifact commit: `971d29d4145411e0c78703326246b770c82d95c3`; ZIP SHA-256: `35a50dad9f17f0d0a47c2cea7892d769a1b613ab2743bbbd61a1fc59267ae53f`.

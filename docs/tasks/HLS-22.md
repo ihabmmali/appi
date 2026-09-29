@@ -15,6 +15,11 @@ Determine why Appi's Buffered Look Ahead producer appears to fill substantially 
 
 This is explicitly a candidate for the release **after** the currently committed release. It is not part of the current release scope.
 
+## Scope
+Benchmark and optimize only the Buffered Look Ahead producer/transport layer in a future release. Preserve the proven reservoir thresholds/accounting, rendition selection, seek epochs, HLS-19 recovery behavior and playback modes 0–2. Any transport concurrency, connection reuse or scheduling change must be evidence-driven and settings-backed where behavior-affecting.
+
+This task remains explicitly excluded from Appi 0.7.22.
+
 ## User evidence
 The user tested the same media using FFmpeg and observed that FFmpeg could download the entire stream dramatically faster than Appi appears to fill its look-ahead reservoir under the same network and VPN conditions.
 
@@ -117,6 +122,9 @@ Concurrent work must commit completed media into contiguous playable order. A fa
 Requested by the user on 2026-09-28 after observing that FFmpeg can ingest the same stream much faster than Appi's buffer appears to fill on the same network/VPN connection.
 
 The user explicitly requested that this be tracked as a **candidate for the release after the one currently being implemented**. HLS-22 is therefore a future-release candidate and is explicitly excluded from the currently committed release.
+
+## Evidence
+User-observed A/B evidence: FFmpeg can ingest the same HLS media substantially faster than Appi appears to fill its look-ahead reservoir on the same network/VPN path. Current Appi source uses synchronous per-resource Python HTTP fetches from one prefetch worker per track, which makes connection/request overhead and bounded future-segment concurrency valid hypotheses to measure in the next release cycle. No implementation or target-device optimization result is claimed yet.
 
 ## Outcome and next action
 After the current committed release is completed, benchmark Appi's producer against FFmpeg on the same stream, then optimize the transport layer only where measurements justify it.

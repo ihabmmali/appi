@@ -14,7 +14,7 @@ Updated: 2026-09-28. Each linked task is the canonical requirements/status/evide
 | AUDIO-1 | review | implementation | [Restore audio for InputStream Adaptive playback](docs/tasks/AUDIO-1.md) |
 | DIAG-1 | review | review | [Export bounded playback diagnostics](docs/tasks/DIAG-1.md) |
 | DIAG-2 | review | review | [Causal HLS playback telemetry](docs/tasks/DIAG-2.md) |
-| DOWNLOAD-1 | ready | implementation | [Use the tested fast FFmpeg remux command for generated download scripts](docs/tasks/DOWNLOAD-1.md) |
+| DOWNLOAD-1 | review | implementation | [Use the tested fast FFmpeg remux command for generated download scripts](docs/tasks/DOWNLOAD-1.md) |
 | HLS-1 | proposed | research | [Investigate repeated HLS stalls](docs/tasks/HLS-1.md) |
 | HLS-2 | review | review | [Explicit adaptive bitrate HLS mode](docs/tasks/HLS-2.md) |
 | HLS-3 | review | review | [Cancel quality selection without starting playback](docs/tasks/HLS-3.md) |
@@ -28,13 +28,13 @@ Updated: 2026-09-28. Each linked task is the canonical requirements/status/evide
 | HLS-13 | review | implementation | [Implement true deep-reservoir Buffered Look Ahead playback](docs/tasks/HLS-13.md) |
 | HLS-14 | review | implementation | [Make the detailed Buffered Look Ahead overlay actually visible](docs/tasks/HLS-14.md) |
 | HLS-15 | review | implementation | [Show actual buffered KB/MB in the normal preparation/recovery UI](docs/tasks/HLS-15.md) |
-| HLS-16 | ready | implementation | [Replace invisible Buffered Look Ahead debug overlay with a target-device-proven renderer](docs/tasks/HLS-16.md) |
-| HLS-17 | ready | implementation | [Clarify startup target versus configured buffer capacity](docs/tasks/HLS-17.md) |
-| HLS-18 | ready | implementation | [Make Buffered Look Ahead algorithm thresholds configurable](docs/tasks/HLS-18.md) |
-| HLS-19 | ready | implementation | [Add resilient in-session recovery for depleted or stalled Buffered Look Ahead playback](docs/tasks/HLS-19.md) |
-| HLS-20 | ready | implementation | [Diagnose and reduce post-fill startup handoff delay](docs/tasks/HLS-20.md) |
-| HLS-21 | ready | research | [Prove whether Buffered Look Ahead timeouts are true reservoir depletion](docs/tasks/HLS-21.md) |
+| HLS-16 | review | implementation | [Replace invisible Buffered Look Ahead debug overlay with a target-device-proven renderer](docs/tasks/HLS-16.md) |
+| HLS-17 | review | implementation | [Clarify startup target versus configured buffer capacity](docs/tasks/HLS-17.md) |
+| HLS-18 | review | implementation | [Make Buffered Look Ahead algorithm thresholds configurable](docs/tasks/HLS-18.md) |
+| HLS-19 | review | implementation | [Add resilient in-session recovery for depleted or stalled Buffered Look Ahead playback](docs/tasks/HLS-19.md) |
+| HLS-20 | review | implementation | [Diagnose and reduce post-fill startup handoff delay](docs/tasks/HLS-20.md) |
 | HLS-22 | ready | implementation | [Optimize Buffered Look Ahead producer throughput](docs/tasks/HLS-22.md) |
+| HLS-21 | review | research | [Prove whether Buffered Look Ahead timeouts are true reservoir depletion](docs/tasks/HLS-21.md) |
 | HLS-11 | review | implementation | [Repair multi-variant HLS seek, resume-point and recovery timeout](docs/tasks/HLS-11.md) |
 | HLS-12 | review | implementation | [Replace Buffered Look Ahead seek/resume with fresh buffer epochs](docs/tasks/HLS-12.md) |
 | SUB-1 | review | review | [Restore downloaded subtitle persistence across playback sessions](docs/tasks/SUB-1.md) |
@@ -43,8 +43,8 @@ Updated: 2026-09-28. Each linked task is the canonical requirements/status/evide
 | UI-2 | review | implementation | [About / installed Appi version](docs/tasks/UI-2.md) |
 | UI-3 | review | implementation | [Appi add-on artwork / icon](docs/tasks/UI-3.md) |
 | UI-4 | review | implementation | [Integrate revised Appi artwork](docs/tasks/UI-4.md) |
-| UI-5 | ready | implementation | [Remove redundant nested About action and show installed version directly](docs/tasks/UI-5.md) |
-| UI-6 | ready | implementation | [Force Kodi to refresh the approved Appi icon](docs/tasks/UI-6.md) |
+| UI-5 | review | implementation | [Remove redundant nested About action and show installed version directly](docs/tasks/UI-5.md) |
+| UI-6 | review | implementation | [Force Kodi to refresh the approved Appi icon](docs/tasks/UI-6.md) |
 | FRAMEWORK-1 | done | implementation | [Lifecycle pilot setup](docs/tasks/FRAMEWORK-1.md) |
 
 Use [NEXT_RELEASE.md](NEXT_RELEASE.md) to select release scope. A candidate is not an implementation commitment. Follow [triage](docs/workflows/triage.md) to add/change a task.

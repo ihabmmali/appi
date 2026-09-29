@@ -1,12 +1,12 @@
 ---
 id: UI-5
 role: implementation
-status: ready
+status: review
 delivery: unreleased
-verification: pending
-owner: unassigned
-base_commit: unset
-artifact: none
+verification: partial
+owner: builder-publisher-0.7.22
+base_commit: fd0bd5b08228c34b09de684f7b4b1f865a09e2d2
+artifact: 971d29d4145411e0c78703326246b770c82d95c3
 ---
 # UI-5 — Remove redundant nested About action and show installed version directly
 
@@ -43,3 +43,9 @@ Current `resources/settings.xml` defines `<category id="about"...>` containing `
 
 ## Outcome and next action
 Replace the nested action with a direct read-only installed-version display in the About settings pane.
+
+
+## 0.7.22 candidate evidence
+0.7.22 candidate removes the nested About action/dialog and synchronizes a disabled installed-version field directly from runtime add-on metadata before opening settings. Automated upgrade/rollback smoke coverage passed; target-skin display remains pending.
+
+Final package gate run `36515744781` passed all 100 unit/smoke tests (1 skipped), workflow tracker validation, deterministic rebuild and ZIP/index inspection. Candidate artifact commit: `971d29d4145411e0c78703326246b770c82d95c3`; ZIP SHA-256: `35a50dad9f17f0d0a47c2cea7892d769a1b613ab2743bbbd61a1fc59267ae53f`.

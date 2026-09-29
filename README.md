@@ -18,6 +18,15 @@ Appi is a Kodi video add-on for user-configured movie and TV-show M3U catalogues
 
 Add `https://ihabmmali.github.io/appi/` in Kodi File Manager, then install the current `plugin.video.appi-<version>.zip`.
 
+## 0.7.22 — 2026-09-28
+
+- Buffered Look Ahead now retries transient depleted-segment/provider failures inside Appi under configurable bounds instead of making Kodi's retry behavior the primary recovery mechanism. Pause/buffering/stopped lifecycle states are separated so long pauses are retained by default.
+- Advanced mode-3 settings expose reservoir thresholds, transfer/startup/recovery timeouts, seek/recovery reserve, prefetch lead and retry policy; defaults retain the healthy 0.7.21 behavior.
+- Startup/handoff diagnostics now distinguish current playable data, startup target and capacity; record reservoir-ready through AV start; and retain a rolling per-track/segment failure timeline. The detailed overlay uses a bundled WindowXMLDialog target with a logged fallback.
+- About displays the runtime installed version directly. The approved icon is byte-identical but referenced through a new resource path to bypass Kodi's cached old texture.
+- Generated FFmpeg download scripts now use explicit first-video/first-audio mapping, `-c copy` and `-threads 0` while preserving safe partial-file handling.
+- Existing HLS modes 0–2 are unchanged. Automated candidate testing passed 100 tests (1 skipped); Fire TV/provider acceptance remains separately required.
+
 ## 0.7.21 — 2026-09-28
 
 - Buffered Look Ahead now uses the configured storage as a real rolling reservoir: startup fills a meaningful byte target, video and audio share capacity dynamically, and continuous high/low-water refill protects the selected rendition from intermittent provider stalls when average provider throughput is sufficient.

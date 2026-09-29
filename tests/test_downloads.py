@@ -53,7 +53,8 @@ script=open(result['path'],encoding='utf-8').read()
 assert subprocess.run(['sh','-n',result['path']],capture_output=True).returncode==0
 assert '#!/bin/sh' in script and 'set -eu' in script
 assert '-c copy' in script and '-sn -dn' in script and '-f mp4' in script
-assert '-map ' not in script and 'ffprobe' not in script
+assert '-map 0:v:0 -map 0:a:0' in script and '-threads 0' in script
+assert '-re ' not in script and 'ffprobe' not in script
 assert 'stream.m3u8' in script and "'\"'\"'" in script
 assert 'script_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)' in script
 assert 'output="$script_dir"/' in script
@@ -73,6 +74,7 @@ episode={
 episode_result=downloads.generate('tv',episode,'synthetic-show')
 episode_script=open(episode_result['path'],encoding='utf-8').read()
 assert 'Synthetic Series - S02E03 - ' in episode_script
+assert '-map 0:v:0 -map 0:a:0' in episode_script and '-threads 0' in episode_script
 assert downloads.status()['scripts']==2
 '''
         result = subprocess.run(
