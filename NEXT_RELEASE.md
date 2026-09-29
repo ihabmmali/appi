@@ -172,3 +172,5 @@ Committed next-release scope: HLS-16, HLS-17, HLS-18, HLS-19, HLS-20, HLS-21, UI
 Final lifecycle verification is pending after review-state evidence.
 
 Publication rebase completed onto current `main`; final package/index verification now also requires 0.7.21 and 0.7.8 to remain visible alongside 0.7.22.
+
+HLS-22 tracker normalization completed after inheriting the future-task record from current `main`; final publication gate rerun requested.
