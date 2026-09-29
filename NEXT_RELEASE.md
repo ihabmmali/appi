@@ -170,3 +170,5 @@ These items are explicitly **not** part of the currently committed release. They
 Committed next-release scope: HLS-16, HLS-17, HLS-18, HLS-19, HLS-20, HLS-21, UI-5, UI-6 and DOWNLOAD-1. HLS-12, HLS-13, HLS-14 and HLS-15 are shipped in 0.7.21 and remain review/partial pending target-device acceptance. PLAY-1, HLS-1 and UI-1 remain backlog investigations; target-device acceptance for earlier shipped tasks remains tracked in their canonical task records.
 
 Final lifecycle verification is pending after review-state evidence.
+
+Publication rebase completed onto current `main`; final package/index verification now also requires 0.7.21 and 0.7.8 to remain visible alongside 0.7.22.
