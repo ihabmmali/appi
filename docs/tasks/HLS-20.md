@@ -2,11 +2,11 @@
 id: HLS-20
 role: implementation
 status: review
-delivery: unreleased
+delivery: released
 verification: partial
 owner: builder-publisher-0.7.22
 base_commit: fd0bd5b08228c34b09de684f7b4b1f865a09e2d2
-artifact: 971d29d4145411e0c78703326246b770c82d95c3
+artifact: https://ihabmmali.github.io/appi/plugin.video.appi-0.7.22.zip
 ---
 # HLS-20 — Diagnose and reduce post-fill startup handoff delay
 
@@ -93,3 +93,7 @@ Instrument the entire reservoir-ready-to-AV-start handoff, then repair only the 
 0.7.22 candidate records monotonic handoff stages from reservoir-ready through plugin return/setResolvedUrl, first local playlist/key/map/segment/bytes and AV start, and preloads known key/map dependencies. Automated tests passed; target-device latency evidence remains pending.
 
 Final package gate run `36515744781` passed all 100 unit/smoke tests (1 skipped), workflow tracker validation, deterministic rebuild and ZIP/index inspection. Candidate artifact commit: `971d29d4145411e0c78703326246b770c82d95c3`; ZIP SHA-256: `35a50dad9f17f0d0a47c2cea7892d769a1b613ab2743bbbd61a1fc59267ae53f`.
+
+
+## 0.7.22 publication
+Published in Appi 0.7.22 through PR #11 / merge `92131c95c1d047eb7a683e8e5e2e6abe10e1a518`. Final publication gate run `36626983906` passed 100 tests (1 skipped), workflow tracker validation, deterministic rebuild, ZIP/index inspection and packaging. GitHub Pages deployment run `36627135052` succeeded. Published ZIP SHA-256: `35a50dad9f17f0d0a47c2cea7892d769a1b613ab2743bbbd61a1fc59267ae53f`. Delivery is released; documented target-device acceptance remains review/partial.
