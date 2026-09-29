@@ -129,3 +129,11 @@ This must be verified on-device/logged rather than assumed, but HLS-19 must not 
 - If the provider-side media URLs expire during a very long pause, recover through the normal HLS-19 retry/reload path rather than silently exiting.
 - Log the reason for any session retirement so a silent user-visible exit can be traced.
 - Add target-device acceptance for a pause substantially longer than 10 seconds followed by successful resume without restarting the item.
+
+
+## Runtime failure evidence and HLS-21 dependency
+The user reports a repeatable 0.7.21 failure sequence: A/V freezes while subtitles keep advancing, playback may briefly resume/catch up, Appi reports a Buffered Look Ahead timeout, then playback stops a few seconds later.
+
+Do not assume this proves the configured buffer is too small. [HLS-21](HLS-21.md) must distinguish true contiguous-reserve exhaustion from a missing next segment, sustained provider deficit, required-track starvation, or recovery timeout while progress is still occurring.
+
+HLS-19 should consume that evidence but remains constrained to add recovery around the working reservoir rather than redesigning normal fill/refill behavior.

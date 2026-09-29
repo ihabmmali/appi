@@ -61,3 +61,7 @@ The repaired overlay must therefore make seek behavior observable in real time. 
 - retry count/status when HLS-19 is active.
 
 This is diagnostic visibility only; do not change the working seek/reservoir algorithm merely to shorten the observed delay without evidence.
+
+
+## HLS-21 failure classification
+When HLS-21 metrics are available, the repaired overlay should make the critical distinction visible during a stall: **contiguous playable reserve** versus total cached bytes, plus whether the next required video/audio segment is missing. This helps the user tell a genuinely empty reservoir from a cache that contains unusable non-contiguous data.
