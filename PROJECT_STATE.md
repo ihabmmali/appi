@@ -26,6 +26,7 @@ Updated: 2026-09-28. Start with [AGENTS.md](AGENTS.md) for role routing.
 - HLS-15 shows actual active-epoch contiguous playable KB/MB and target during normal preparation/recovery without requiring detailed debug.
 - Existing HLS modes 0–2 were intentionally left unchanged. Buffered mode does not automatically downgrade quality and reports measured throughput deficit when reserve is critical.
 - AUDIO-1, HLS-10 and HLS-11 remain review records for the 0.7.20 behavior they shipped; HLS-12/HLS-14 supersede the unresolved Buffered Look Ahead seek/overlay directions in 0.7.21.
+- HLS-22 is a future-release candidate, explicitly excluded from the currently committed release. It will benchmark Appi's HLS producer against FFmpeg on the same stream/network/VPN and investigate persistent connection reuse, request overhead and bounded concurrency without changing the proven reservoir policy.
 - PLAY-1 remains a backlog Trakt-error investigation. HLS-1 and UI-1 remain backlog investigations.
 - DOWNLOAD-1 is committed to change generated FFmpeg download scripts to the user's tested fast remux form with explicit first-video/first-audio mapping, `-c copy` and `-threads 0`, while preserving safe script/partial-file handling unless measured otherwise.
 - UI-5 is committed to remove the redundant nested About action and show installed version directly in the About settings pane.

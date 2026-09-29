@@ -21,6 +21,14 @@ Planning status: committed. Version: not assigned. Current baseline and fallback
 | [HLS-1](docs/tasks/HLS-1.md) | backlog | investigation | Use buffered-mode/diagnostic evidence to diagnose any underlying provider stalls that remain |
 | [UI-1](docs/tasks/UI-1.md) | backlog | investigation | Skin comparison needed |
 
+## Future release candidates
+
+These items are explicitly **not** part of the currently committed release. They are candidates for the following release cycle.
+
+| Task | Selection | Priority | Reason |
+| --- | --- | --- | --- |
+| [HLS-22](docs/tasks/HLS-22.md) | future candidate | producer throughput | FFmpeg can ingest the same HLS stream far faster on the same network/VPN; benchmark and optimize Appi's transport layer without changing the proven reservoir policy |
+
 ## How to plan the release
 
 1. Send a plain list of desired changes, priorities, expected behavior and constraints. Include bug reproduction/version when available.
@@ -31,6 +39,8 @@ Planning status: committed. Version: not assigned. Current baseline and fallback
 6. Copy shipped task IDs and scope changes into RELEASE_NOTES, then reset this planning file for the next cycle.
 
 ## Scope decisions
+
+2026-09-28: HLS-22 added at user request as a **candidate for the release after the currently committed release**, and is explicitly excluded from current scope. The motivating A/B observation is that FFmpeg can ingest the same HLS stream dramatically faster through the same network/VPN than Appi appears to fill its reservoir. Future work should benchmark persistent connection reuse, request/TTFB overhead and bounded segment concurrency while preserving the HLS-13 reservoir and settings-backed parameter rule.
 
 2026-09-28: DOWNLOAD-1 added and explicitly committed by the user. Generated FFmpeg scripts must follow the tested core command `ffmpeg -i <URL> -map 0:v:0 -map 0:a:0 -c copy -threads 0 <MediaFileName.mp4>`. Current Appi scripts omit explicit mapping and `-threads 0`; the user reports the tested form downloads dramatically faster than the current generated command. Preserve safe quoting and atomic partial-file handling unless measured evidence shows those wrappers interfere with throughput, and verify the change with a same-URL timing comparison.
 
