@@ -137,3 +137,7 @@ The user reports a repeatable 0.7.21 failure sequence: A/V freezes while subtitl
 Do not assume this proves the configured buffer is too small. [HLS-21](HLS-21.md) must distinguish true contiguous-reserve exhaustion from a missing next segment, sustained provider deficit, required-track starvation, or recovery timeout while progress is still occurring.
 
 HLS-19 should consume that evidence but remains constrained to add recovery around the working reservoir rather than redesigning normal fill/refill behavior.
+
+
+## HLS-16 observability dependency
+HLS-16 is a practical diagnostic dependency for target-device validation of this recovery work. A working overlay should expose reserve, track starvation, throughput and recovery state while HLS-19 is exercised so recovery failures do not require another blind reproduction cycle.

@@ -65,3 +65,16 @@ This is diagnostic visibility only; do not change the working seek/reservoir alg
 
 ## HLS-21 failure classification
 When HLS-21 metrics are available, the repaired overlay should make the critical distinction visible during a stall: **contiguous playable reserve** versus total cached bytes, plus whether the next required video/audio segment is missing. This helps the user tell a genuinely empty reservoir from a cache that contains unusable non-contiguous data.
+
+
+## Diagnostic dependency priority
+The user correctly noted that the repeated HLS-21 timeout diagnosis would have been much easier if the detailed overlay had already been functional. HLS-16 is therefore not cosmetic-only work: it is a diagnostic dependency for HLS-19/HLS-21 target-device validation.
+
+The repaired overlay should be available early enough in the next development cycle to observe:
+- contiguous playable reserve versus total cached bytes;
+- per-track starvation;
+- provider throughput versus selected bitrate;
+- recovery state/elapsed time/retry count;
+- seek epoch refill progress.
+
+Do not delay HLS-16 until after HLS-19/HLS-21 validation if doing so would force another blind diagnostic cycle.

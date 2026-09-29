@@ -103,3 +103,9 @@ This is a ready investigation candidate and is not committed to a future release
 
 ## Outcome and next action
 Instrument and classify the next runtime timeout before changing buffer-size defaults or reservoir behavior. Preserve the working 0.7.21 producer/consumer algorithm while determining the true failure boundary.
+
+
+## HLS-16 observability dependency
+The user noted that this root-cause question would have been straightforward to diagnose had the detailed debug overlay already been working. HLS-16 is therefore a practical dependency for efficient HLS-21 target-device validation.
+
+The persisted rolling failure snapshot remains required because the overlay can disappear when playback exits, but the live overlay should expose the same critical metrics during reproduction so reserve exhaustion versus segment-hole/recovery-timeout behavior can be recognized immediately.

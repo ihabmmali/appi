@@ -8,7 +8,7 @@ Planning status: open. Version: not assigned. Current baseline and fallback: [PR
 
 | Task | Selection | Priority | Reason |
 | --- | --- | --- | --- |
-| [HLS-16](docs/tasks/HLS-16.md) | candidate | confirmed overlay regression | 0.7.21 buffering appears to work well, but the replacement WindowDialog debug overlay is still invisible on Fire TV |
+| [HLS-16](docs/tasks/HLS-16.md) | candidate | diagnostic dependency / confirmed overlay regression | 0.7.21 buffering appears to work well, but the replacement WindowDialog debug overlay is still invisible on Fire TV |
 | [HLS-17](docs/tasks/HLS-17.md) | candidate | buffering status UX | Startup window shows the intentional 50% startup target; label it separately from configured total capacity while preserving the working 0.7.21 algorithm |
 | [HLS-18](docs/tasks/HLS-18.md) | candidate | buffering configuration | Expose all behavior-affecting Buffered Look Ahead thresholds, including during-playback watermarks, while defaulting exactly to the proven 0.7.21 values |
 | [HLS-19](docs/tasks/HLS-19.md) | candidate | buffering resilience | Add configurable Appi-owned retry/recovery for true buffer depletion without changing the working 0.7.21 reservoir algorithm |
@@ -30,6 +30,8 @@ Planning status: open. Version: not assigned. Current baseline and fallback: [PR
 6. Copy shipped task IDs and scope changes into RELEASE_NOTES, then reset this planning file for the next cycle.
 
 ## Scope decisions
+
+2026-09-28: HLS-16 is elevated from a cosmetic/debug convenience to a practical diagnostic dependency for HLS-19/HLS-21. The user correctly noted that current reservoir-depletion/recovery diagnosis would have been much easier with the requested overlay working. Implement/validate the live metrics early enough to avoid another blind target-device diagnostic cycle; retain HLS-21's persisted failure snapshot because playback exit can remove the overlay.
 
 2026-09-28: HLS-21 added after repeated 0.7.21 runtime timeout failures. Observed sequence: A/V freezes while subtitles continue, playback may briefly catch up, Appi timeout notification appears, then playback exits. Do not infer 'buffer too small' from the timeout alone. HLS-21 must correlate contiguous playable reserve, total cached bytes, exact next video/audio segment availability, throughput and recovery timing to distinguish true reservoir exhaustion from sustained deficit, segment holes, track starvation or premature recovery timeout. Preserve HLS-13 while gathering evidence.
 
