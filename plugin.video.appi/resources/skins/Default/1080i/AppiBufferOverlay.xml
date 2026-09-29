@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<window type="dialog">
+  <coordinates><system>1</system></coordinates>
+  <controls>
+    <control type="label" id="100">
+      <left>40</left>
+      <top>45</top>
+      <width>1840</width>
+      <height>60</height>
+      <font>font14</font>
+      <textcolor>FFFFFFFF</textcolor>
+      <shadowcolor>FF000000</shadowcolor>
+      <align>left</align>
+      <aligny>center</aligny>
+      <label></label>
+    </control>
+  </controls>
+</window>

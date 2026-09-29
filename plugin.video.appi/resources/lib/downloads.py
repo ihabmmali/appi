@@ -84,7 +84,7 @@ partial="$script_dir"/{partial}
 
 "$FFMPEG" -hide_banner -nostdin -y \\
   -i {url} \\
-  -sn -dn -c copy -f mp4 "$partial"
+  -map 0:v:0 -map 0:a:0 -c copy -threads 0 -sn -dn -f mp4 "$partial"
 mv -f -- "$partial" "$output"
 '''.format(
         url=_shell_quote(media_url),

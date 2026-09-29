@@ -2,6 +2,16 @@
 
 Implemented features, grouped by add-on version. A version listed here means its source/package was published in the repository; it does not by itself certify device testing. For details and earlier 0.7.x entries, see [README.md](README.md). This file is the concise ongoing release history; [RELEASE_NOTES.md](RELEASE_NOTES.md) records what each package shipped and how it was verified.
 
+## 0.7.22 — 2026-09-28
+
+- Buffered Look Ahead now owns recovery for transient segment/provider stalls: it retries the exact needed media inside Appi under a bounded configurable policy instead of relying on repeated Kodi 503 retries, while stale/superseded seek epochs remain request-scoped.
+- Add advanced Buffered Look Ahead controls for startup/high/low/critical reservoir thresholds, media/startup/recovery timeouts, seek/recovery reserve, prefetch lead, retry delay/attempts and optional paused-session retention. Defaults preserve the healthy 0.7.21 reservoir behavior.
+- Separate playing, buffering, paused and stopped lifecycle handling so a long pause no longer looks like a dead player. Add handoff timing from reservoir-ready through Kodi requests/AV start and preload required key/map resources before handoff.
+- Expand live and persisted diagnostics with per-track contiguous reserve, next-segment state, total cached bytes, retry state, a rolling pre-failure timeline and evidence-based failure classification. Detailed overlay rendering now targets a bundled modeless WindowXMLDialog, with a logged compatibility fallback.
+- About shows the installed add-on version directly in its settings pane, and the approved flat icon is referenced through a new byte-identical resource path to bypass Kodi texture caching.
+- Generated FFmpeg download scripts explicitly map the first video/audio streams and use stream copy plus `-threads 0`, retaining safe quoting and atomic partial-file rename.
+- Existing HLS modes 0–2 remain unchanged. Automated candidate run `36515421099` passed all 100 unit/smoke tests (1 skipped); final lifecycle/package verification remains required before publication, and target Fire TV/provider acceptance remains separate.
+
 ## 0.7.21 — 2026-09-28
 
 - Replace Buffered Look Ahead's fixed 12-second/equal-share cache with a configured-capacity producer/consumer reservoir. Startup now fills 50% of the configured bytes (or the complete remaining short VOD), background prefetch continues toward an 80% high-water mark, and refill resumes below a 60% low-water mark without statically splitting capacity between video and audio.

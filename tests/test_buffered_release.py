@@ -348,11 +348,80 @@ class BufferedReleaseTests(unittest.TestCase):
         self.m._fetch_to_path = lambda *a, **k: (_ for _ in ()).throw(
             TimeoutError('simulated provider stall')
         )
+        session.retry_attempts = 1
+        session.retry_delay = 0
         session._wait_reservoir = lambda *args: False
         for index in range(5):
             self.assertTrue(os.path.isfile(track.serve(index)))
         with self.assertRaises(self.m.RecoveryTimeout):
             track.serve(5)
+
+    def test_tuning_validation_preserves_defaults_and_rejects_bad_watermark_order(self):
+        defaults=self.m.validated_tuning({})
+        self.assertEqual(defaults['startup_pct'],50)
+        self.assertEqual(defaults['high_water_pct'],80)
+        self.assertEqual(defaults['low_water_pct'],60)
+        self.assertEqual(defaults['critical_pct'],15)
+        bad=self.m.validated_tuning({
+            'startup_pct':90,'high_water_pct':70,'low_water_pct':80,'critical_pct':85,
+            'recovery_timeout_s':1,'retry_delay_ms':1,
+        })
+        self.assertEqual(
+            [bad[k] for k in ('startup_pct','high_water_pct','low_water_pct','critical_pct')],
+            [50,80,60,15],
+        )
+        self.assertEqual(bad['recovery_timeout_s'],5)
+        self.assertEqual(bad['retry_delay_ms'],100)
+
+    def test_transient_depletion_retries_inside_appi_before_terminal_failure(self):
+        session=self.session(buffer_mb=32,tuning={
+            'recovery_timeout_s':5,'retry_attempts':3,'retry_delay_ms':100,
+        })
+        session.prepare()
+        track=next(iter(session.tracks.values()))
+        track.stop()
+        index=min(20,len(track.segments)-1)
+        resource=track.segments[index].resource
+        if resource.path and os.path.exists(resource.path):
+            os.remove(resource.path)
+        resource.path=''
+        original=self.m._fetch_to_path
+        calls={'count':0}
+        def flaky(*args,**kwargs):
+            calls['count']+=1
+            if calls['count']<2:
+                raise TimeoutError('synthetic transient timeout')
+            return original(*args,**kwargs)
+        self.m._fetch_to_path=flaky
+        session._wait_reservoir=lambda *args: True
+        self.assertTrue(os.path.isfile(track.serve(index)))
+        self.assertGreaterEqual(calls['count'],2)
+        names=[name for name,_ in session.drain_events()]
+        self.assertIn('buffer_recovery_retry',names)
+        self.assertIn('buffer_recovery',names)
+
+    def test_failure_snapshot_contains_numeric_timeline_and_classification(self):
+        session=self.session(buffer_mb=32)
+        session.ready=True
+        session.started_playback=True
+        session._startup_complete=True
+        session._epoch_preparing=False
+        session._playable_reserve=lambda:(0,0.0,0)
+        status=session.status()
+        self.assertEqual(status['cached_ahead_bytes'],0)
+        classification=session._failure_snapshot('recovery_exhausted','synthetic')
+        self.assertIn(classification,{
+            'reservoir_exhausted','required_track_starvation','next_segment_hole',
+            'recovery_timeout_with_progress','sustained_throughput_deficit','unknown'
+        })
+        snapshots=[fields for name,fields in session.drain_events()
+                   if name=='buffer_failure_snapshot']
+        self.assertTrue(snapshots)
+        self.assertTrue(snapshots[-1]['timeline'])
+        latest=snapshots[-1]['timeline'][-1]
+        self.assertIn('playable_bytes',latest)
+        self.assertIn('total_cached_bytes',latest)
+        self.assertIn('tracks',latest)
 
     def test_critical_sustained_deficit_is_reported_from_measured_evidence(self):
         session = self.session(buffer_mb=32)
@@ -429,8 +498,36 @@ class ReleaseSettingsTests(unittest.TestCase):
     def test_icon_exact_copy_and_manifest_reference(self):
         manifest=ET.parse(ROOT/'plugin.video.appi/addon.xml').getroot()
         icon=manifest.findtext('./extension/assets/icon')
+        self.assertEqual(manifest.get('version'),'0.7.22')
+        self.assertNotEqual(icon, 'resources/icon.png')
         self.assertEqual((ROOT/'plugin.video.appi'/icon).read_bytes(),
                          (ROOT/'artwork/appi-icon-selected.png').read_bytes())
+
+    def test_about_is_direct_read_only_version_display(self):
+        root=ET.parse(ROOT/'plugin.video.appi/resources/settings.xml').getroot()
+        category=root.find('.//category[@id="about"]')
+        self.assertIsNotNone(category)
+        self.assertIsNone(category.find('.//setting[@id="about"]'))
+        version=category.find('.//setting[@id="installed_version_display"]')
+        self.assertIsNotNone(version)
+        self.assertEqual(version.findtext('enable'),'false')
+        self.assertEqual(version.find('control').get('type'),'edit')
+
+    def test_advanced_buffer_tuning_defaults_match_0721(self):
+        root=ET.parse(ROOT/'plugin.video.appi/resources/settings.xml').getroot()
+        expected={
+            'buffered_startup_pct':'50','buffered_high_water_pct':'80',
+            'buffered_low_water_pct':'60','buffered_critical_pct':'15',
+            'buffered_media_timeout_s':'15','buffered_startup_timeout_s':'180',
+            'buffered_seek_reserve_s':'12','buffered_min_seek_reserve_mb':'4',
+            'buffered_prefetch_lead_s':'24','buffered_recovery_timeout_s':'60',
+            'buffered_retry_delay_ms':'500','buffered_retry_attempts':'0',
+            'buffered_recovery_reserve_s':'6','buffered_pause_retention_min':'0',
+        }
+        for setting_id, default in expected.items():
+            setting=root.find('.//setting[@id="{}"]'.format(setting_id))
+            self.assertIsNotNone(setting, setting_id)
+            self.assertEqual(setting.findtext('default'), default, setting_id)
 
 class BufferTransferTests(unittest.TestCase):
     def test_actual_http_transfer_auth_truncation_capacity_and_range(self):

@@ -1,12 +1,12 @@
 ---
 id: HLS-20
 role: implementation
-status: ready
+status: review
 delivery: unreleased
-verification: pending
-owner: unassigned
-base_commit: unset
-artifact: none
+verification: partial
+owner: builder-publisher-0.7.22
+base_commit: fd0bd5b08228c34b09de684f7b4b1f865a09e2d2
+artifact: 971d29d4145411e0c78703326246b770c82d95c3
 ---
 # HLS-20 — Diagnose and reduce post-fill startup handoff delay
 
@@ -14,6 +14,9 @@ artifact: none
 Remove avoidable delay between Buffered Look Ahead reaching its configured startup reservoir target and actual audio/video playback beginning, without changing the working 0.7.21 reservoir algorithm.
 
 This is an investigation-first implementation task: measure the handoff timeline, identify which stage consumes the delay on the target device, then fix only the responsible Appi-controlled stage(s).
+
+## Scope
+Instrument and optimize only the Buffered Look Ahead handoff after the configured startup reservoir is ready. Measure each Appi/Kodi boundary, preload required key/map resources, and remove no delay unless evidence shows it is Appi-owned. Preserve the startup reservoir policy and modes 0–2.
 
 ## Current 0.7.21 handoff
 Source inspection shows there is no intentional sleep after startup fill completes.
@@ -84,3 +87,9 @@ Created from the user's repeated target-device observation that there is a notic
 
 ## Outcome and next action
 Instrument the entire reservoir-ready-to-AV-start handoff, then repair only the proven Appi-side source of delay while preserving the working 0.7.21 buffering algorithm.
+
+
+## 0.7.22 candidate evidence
+0.7.22 candidate records monotonic handoff stages from reservoir-ready through plugin return/setResolvedUrl, first local playlist/key/map/segment/bytes and AV start, and preloads known key/map dependencies. Automated tests passed; target-device latency evidence remains pending.
+
+Final package gate run `36515744781` passed all 100 unit/smoke tests (1 skipped), workflow tracker validation, deterministic rebuild and ZIP/index inspection. Candidate artifact commit: `971d29d4145411e0c78703326246b770c82d95c3`; ZIP SHA-256: `35a50dad9f17f0d0a47c2cea7892d769a1b613ab2743bbbd61a1fc59267ae53f`.

@@ -1,12 +1,12 @@
 ---
 id: DOWNLOAD-1
 role: implementation
-status: ready
+status: review
 delivery: unreleased
-verification: pending
-owner: unassigned
-base_commit: unset
-artifact: none
+verification: partial
+owner: builder-publisher-0.7.22
+base_commit: fd0bd5b08228c34b09de684f7b4b1f865a09e2d2
+artifact: 971d29d4145411e0c78703326246b770c82d95c3
 ---
 # DOWNLOAD-1 — Use the tested fast FFmpeg remux command for generated download scripts
 
@@ -20,6 +20,9 @@ ffmpeg -i 'REPLACE WITH MEDIA URL' -map 0:v:0 -map 0:a:0 -c copy -threads 0 Medi
 ```
 
 Appi must substitute the actual authenticated/pre-authorized media URL and its generated media filename safely.
+
+## Scope
+Change only generated FFmpeg download-script invocation semantics and its tests. Preserve existing VFS writing, filename sanitization, shell quoting, temporary partial-file output and atomic rename. Do not change playback paths.
 
 ## Current behavior
 `resources/lib/downloads.py` currently generates an invocation equivalent to:
@@ -79,3 +82,9 @@ Current `plugin.video.appi/resources/lib/downloads.py` emits `-sn -dn -c copy -f
 
 ## Outcome and next action
 Update only the generated FFmpeg command and its tests, then verify both command structure and real transfer behavior. Do not change unrelated download naming, VFS script generation, or playback/buffering code.
+
+
+## 0.7.22 candidate evidence
+0.7.22 candidate generates FFmpeg scripts with explicit first-video/first-audio mapping, stream copy and -threads 0 while preserving quoting, partial output and atomic rename. Automated script-generation coverage passed; same-provider real transfer-rate comparison remains a target/environment check.
+
+Final package gate run `36515744781` passed all 100 unit/smoke tests (1 skipped), workflow tracker validation, deterministic rebuild and ZIP/index inspection. Candidate artifact commit: `971d29d4145411e0c78703326246b770c82d95c3`; ZIP SHA-256: `35a50dad9f17f0d0a47c2cea7892d769a1b613ab2743bbbd61a1fc59267ae53f`.

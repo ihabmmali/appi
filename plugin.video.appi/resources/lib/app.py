@@ -71,11 +71,21 @@ def _bool_setting(name, default=False):
     return value.lower() == 'true'
 
 
+def _sync_installed_version():
+    version = ADDON.getAddonInfo('version') or ''
+    try:
+        if ADDON.getSetting('installed_version_display') != version:
+            ADDON.setSetting('installed_version_display', version)
+    except Exception as exc:
+        xbmc.log('Appi could not synchronize installed version display: {}'.format(exc), xbmc.LOGWARNING)
+
+
 def _require_setting(name, label):
     value = _setting(name).strip()
     if value:
         return value
     xbmcgui.Dialog().ok('Appi', '{} is not configured. Open Appi settings and enter it first.'.format(label))
+    _sync_installed_version()
     ADDON.openSettings()
     return None
 
@@ -1557,13 +1567,17 @@ def play_ref(params):
                 'buffer_quality': 'prompt' if _int_setting('buffered_quality', 0) == 1 else 'highest',
             })
             try:
+                tuning = buffered_hls.tuning_from_addon(ADDON)
                 buffered_url = buffered_hls.request_playback(
                     media_url,
                     target_seconds=buffered_hls.DEFAULT_TARGET_SECONDS,
                     startup_seconds=buffered_hls.DEFAULT_STARTUP_SECONDS,
                     buffer_mb=_int_setting('buffered_buffer_mb', 128),
                     quality='prompt' if _int_setting('buffered_quality', 0) == 1 else 'highest',
+                    tuning=tuning,
+                    timeout=max(buffered_hls.CONTROL_TIMEOUT, tuning['startup_timeout_s'] + 30),
                 )
+                buffered_hls.note_handoff(buffered_url, 'buffered_url_returned')
                 list_item.setPath(buffered_url)
             except buffered_hls.PlaybackCancelled:
                 xbmcplugin.setResolvedUrl(HANDLE, False, xbmcgui.ListItem())
@@ -1635,6 +1649,11 @@ def play_ref(params):
                 xbmc.log('Appi could not attach saved subtitles: {}'.format(exc), xbmc.LOGWARNING)
 
     playback_history.start_session(catalog_name, ref, item, key or '')
+    if stream.get('kind') == 'hls' and hls_mode == 3:
+        try:
+            buffered_hls.note_handoff(list_item.getPath(), 'before_set_resolved_url')
+        except Exception:
+            buffered_hls.note_handoff(buffered_url, 'before_set_resolved_url')
     xbmcplugin.setResolvedUrl(HANDLE, True, list_item)
 
 def _dialog_select(heading, choices, preselect=0):
@@ -2122,9 +2141,10 @@ def _run_action(params):
     elif action == 'clear_data':
         clear_data(params.get('scope', ''))
     elif action == 'about':
-        xbmcgui.Dialog().ok(ADDON.getAddonInfo('name') or 'Appi',
-                            'Installed version: ' + ADDON.getAddonInfo('version'))
+        _sync_installed_version()
+        ADDON.openSettings()
     elif action == 'settings':
+        _sync_installed_version()
         ADDON.openSettings()
         xbmc.executebuiltin('Container.Update({})'.format(BASE_URL))
     else:

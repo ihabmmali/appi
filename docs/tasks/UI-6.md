@@ -1,12 +1,12 @@
 ---
 id: UI-6
 role: implementation
-status: ready
+status: review
 delivery: unreleased
-verification: pending
-owner: unassigned
-base_commit: unset
-artifact: none
+verification: partial
+owner: builder-publisher-0.7.22
+base_commit: fd0bd5b08228c34b09de684f7b4b1f865a09e2d2
+artifact: 971d29d4145411e0c78703326246b770c82d95c3
 ---
 # UI-6 — Force Kodi to refresh the approved Appi icon
 
@@ -41,5 +41,14 @@ Because the approved bytes are already present in the 0.7.21 source while the ta
 ## Authorization
 Reported by the user on 2026-09-28 after installing 0.7.21: Kodi appears to show the very first Appi graphic again. On 2026-09-28 the user explicitly instructed that all current candidates be committed for the next release. UI-6 is committed next-release scope.
 
+## Evidence
+The 0.7.22 implementation keeps the approved flat icon bytes unchanged and introduces a new manifest resource path, `resources/icon-v2.png`, to force Kodi texture-cache invalidation. The new resource blob SHA is exactly `08016a229ed053e000deffad659a2b94bd64acfc`, identical to the previous approved `resources/icon.png` blob. Automated release coverage asserts that the manifest no longer references the old path and that the packaged icon bytes match `artwork/appi-icon-selected.png`.
+
 ## Outcome and next action
 Force an artwork cache miss by versioning the icon resource path while preserving the approved artwork bytes.
+
+
+## 0.7.22 candidate evidence
+0.7.22 candidate changes the manifest artwork path to resources/icon-v2.png without transforming the approved PNG. Source and destination Git blob SHA are both 08016a229ed053e000deffad659a2b94bd64acfc. Automated package byte equality passed; actual Kodi texture-cache refresh remains a device check.
+
+Final package gate run `36515744781` passed all 100 unit/smoke tests (1 skipped), workflow tracker validation, deterministic rebuild and ZIP/index inspection. Candidate artifact commit: `971d29d4145411e0c78703326246b770c82d95c3`; ZIP SHA-256: `35a50dad9f17f0d0a47c2cea7892d769a1b613ab2743bbbd61a1fc59267ae53f`.

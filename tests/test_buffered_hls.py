@@ -507,12 +507,12 @@ class BufferedHlsTests(unittest.TestCase):
         self.assertTrue(recenter)
         self.assertEqual(recenter[0].get('reason'), 'cold-resume')
 
-    def test_recovery_timeout_keeps_session_retriable_and_clears_recovering_state(self):
+    def test_recovery_policy_exhaustion_is_internal_and_clears_recovering_state(self):
         m = self.m
-        m.RECOVERY_TIMEOUT = 0.2
         session = m.BufferedHlsSession(
             'https://up.example/media.m3u8',
             root=os.path.join(m._test_root, 'retry-after-timeout'),
+            tuning={'recovery_timeout_s': 5, 'retry_attempts': 1, 'retry_delay_ms': 100},
         )
         session._startup_complete = True
         track = m._Track(session, 'video', 3, 1, 1)
@@ -528,20 +528,21 @@ class BufferedHlsTests(unittest.TestCase):
         track.replace_segments(segments)
 
         def failing_fetch(url, path, **kwargs):
-            raise RuntimeError('temporary upstream miss')
+            raise TimeoutError('temporary upstream timeout')
 
         m._fetch_to_path = failing_fetch
-        with self.assertRaises(m.RecoveryTimeout):
+        with self.assertRaises(m.RecoveryExhausted):
             track.serve(3)
         self.assertFalse(track.recovering)
         self.assertFalse(session.error)
         self.assertEqual(track.last_served, 2)
         names = [name for name, _ in session.drain_events()]
-        self.assertIn('buffer_recovery_timeout', names)
+        self.assertIn('buffer_recovery_retry', names)
+        self.assertIn('buffer_failure_snapshot', names)
+        self.assertNotIn('buffer_request_retry', names)
 
         payloads = {'/s{}.ts'.format(i): bytes([65 + i]) * 32 for i in range(5)}
         _install_fake_fetch(m, payloads)
-        m.RECOVERY_TIMEOUT = 2.0
         path = track.serve(3)
         self.assertTrue(os.path.isfile(path))
         self.assertEqual(track.last_served, 3)

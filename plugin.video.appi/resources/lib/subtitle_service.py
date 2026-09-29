@@ -294,24 +294,38 @@ def run():
     queued_focus = ''
     while not monitor.abortRequested():
         playing = player.isPlayingVideo()
+        paused = bool(xbmc.getCondVisibility('Player.Paused'))
+        caching = bool(xbmc.getCondVisibility('Player.Caching'))
+        active_video = playing or paused or caching
+        if paused:
+            player_state = 'paused'
+        elif caching and active_video:
+            player_state = 'buffering'
+        elif playing:
+            player_state = 'playing'
+        else:
+            player_state = 'stopped'
         try:
-            buffered_manager.poll(player_active=playing)
+            buffered_manager.poll(player_active=active_video, player_state=player_state)
             buffered_manager.flush_diagnostics(diagnostics.event)
             session = buffered_manager.active
             status = session.status() if session else None
-            if status and playing:
-                status['recovering'] = status['recovering'] or xbmc.getCondVisibility('Player.Caching')
+            if status and active_video:
+                status['recovering'] = status['recovering'] or caching
             overlay.update(status if session and session.ready else None,
-                           _enabled('buffered_debug_overlay', False), playing)
-            if session and playing:
+                           _enabled('buffered_debug_overlay', False), active_video)
+            if session and active_video:
                 diagnostics.event('buffer_status', **{k: v for k, v in status.items()
                                   if k in {'cached_ahead_bytes', 'buffer_target_bytes',
                                            'high_water_bytes', 'low_water_bytes',
                                            'critical_water_bytes', 'buffered_seconds',
                                            'cached_segments_ahead', 'buffer_capacity_mb',
-                                           'buffer_state', 'buffer_trend',
+                                           'total_cached_bytes', 'required_track_reserve',
+                                           'missing_next_tracks', 'buffer_state', 'buffer_trend',
                                            'selected_bitrate_mbps', 'throughput_mbps',
                                            'throughput_limited', 'limitation_message',
+                                           'recovery_attempt', 'recovery_elapsed_s',
+                                           'recovery_last_error', 'player_state',
                                            'epoch_id', 'epoch_reason',
                                            'epoch_target_seconds',
                                            'stale_jobs_cancelled_or_ignored'}})

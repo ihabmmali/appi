@@ -36,13 +36,17 @@ CRITICAL_WATER_RATIO = 0.15
 MIN_SEEK_RESERVE_BYTES = 4 * 1024 * 1024
 SEEK_RESERVE_SECONDS = 12.0
 PREFETCH_LEAD_SECONDS = 24.0
-_USER_AGENT = 'Kodi Appi Buffered/0.7.21'
+_USER_AGENT = 'Kodi Appi Buffered/0.7.22'
 _URI_RE = re.compile(r'URI=(?P<quoted>"(?P<qvalue>[^"]*)"|(?P<uvalue>[^,]*))', re.IGNORECASE)
 _ATTR_RE = re.compile(r'([A-Z0-9-]+)=(?:"([^"]*)"|([^,]*))', re.IGNORECASE)
 
 
 class RecoveryTimeout(TimeoutError):
-    """A bounded random-access refill miss that Kodi may safely retry."""
+    """A request was superseded by a newer playback epoch."""
+
+
+class RecoveryExhausted(RecoveryTimeout):
+    """Appi-owned recovery policy was exhausted for the active epoch."""
 
 
 def _root_path():
@@ -142,9 +146,122 @@ def buffer_size_mb(value):
     return min(1024, max(32, _int(value, DEFAULT_BUFFER_MB)))
 
 
+_TUNING_DEFAULTS = {
+    'startup_pct': 50,
+    'high_water_pct': 80,
+    'low_water_pct': 60,
+    'critical_pct': 15,
+    'media_timeout_s': 15,
+    'startup_timeout_s': 180,
+    'seek_reserve_s': 12,
+    'min_seek_reserve_mb': 4,
+    'prefetch_lead_s': 24,
+    'recovery_timeout_s': 60,
+    'retry_delay_ms': 500,
+    'retry_attempts': 0,
+    'recovery_reserve_s': 6,
+    'pause_retention_min': 0,
+}
+
+
+def validated_tuning(values=None):
+    values = dict(values or {})
+    result = dict(_TUNING_DEFAULTS)
+    limits = {
+        'startup_pct': (1, 100), 'high_water_pct': (1, 100),
+        'low_water_pct': (1, 99), 'critical_pct': (0, 98),
+        'media_timeout_s': (1, 120), 'startup_timeout_s': (30, 600),
+        'seek_reserve_s': (1, 120), 'min_seek_reserve_mb': (1, 256),
+        'prefetch_lead_s': (0, 120), 'recovery_timeout_s': (5, 600),
+        'retry_delay_ms': (100, 10000), 'retry_attempts': (0, 100),
+        'recovery_reserve_s': (1, 120), 'pause_retention_min': (0, 1440),
+    }
+    for key, default in _TUNING_DEFAULTS.items():
+        try:
+            value = int(values.get(key, default))
+        except (TypeError, ValueError):
+            value = default
+        low, high = limits[key]
+        result[key] = min(high, max(low, value))
+    if not (
+        0 <= result['critical_pct'] < result['low_water_pct']
+        < result['high_water_pct'] <= 100
+        and 0 < result['startup_pct'] <= result['high_water_pct']
+    ):
+        for key in ('startup_pct', 'high_water_pct', 'low_water_pct', 'critical_pct'):
+            result[key] = _TUNING_DEFAULTS[key]
+    return result
+
+
+def tuning_from_addon(addon=None):
+    addon = addon or ADDON
+    mapping = {
+        'startup_pct': 'buffered_startup_pct',
+        'high_water_pct': 'buffered_high_water_pct',
+        'low_water_pct': 'buffered_low_water_pct',
+        'critical_pct': 'buffered_critical_pct',
+        'media_timeout_s': 'buffered_media_timeout_s',
+        'startup_timeout_s': 'buffered_startup_timeout_s',
+        'seek_reserve_s': 'buffered_seek_reserve_s',
+        'min_seek_reserve_mb': 'buffered_min_seek_reserve_mb',
+        'prefetch_lead_s': 'buffered_prefetch_lead_s',
+        'recovery_timeout_s': 'buffered_recovery_timeout_s',
+        'retry_delay_ms': 'buffered_retry_delay_ms',
+        'retry_attempts': 'buffered_retry_attempts',
+        'recovery_reserve_s': 'buffered_recovery_reserve_s',
+        'pause_retention_min': 'buffered_pause_retention_min',
+    }
+    values = {}
+    for key, setting_id in mapping.items():
+        try:
+            raw = addon.getSetting(setting_id)
+        except Exception:
+            raw = ''
+        values[key] = raw if raw != '' else _TUNING_DEFAULTS[key]
+    return validated_tuning(values)
+
+
+def _retryable_error(exc):
+    code = getattr(exc, 'code', None)
+    if code is not None:
+        try:
+            code = int(code)
+        except (TypeError, ValueError):
+            code = None
+        if code is not None:
+            return code in {408, 429} or 500 <= code <= 599
+    if isinstance(exc, (TimeoutError, ConnectionError, OSError)):
+        return True
+    text = str(exc).lower()
+    return any(marker in text for marker in (
+        'incomplete', 'empty response', 'temporarily occupied',
+        'connection reset', 'timed out', 'timeout',
+    ))
+
+
+def note_handoff(local_url, stage, **fields):
+    match = re.search(r'/hls/([a-f0-9]{24})/', local_url or '')
+    if not match:
+        return False
+    control = os.path.join(_root_path(), 'control')
+    _ensure(control)
+    path = os.path.join(control, 'handoff-' + match.group(1) + '.json')
+    payload = _json_read(path) or {'events': []}
+    events = payload.get('events') if isinstance(payload.get('events'), list) else []
+    event = {
+        'stage': str(stage),
+        'monotonic_ms': round(time.monotonic() * 1000.0, 3),
+    }
+    event.update(fields)
+    events.append(event)
+    payload['events'] = events[-20:]
+    _json_write(path, payload)
+    return True
+
+
 def request_playback(source_url, target_seconds=DEFAULT_TARGET_SECONDS,
                      startup_seconds=DEFAULT_STARTUP_SECONDS, timeout=CONTROL_TIMEOUT,
-                     buffer_mb=DEFAULT_BUFFER_MB, quality='highest'):
+                     buffer_mb=DEFAULT_BUFFER_MB, quality='highest', tuning=None):
     # Unique mailboxes prevent a cancelled/late reply being used by a retry.
     import xbmc
     import xbmcgui
@@ -158,10 +275,12 @@ def request_playback(source_url, target_seconds=DEFAULT_TARGET_SECONDS,
     dialog.create('Appi — Buffered Look Ahead', 'Preparing stream…')
     monitor = xbmc.Monitor()
     success = False
+    tuning = validated_tuning(tuning or tuning_from_addon())
     _json_write(request_path, {
         'id': request_id, 'source_url': source_url,
         'target_seconds': target_seconds, 'startup_seconds': startup_seconds,
         'buffer_mb': buffer_size_mb(buffer_mb), 'quality': quality,
+        'tuning': tuning,
         'created_at': time.time(),
     })
     deadline = time.monotonic() + timeout
@@ -183,7 +302,8 @@ def request_playback(source_url, target_seconds=DEFAULT_TARGET_SECONDS,
                 deadline = time.monotonic() + timeout
                 dialog.create('Appi — Buffered Look Ahead', 'Filling buffer…')
             if response.get('ready') and response.get('local_url'):
-                dialog.update(100, 'Buffer ready — starting playback…')
+                dialog.update(100, 'Buffer ready — starting Kodi playback…')
+                note_handoff(response['local_url'], 'plugin_ready_observed')
                 success = True
                 return response['local_url']
             dialog.update(int(response.get('percent', 0)), response.get('message', 'Preparing stream…'))
@@ -568,7 +688,7 @@ class _Track:
                     error_type=type(exc).__name__,
                     http_status=getattr(exc, 'code', None),
                 )
-                if self._stop.wait(0.5):
+                if self._stop.wait(self.session.retry_delay):
                     break
 
     def _reserve_state(self, index, reserve_seconds):
@@ -633,61 +753,8 @@ class _Track:
                 random_access=is_seek,
             )
             try:
-                try:
-                    self.session._ensure_binary(
-                        self.segments[index].resource,
-                        segment=self.segments[index],
-                        track=self,
-                        epoch=epoch,
-                    )
-                except PlaybackCancelled:
-                    if epoch != self.session.epoch:
-                        raise RecoveryTimeout('Playback target was superseded by a newer seek')
-                    raise
-                except Exception as exc:
-                    self.session._event(
-                        'buffer_seek_target_error' if is_seek else 'buffer_target_error',
-                        epoch_id=epoch,
-                        track_id=self.id,
-                        requested_index=index,
-                        error_type=type(exc).__name__,
-                    )
-
-                target_bytes = (
-                    self.session.epoch_target_bytes
-                    if is_seek else self.session.seek_reserve_bytes()
-                )
-                recovered = self.session._wait_reservoir(
-                    epoch, target_bytes, RECOVERY_TIMEOUT
-                )
-                if epoch != self.session.epoch:
-                    raise RecoveryTimeout('Playback target was superseded by a newer seek')
-                new_bytes, new_seconds, _ = self.session._playable_reserve()
-                if not recovered:
-                    self.session._event(
-                        'buffer_recovery_timeout',
-                        epoch_id=epoch,
-                        track_id=self.id,
-                        buffered_seconds=new_seconds,
-                        cached_ahead_bytes=new_bytes,
-                        requested_index=index,
-                        random_access=is_seek,
-                    )
-                    raise RecoveryTimeout(
-                        'Unable to prepare playback target: {} buffered toward {} target'.format(
-                            _human_bytes(new_bytes), _human_bytes(target_bytes)
-                        )
-                    )
+                self.session.recover_segment(self, index, epoch, random_access=is_seek)
                 self.failed = ''
-                self.session._event(
-                    'buffer_recovery',
-                    epoch_id=epoch,
-                    track_id=self.id,
-                    buffered_seconds=new_seconds,
-                    cached_ahead_bytes=new_bytes,
-                    requested_index=index,
-                    random_access=is_seek,
-                )
             finally:
                 self.recovering = False
 
@@ -761,13 +828,16 @@ class BufferedHlsSession:
         root=None,
         buffer_mb=DEFAULT_BUFFER_MB,
         quality='highest',
+        tuning=None,
     ):
         self.source_url = source_url
+        supplied_tuning = dict(tuning or {})
+        self.tuning = validated_tuning(supplied_tuning)
         self.max_bytes = buffer_size_mb(buffer_mb) * 1024 * 1024
-        self.high_water_bytes = max(1, int(self.max_bytes * HIGH_WATER_RATIO))
-        self.startup_target_bytes = max(1, int(self.max_bytes * STARTUP_WATER_RATIO))
-        self.low_water_bytes = max(1, int(self.max_bytes * LOW_WATER_RATIO))
-        self.critical_water_bytes = max(1, int(self.max_bytes * CRITICAL_WATER_RATIO))
+        self.high_water_bytes = max(1, int(self.max_bytes * self.tuning['high_water_pct'] / 100.0))
+        self.startup_target_bytes = max(1, int(self.max_bytes * self.tuning['startup_pct'] / 100.0))
+        self.low_water_bytes = max(1, int(self.max_bytes * self.tuning['low_water_pct'] / 100.0))
+        self.critical_water_bytes = max(1, int(self.max_bytes * self.tuning['critical_pct'] / 100.0))
         self.quality = quality
         self.choices = []
         self.choice = None
@@ -786,7 +856,35 @@ class BufferedHlsSession:
         self._registry = {}
         self.target_seconds = max(5.0, float(target_seconds))
         self.startup_seconds = min(max(5.0, float(startup_seconds)), self.target_seconds)
-        self.recovery_seconds = min(max(5.0, float(recovery_seconds)), self.target_seconds)
+        self.recovery_seconds = min(
+            max(1.0, float(self.tuning['recovery_reserve_s'])), self.target_seconds
+        )
+        self.media_timeout = float(
+            self.tuning['media_timeout_s']
+            if 'media_timeout_s' in supplied_tuning else REQUEST_TIMEOUT
+        )
+        self.startup_timeout = float(
+            self.tuning['startup_timeout_s']
+            if 'startup_timeout_s' in supplied_tuning else STARTUP_TIMEOUT
+        )
+        self.seek_reserve_seconds = float(
+            self.tuning['seek_reserve_s']
+            if 'seek_reserve_s' in supplied_tuning else SEEK_RESERVE_SECONDS
+        )
+        self.min_seek_reserve_bytes = int(
+            self.tuning['min_seek_reserve_mb']
+            if 'min_seek_reserve_mb' in supplied_tuning
+            else max(1, MIN_SEEK_RESERVE_BYTES // (1024 * 1024))
+        ) * 1024 * 1024
+        self.prefetch_lead_seconds = float(
+            self.tuning['prefetch_lead_s']
+            if 'prefetch_lead_s' in supplied_tuning else PREFETCH_LEAD_SECONDS
+        )
+        self.recovery_timeout = float(self.tuning['recovery_timeout_s'])
+        self.retry_delay = float(self.tuning['retry_delay_ms']) / 1000.0
+        self.retry_attempts = int(self.tuning['retry_attempts'])
+        self.recovery_reserve_seconds = float(self.tuning['recovery_reserve_s'])
+        self.pause_retention_seconds = float(self.tuning['pause_retention_min']) * 60.0
         self.token = secrets.token_hex(12)
         self.root = root or os.path.join(_root_path(), 'session-{}'.format(self.token))
         self.data_root = os.path.join(self.root, 'data')
@@ -816,6 +914,15 @@ class BufferedHlsSession:
         self._throughput_samples = []
         self._last_status_bytes = 0
         self._last_status_at = time.monotonic()
+        self._recovery_started_at = 0.0
+        self._recovery_attempt = 0
+        self._recovery_last_error = ''
+        self._telemetry = []
+        self._last_telemetry_at = 0.0
+        self._transfer_history = []
+        self._handoff_marks = set()
+        self._player_state = 'preparing'
+        self._paused_since = 0.0
         self.master = self._register(source_url, 'playlist', metadata={'root': True})
 
     def _required_startup_tracks(self):
@@ -843,11 +950,16 @@ class BufferedHlsSession:
 
     def seek_reserve_bytes(self):
         bitrate = self._selected_bitrate_bps() or 4000000
-        estimated = int((bitrate / 8.0) * SEEK_RESERVE_SECONDS * 1.15)
+        estimated = int((bitrate / 8.0) * self.seek_reserve_seconds * 1.15)
         return min(
             self.startup_target_bytes,
-            max(MIN_SEEK_RESERVE_BYTES, min(self.low_water_bytes, estimated)),
+            max(self.min_seek_reserve_bytes, min(self.low_water_bytes, estimated)),
         )
+
+    def recovery_reserve_bytes(self):
+        bitrate = self._selected_bitrate_bps() or 4000000
+        estimated = int((bitrate / 8.0) * self.recovery_reserve_seconds * 1.15)
+        return min(self.low_water_bytes, max(1024 * 1024, estimated))
 
     def _playable_reserve(self):
         required = [track for track in self._required_startup_tracks() if track.segments]
@@ -916,7 +1028,115 @@ class BufferedHlsSession:
             return True
         ahead = {value.id: value._ahead(value.cursor_index())[0] for value in required}
         minimum = min(ahead.values(), default=0.0)
-        return ahead.get(track.id, 0.0) > minimum + PREFETCH_LEAD_SECONDS
+        return ahead.get(track.id, 0.0) > minimum + self.prefetch_lead_seconds
+
+    def recover_segment(self, track, index, epoch, random_access=False):
+        target_bytes = (
+            self.epoch_target_bytes if random_access else self.recovery_reserve_bytes()
+        )
+        deadline = time.monotonic() + self.recovery_timeout
+        self._recovery_started_at = time.monotonic()
+        self._recovery_attempt = 0
+        self._recovery_last_error = ''
+        start_bytes, _, _ = self._playable_reserve()
+        self._event(
+            'buffer_recovery_started',
+            epoch_id=epoch,
+            track_id=track.id,
+            requested_index=index,
+            target_bytes=target_bytes,
+            random_access=random_access,
+        )
+        segment = track.segments[index]
+        while not self._stop.is_set():
+            if epoch != self.epoch:
+                raise RecoveryTimeout('Playback target was superseded by a newer seek')
+            if track._cached(index):
+                break
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                break
+            if self.retry_attempts and self._recovery_attempt >= self.retry_attempts:
+                break
+            self._recovery_attempt += 1
+            try:
+                self._ensure_binary(
+                    segment.resource, segment=segment, track=track, epoch=epoch
+                )
+                self._recovery_last_error = ''
+            except PlaybackCancelled:
+                if epoch != self.epoch:
+                    raise RecoveryTimeout('Playback target was superseded by a newer seek')
+                raise
+            except Exception as exc:
+                self._recovery_last_error = '{}: {}'.format(type(exc).__name__, exc)
+                retryable = _retryable_error(exc)
+                self._event(
+                    'buffer_recovery_retry',
+                    epoch_id=epoch,
+                    track_id=track.id,
+                    requested_index=index,
+                    attempt=self._recovery_attempt,
+                    retryable=retryable,
+                    error_type=type(exc).__name__,
+                    http_status=getattr(exc, 'code', None),
+                    elapsed_s=round(time.monotonic() - self._recovery_started_at, 3),
+                )
+                if not retryable:
+                    self._failure_snapshot('non_retryable_recovery', self._recovery_last_error)
+                    raise RecoveryExhausted(
+                        'Non-retryable provider/local failure: {}'.format(self._recovery_last_error)
+                    )
+                wait_for = min(self.retry_delay, max(0.0, deadline - time.monotonic()))
+                if wait_for and self._stop.wait(wait_for):
+                    raise PlaybackCancelled()
+                continue
+        if epoch != self.epoch:
+            raise RecoveryTimeout('Playback target was superseded by a newer seek')
+        if not track._cached(index):
+            self._failure_snapshot('recovery_exhausted', self._recovery_last_error)
+            raise RecoveryExhausted(
+                'Recovery exhausted after {} attempt(s): {}'.format(
+                    self._recovery_attempt, self._recovery_last_error or 'provider did not deliver target segment'
+                )
+            )
+        remaining = max(0.0, deadline - time.monotonic())
+        recovered = remaining > 0 and self._wait_reservoir(epoch, target_bytes, remaining)
+        if epoch != self.epoch:
+            raise RecoveryTimeout('Playback target was superseded by a newer seek')
+        new_bytes, new_seconds, _ = self._playable_reserve()
+        if not recovered:
+            self._event(
+                'buffer_recovery_timeout',
+                epoch_id=epoch,
+                track_id=track.id,
+                buffered_seconds=new_seconds,
+                cached_ahead_bytes=new_bytes,
+                requested_index=index,
+                random_access=random_access,
+                attempt=self._recovery_attempt,
+            )
+            self._failure_snapshot('recovery_timeout', self._recovery_last_error)
+            raise RecoveryExhausted(
+                'Unable to rebuild recovery reserve: {} buffered toward {} target'.format(
+                    _human_bytes(new_bytes), _human_bytes(target_bytes)
+                )
+            )
+        self._event(
+            'buffer_recovery',
+            epoch_id=epoch,
+            track_id=track.id,
+            buffered_seconds=new_seconds,
+            cached_ahead_bytes=new_bytes,
+            requested_index=index,
+            random_access=random_access,
+            attempt=self._recovery_attempt,
+            recovered_from_bytes=start_bytes,
+        )
+        self._recovery_started_at = 0.0
+        self._recovery_attempt = 0
+        self._recovery_last_error = ''
+        return True
 
     def _coordinate_seek(self, source_track, source_index, reason='seek'):
         """Create a fresh authoritative buffer epoch at the requested timeline."""
@@ -999,23 +1219,146 @@ class BufferedHlsSession:
             self._stop.wait(0.1)
         return False
 
+    def _track_metrics(self):
+        values = []
+        missing = []
+        for track in self._required_startup_tracks():
+            if not track.segments:
+                continue
+            index = track.cursor_index()
+            ahead_seconds, ahead_count = track._ahead(index)
+            ahead_bytes = track.bytes_for_seconds(index, ahead_seconds)
+            next_state = 'end'
+            next_sequence = None
+            later_cached = False
+            if index < len(track.segments):
+                segment = track.segments[index]
+                resource = segment.resource
+                next_sequence = segment.sequence
+                if track._cached(index):
+                    next_state = 'cached'
+                elif resource.fetching:
+                    next_state = 'fetching'
+                elif resource.error or track.failed:
+                    next_state = 'failed'
+                else:
+                    next_state = 'absent'
+                later_cached = any(
+                    track._cached(i)
+                    for i in range(index + 1, min(len(track.segments), index + 9))
+                )
+                if next_state != 'cached':
+                    missing.append(track.id)
+            values.append({
+                'track_id': track.id,
+                'cursor_index': index,
+                'contiguous_bytes': ahead_bytes,
+                'contiguous_seconds': ahead_seconds,
+                'contiguous_segments': ahead_count,
+                'next_sequence': next_sequence,
+                'next_state': next_state,
+                'later_cached': later_cached,
+                'failed': bool(track.failed),
+            })
+        return values, missing
+
+    def _record_telemetry(self, reserve_bytes, reserve_seconds, state,
+                          selected_mbps, throughput_mbps, track_metrics, force=False):
+        now = time.monotonic()
+        cadence = 0.25 if state == 'critical' or self._recovery_started_at else 1.0
+        if not force and now - self._last_telemetry_at < cadence:
+            return
+        self._last_telemetry_at = now
+        self._telemetry.append({
+            'monotonic': round(now, 3),
+            'observed_at': round(time.time(), 3),
+            'epoch_id': self.epoch,
+            'epoch_reason': self.epoch_reason,
+            'capacity_bytes': self.max_bytes,
+            'startup_bytes': self.startup_target_bytes,
+            'high_water_bytes': self.high_water_bytes,
+            'low_water_bytes': self.low_water_bytes,
+            'critical_water_bytes': self.critical_water_bytes,
+            'playable_bytes': int(reserve_bytes),
+            'playable_seconds': round(float(reserve_seconds), 3),
+            'total_cached_bytes': self.disk_bytes(),
+            'selected_bitrate_mbps': selected_mbps,
+            'throughput_mbps': throughput_mbps,
+            'buffer_state': state,
+            'tracks': track_metrics,
+            'recovery_attempt': self._recovery_attempt,
+            'recovery_elapsed_s': (
+                round(now - self._recovery_started_at, 3)
+                if self._recovery_started_at else 0.0
+            ),
+            'player_state': self._player_state,
+        })
+        cutoff = now - 65.0
+        self._telemetry = [
+            item for item in self._telemetry[-300:]
+            if item.get('monotonic', now) >= cutoff
+        ]
+
+    def _classify_failure(self, trigger):
+        if not self._telemetry:
+            return 'unknown'
+        sample = self._telemetry[-1]
+        tracks = sample.get('tracks') or []
+        if trigger in {'player-idle', 'pause-retention-expired', 'session_lifecycle'}:
+            return 'session_lifecycle_termination'
+        positives = [t for t in tracks if t.get('contiguous_bytes', 0) > 0]
+        empty = [t for t in tracks if t.get('contiguous_bytes', 0) <= 0]
+        if len(tracks) > 1 and positives and empty:
+            return 'required_track_starvation'
+        if any(t.get('next_state') != 'cached' and t.get('later_cached') for t in tracks):
+            return 'next_segment_hole'
+        if trigger in {'recovery_timeout', 'recovery_exhausted'} and len(self._telemetry) > 1:
+            start = self._telemetry[0].get('playable_bytes', 0)
+            end = sample.get('playable_bytes', 0)
+            if end > start:
+                return 'recovery_timeout_with_progress'
+        selected = float(sample.get('selected_bitrate_mbps') or 0)
+        throughput = float(sample.get('throughput_mbps') or 0)
+        if selected and throughput and throughput < selected * 0.95:
+            return 'sustained_throughput_deficit'
+        if sample.get('playable_bytes', 0) <= 64 * 1024:
+            return 'reservoir_exhausted'
+        return 'unknown'
+
+    def _failure_snapshot(self, trigger, reason=''):
+        try:
+            self.status()
+        except Exception:
+            pass
+        classification = self._classify_failure(trigger)
+        self._event(
+            'buffer_failure_snapshot',
+            trigger=trigger,
+            reason=reason,
+            classification=classification,
+            timeline=list(self._telemetry),
+            recent_transfers=list(self._transfer_history[-24:]),
+        )
+        return classification
+
     def status(self):
         tracks = list(self.tracks.values())
         reserve_bytes, seconds, count = self._playable_reserve()
-        target_bytes = (
-            self.epoch_target_bytes
-            if self._epoch_preparing
-            else self.high_water_bytes
-        )
+        target_bytes = self.epoch_target_bytes if self._epoch_preparing else self.high_water_bytes
         ratio = min(1.0, reserve_bytes / float(max(1, target_bytes)))
         percent = 100 if self.ready and not self._epoch_preparing else min(99, int(ratio * 100))
         stalled = any(track.failed for track in self._required_startup_tracks())
         target_text = _human_bytes(target_bytes)
         current_text = _human_bytes(reserve_bytes)
+        capacity_text = _human_bytes(self.max_bytes)
         if self.ready and not self._epoch_preparing:
-            message = 'Buffer ready — starting playback…'
+            message = 'Buffer ready — starting Kodi playback…'
         elif stalled:
             message = 'Buffering stalled; retrying — {} / {}'.format(current_text, target_text)
+        elif self.epoch_reason == 'startup':
+            message = 'Filling buffer — {} / {} startup target — capacity {}'.format(
+                current_text, target_text, capacity_text
+            )
         else:
             message = 'Filling buffer — {} / {}'.format(current_text, target_text)
         now = time.monotonic()
@@ -1028,10 +1371,8 @@ class BufferedHlsSession:
         throughput_mbps = self.measured_throughput_mbps()
         state = self.buffer_state(reserve_bytes)
         throughput_limited = bool(
-            self.started_playback
-            and state == 'critical'
-            and selected_mbps > 0
-            and throughput_mbps > 0
+            self.started_playback and state == 'critical'
+            and selected_mbps > 0 and throughput_mbps > 0
             and throughput_mbps < selected_mbps * 0.95
         )
         limitation_message = ''
@@ -1041,35 +1382,48 @@ class BufferedHlsSession:
                 .format(throughput_mbps, selected_mbps)
             )
             message = 'Buffer critical — {}'.format(limitation_message)
+        track_metrics, missing_tracks = self._track_metrics()
+        total_cached = self.disk_bytes()
+        self._record_telemetry(
+            reserve_bytes, seconds, state, selected_mbps, throughput_mbps, track_metrics
+        )
         return {
             'ready': self.ready, 'error': self.error, 'local_url': self.local_url,
             'choices': self.choices if not self.choice_event.is_set() else [],
-            'message': message,
-            'percent': percent,
-            'cached_ahead_bytes': reserve_bytes,
-            'buffer_target_bytes': target_bytes,
+            'message': message, 'percent': percent,
+            'cached_ahead_bytes': reserve_bytes, 'buffer_target_bytes': target_bytes,
             'high_water_bytes': self.high_water_bytes,
             'low_water_bytes': self.low_water_bytes,
             'critical_water_bytes': self.critical_water_bytes,
-            'buffered_seconds': seconds,
-            'cached_segments_ahead': count,
+            'buffered_seconds': seconds, 'cached_segments_ahead': count,
             'buffer_capacity_mb': self.max_bytes // (1024 * 1024),
-            'recovering': self._epoch_preparing or any(t.recovering for t in tracks),
+            'total_cached_bytes': total_cached,
+            'required_track_reserve': track_metrics,
+            'missing_next_tracks': missing_tracks,
+            'recovering': self._epoch_preparing or any(t.recovering for t in tracks)
+                          or bool(self._recovery_started_at),
+            'recovery_attempt': self._recovery_attempt,
+            'recovery_elapsed_s': (
+                round(now - self._recovery_started_at, 3)
+                if self._recovery_started_at else 0.0
+            ),
+            'recovery_last_error': self._recovery_last_error,
             'startup_tracks': len(self._required_startup_tracks()),
-            'buffer_state': state,
-            'buffer_trend': trend,
+            'buffer_state': state, 'buffer_trend': trend,
             'selected_bitrate_mbps': selected_mbps,
             'throughput_mbps': throughput_mbps,
             'throughput_limited': throughput_limited,
             'limitation_message': limitation_message,
-            'epoch_id': self.epoch,
-            'epoch_reason': self.epoch_reason,
+            'epoch_id': self.epoch, 'epoch_reason': self.epoch_reason,
             'epoch_target_seconds': self.epoch_target_seconds,
             'stale_jobs_cancelled_or_ignored': self._stale_ignored,
+            'player_state': self._player_state,
         }
 
     def fail(self, message, error_type='PlaybackError'):
         if not self.error and not self._stop.is_set():
+            if self.started_playback:
+                self._failure_snapshot('session_failure', message)
             self.error = message
             self._event('buffer_failure', error_type=error_type, epoch_id=self.epoch)
 
@@ -1099,6 +1453,20 @@ class BufferedHlsSession:
             )
             self.serve(chosen.id)
 
+    def _preload_startup_dependencies(self):
+        dependencies = [
+            resource for resource in list(self.resources.values())
+            if resource.kind in {'key', 'map'}
+        ]
+        for resource in dependencies:
+            self._ensure_binary(resource, epoch=self.epoch)
+        if dependencies:
+            self._event(
+                'buffer_startup_dependencies_preloaded',
+                count=len(dependencies),
+                kinds=sorted({resource.kind for resource in dependencies}),
+            )
+
     def prepare(self):
         try:
             self.serve(self.master.id)
@@ -1106,6 +1474,7 @@ class BufferedHlsSession:
             if variants:
                 self.serve(variants[0].id)
             self._prepare_associated_media()
+            self._preload_startup_dependencies()
             if self._stop.is_set():
                 return
 
@@ -1128,7 +1497,7 @@ class BufferedHlsSession:
             self._refill_active = True
             self._notify_tracks()
             if not self._wait_reservoir(
-                self.epoch, self.startup_target_bytes, STARTUP_TIMEOUT
+                self.epoch, self.startup_target_bytes, self.startup_timeout
             ):
                 reserve_bytes, reserve_seconds, _ = self._playable_reserve()
                 failures = [
@@ -1149,6 +1518,7 @@ class BufferedHlsSession:
                 return
             self._startup_complete = True
             self._epoch_preparing = False
+            self._mark_handoff('reservoir_ready')
             self.ready = True
             self.last_access = time.monotonic()
             self._notify_tracks()
@@ -1187,6 +1557,17 @@ class BufferedHlsSession:
                 }.get(resource.kind, '.bin')
         return 'http://127.0.0.1:{}/hls/{}/{}{}'.format(
             self._server.server_address[1], self.token, resource_id, suffix)
+
+    def _mark_handoff(self, stage, **fields):
+        if stage in self._handoff_marks:
+            return False
+        self._handoff_marks.add(stage)
+        fields.update({
+            'stage': stage,
+            'monotonic_ms': round(time.monotonic() * 1000.0, 3),
+        })
+        self._event('buffer_handoff', **fields)
+        return True
 
     def _event(self, name, **fields):
         fields['observed_at'] = round(time.time(), 3)
@@ -1252,6 +1633,12 @@ class BufferedHlsSession:
                 session._serving.add(resource_id)
                 try:
                     if resource.kind == 'playlist':
+                        session._mark_handoff(
+                            'first_master_playlist_request'
+                            if resource is session.master
+                            else 'first_media_playlist_request',
+                            resource_kind=resource.kind,
+                        )
                         data, content_type = session.serve(resource_id)
                         self.send_response(200)
                         self.send_header(
@@ -1263,6 +1650,10 @@ class BufferedHlsSession:
                         self.end_headers()
                         self.wfile.write(data)
                         return
+                    if resource.kind in {'key', 'map'}:
+                        session._mark_handoff('first_key_or_map_request', resource_kind=resource.kind)
+                    elif resource.kind == 'segment':
+                        session._mark_handoff('first_media_segment_request', resource_kind=resource.kind)
                     path, content_type = session.serve_file(resource_id)
                     with session._download_lock:
                         handle = open(path, 'rb')
@@ -1299,22 +1690,34 @@ class BufferedHlsSession:
                             if not chunk:
                                 break
                             self.wfile.write(chunk)
+                            if resource.kind == 'segment':
+                                session._mark_handoff('first_media_bytes_served', resource_kind=resource.kind)
                             remaining -= len(chunk)
                     finally:
                         handle.close()
                         session._pins.discard(path)
                 except (BrokenPipeError, ConnectionResetError):
                     pass
-                except RecoveryTimeout as exc:
-                    # A bounded seek/refill miss is request-scoped, not a fatal
-                    # session error. Keep the re-centred prefetch workers alive
-                    # so Kodi can retry the same position as data arrives.
+                except RecoveryExhausted as exc:
                     session._event(
-                        'buffer_request_retry',
+                        'buffer_recovery_exhausted',
                         error_type=type(exc).__name__,
+                        reason=str(exc),
+                    )
+                    session.fail(
+                        'Buffered recovery exhausted: {}'.format(exc),
+                        type(exc).__name__,
                     )
                     try:
-                        self.send_error(503, 'Buffer refilling; retry request')
+                        self.send_error(504, 'Buffered recovery exhausted')
+                    except Exception:
+                        pass
+                except RecoveryTimeout as exc:
+                    # Only superseded/stale epoch requests use a retryable 503;
+                    # ordinary depletion is recovered internally by Appi.
+                    session._event('buffer_request_superseded', error_type=type(exc).__name__)
+                    try:
+                        self.send_error(503, 'Playback target superseded')
                     except Exception:
                         pass
                 except Exception as exc:
@@ -1355,6 +1758,10 @@ class BufferedHlsSession:
     def stop(self, reason='stopped'):
         if self._stop.is_set():
             return
+        if self.started_playback and reason not in {
+            'stopped', 'ended', 'replaced', 'cancelled', 'service-shutdown'
+        }:
+            self._failure_snapshot(reason, reason)
         self._stop.set()
         self.choice_event.set()
         for track in list(self.tracks.values()):
@@ -1736,6 +2143,7 @@ class BufferedHlsSession:
             fetched = _fetch_to_path(
                 resource.upstream_url,
                 path,
+                timeout=self.media_timeout,
                 byte_range=resource.byte_range,
                 stop=_EpochStop(self, epoch),
                 max_bytes=segment_limit,
@@ -1786,6 +2194,10 @@ class BufferedHlsSession:
                 fields['cached_ahead_bytes'] = reserve_bytes
                 fields['cached_segments_ahead'] = reserve_count
                 fields['buffer_state'] = self.buffer_state(reserve_bytes)
+        transfer = dict(fields)
+        transfer['monotonic'] = round(time.monotonic(), 3)
+        self._transfer_history.append(transfer)
+        self._transfer_history = self._transfer_history[-24:]
         self._event(
             'buffer_segment_download' if segment is not None else 'buffer_resource_download',
             **fields
@@ -1870,11 +2282,11 @@ class BufferedHlsManager:
                 except OSError:
                     pass
 
-    def poll(self, player_active=False):
+    def poll(self, player_active=False, player_state=None):
         with self._lock:
-            self._poll(player_active)
+            self._poll(player_active, player_state)
 
-    def _poll(self, player_active=False):
+    def _poll(self, player_active=False, player_state=None):
         # Process only fresh requests. No folder/navigation state is consulted.
         requests = []
         for name in os.listdir(self.control):
@@ -1898,6 +2310,7 @@ class BufferedHlsManager:
                 startup_seconds=request.get('startup_seconds') or DEFAULT_STARTUP_SECONDS,
                 buffer_mb=request.get('buffer_mb', DEFAULT_BUFFER_MB),
                 quality=request.get('quality', 'highest'),
+                tuning=request.get('tuning') or {},
                 root=os.path.join(self.root, 'session-' + secrets.token_hex(12)))
             session.request_id = request_id
             session.start()
@@ -1924,6 +2337,48 @@ class BufferedHlsManager:
                     session.fail('Stream preparation did not return a result in time. Please retry playback.', 'ControlTimeout')
                 if session.ready and not session.started_playback and time.monotonic() - session.last_access > 30:
                     session.fail('Kodi did not start the prepared stream. Please retry playback.', 'PlayerStartTimeout')
+                state = player_state or ('playing' if player_active else 'unknown')
+                if state != session._player_state:
+                    session._event(
+                        'buffer_player_state',
+                        previous=session._player_state,
+                        current=state,
+                        epoch_id=session.epoch,
+                    )
+                    session._player_state = state
+                if state == 'paused':
+                    if not session._paused_since:
+                        session._paused_since = time.monotonic()
+                        session._event('buffer_pause_started', epoch_id=session.epoch)
+                    elif (
+                        session.pause_retention_seconds > 0
+                        and time.monotonic() - session._paused_since
+                        >= session.pause_retention_seconds
+                    ):
+                        session._failure_snapshot('pause-retention-expired', 'configured pause retention elapsed')
+                        self.stop_active('pause-retention-expired')
+                        session = self.active
+                        if not session:
+                            return
+                elif session._paused_since:
+                    session._event(
+                        'buffer_pause_ended',
+                        epoch_id=session.epoch,
+                        paused_s=round(time.monotonic() - session._paused_since, 3),
+                    )
+                    session._paused_since = 0.0
+
+                handoff = os.path.join(self.control, 'handoff-' + session.token + '.json')
+                handoff_data = _json_read(handoff) or {}
+                for marker in handoff_data.get('events') or []:
+                    if isinstance(marker, dict):
+                        session._event('buffer_handoff', **marker)
+                if handoff_data:
+                    try:
+                        os.remove(handoff)
+                    except OSError:
+                        pass
+
                 response = os.path.join(self.control, 'response-' + request_id + '.json')
                 _json_write(response, session.status())
                 if session.error:
@@ -1933,8 +2388,6 @@ class BufferedHlsManager:
                         import xbmcgui
                         xbmcgui.Dialog().notification('Appi Buffered Look Ahead', session.error, time=6000)
                     self.stop_active('error', keep_response=True)
-                elif not player_active and session.started_playback and time.monotonic() - session.last_access > 10:
-                    self.stop_active('player-idle')
         # Retire orphaned control files without affecting new sessions.
         for name in os.listdir(self.control):
             path = os.path.join(self.control, name)
@@ -1948,6 +2401,8 @@ class BufferedHlsManager:
         session = self.active
         if session and '/hls/' + session.token + '/' in (url or ''):
             session.started_playback = True
+            session._player_state = 'playing'
+            session._mark_handoff('on_av_started')
             return session.token
         return None
 
@@ -1986,6 +2441,10 @@ class BufferedHlsManager:
                 os.remove(os.path.join(self.control, prefix + request_id + '.json'))
             except OSError:
                 pass
+        try:
+            os.remove(os.path.join(self.control, 'handoff-' + session.token + '.json'))
+        except OSError:
+            pass
         return events
 
     def shutdown(self, diagnostic_event=None):

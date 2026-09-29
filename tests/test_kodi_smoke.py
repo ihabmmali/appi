@@ -17,7 +17,7 @@ from urllib.error import HTTPError
 PLUGIN = Path(sys.argv[1])
 sys.path.insert(0, str(PLUGIN))
 sys.argv = ['plugin://plugin.video.appi', '1', '']
-state = {'items': [], 'content': [], 'sort': [], 'ended': [], 'notifications': [], 'selects': [], 'resolved': [], 'builtins': [], 'events': []}
+state = {'items': [], 'content': [], 'sort': [], 'ended': [], 'notifications': [], 'selects': [], 'resolved': [], 'builtins': [], 'events': [], 'settings_opened': 0}
 native_status = {}
 settings = {
     'movie_sort':'0','tv_sort':'0',
@@ -50,8 +50,9 @@ profile=tempfile.mkdtemp(prefix='appi-smoke-')
 xa=types.ModuleType('xbmcaddon')
 class Addon:
     def getSetting(self,n): return settings.get(n,'')
+    def setSetting(self,n,v): settings[n]=v
     def getAddonInfo(self,n): return profile if n=='profile' else ('plugin.video.appi' if n=='id' else '')
-    def openSettings(self): pass
+    def openSettings(self): state['settings_opened'] += 1
 xa.Addon=Addon; sys.modules['xbmcaddon']=xa
 xv=types.ModuleType('xbmcvfs'); xv.translatePath=lambda p: tempfile.gettempdir() if p=='special://temp/' else p; xv.exists=os.path.exists; xv.mkdirs=lambda p: os.makedirs(p,exist_ok=True)
 sys.modules['xbmcvfs']=xv
@@ -102,17 +103,15 @@ xp.setResolvedUrl=lambda *a,**k: state['resolved'].append((a,k)) or True
 sys.modules['xbmcplugin']=xp
 from resources.lib import app, favorites, metadata, playback_history, playback_prefs
 
-# About must reflect the installed metadata after upgrades and rollbacks.
+# About must reflect installed metadata directly in the settings pane.
 original_info=app.ADDON.getAddonInfo
-original_ok=Dialog.ok
-about_messages=[]
-Dialog.ok=lambda self,*args: about_messages.append(args)
 for installed in ('0.7.17','0.7.12'):
     app.ADDON.getAddonInfo=lambda key: installed if key=='version' else 'Appi'
+    before=state['settings_opened']
     app._run_action({'action':'about'})
-    assert about_messages[-1] == ('Appi', 'Installed version: '+installed)
+    assert settings['installed_version_display'] == installed
+    assert state['settings_opened'] == before + 1
 app.ADDON.getAddonInfo=original_info
-Dialog.ok=original_ok
 
 movies=[{'kind':'movie','display_title':'Movie %03d (2025)'%i,'title':'Movie %03d'%i,'year':2025,'tvg_id':'tt%03d'%i,'media_url':'https://x/m%d'%i} for i in range(30)]
 shows=[{'show_key':'tt%03d\\x1fShow %03d\\x1f2025'%(i,i),'cache_name':'tv_show_%d'%i,'show_title':'Show %03d'%i,'group_title':'Show %03d (2025)'%i,'year':2025,'tvg_id':'tt%03d'%i,'seasons':[1],'episode_count':1} for i in range(30)]

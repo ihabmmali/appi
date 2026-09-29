@@ -2,6 +2,20 @@
 
 Each entry records the package shipped, its main user-visible changes, and verification at release time. For the current baseline and next tasks read [PROJECT_STATE.md](PROJECT_STATE.md) and [KNOWN_ISSUES.md](KNOWN_ISSUES.md); the [CHANGELOG.md](CHANGELOG.md) is the implemented feature history.
 
+## 0.7.22 — 2026-09-28
+
+- Committed scope: HLS-16, HLS-17, HLS-18, HLS-19, HLS-20, HLS-21, UI-5, UI-6 and DOWNLOAD-1. Base `fd0bd5b08228c34b09de684f7b4b1f865a09e2d2`; branch `release/0.7.22`.
+- HLS-19 moves true depletion recovery inside Appi: transient provider/transport failures retry the exact required segment under configurable delay/attempt/overall-timeout bounds and then rebuild a recovery reserve. A final HTTP failure is returned only after Appi's policy is exhausted; stale seek epochs remain independently supersedable.
+- HLS-18 exposes advanced tuning while retaining 0.7.21-equivalent defaults: startup 50%, high-water 80%, low-water 60%, critical 15%, media inactivity 15s, startup 180s, seek reserve 12s/4MB minimum, prefetch lead 24s, recovery timeout 60s, retry delay 500ms, unlimited retries within the overall timeout, recovery reserve 6s and unlimited paused-session retention by default.
+- HLS-20 instruments reservoir-ready, plugin handoff, first master/media/key/map/segment requests, first bytes served and Kodi AV start with monotonic timestamps; required key/map resources are preloaded before startup handoff.
+- HLS-21 retains a bounded rolling pre-failure timeline with playable/total cache, required-track reserve/next-segment states, transfer timing/throughput, recovery state and lifecycle state, then classifies observable failure modes without fabricating unsupported Kodi internals.
+- HLS-16 uses a bundled modeless `WindowXMLDialog` as the primary detailed-overlay renderer and keeps the prior WindowDialog only as a logged compatibility fallback. HLS-17 distinguishes current playable data, startup target and configured capacity in preparation feedback.
+- UI-5 removes the nested About dialog and synchronizes a read-only installed-version field from runtime add-on metadata. UI-6 references `resources/icon-v2.png`; its Git blob SHA is exactly the approved prior icon SHA `08016a229ed053e000deffad659a2b94bd64acfc`.
+- DOWNLOAD-1 generates FFmpeg remux scripts with `-map 0:v:0 -map 0:a:0 -c copy -threads 0` while preserving shell quoting, noninteractive execution, temporary partial output and atomic final rename.
+- First package gate run `36515215335` was blocked by seven stale/compatibility test assumptions before artifact creation. After fixing the direct-session timeout compatibility and release fixtures, run `36515421099` passed all 100 unit/smoke tests (1 skipped) and stopped only on task-record template validation; those task records were normalized before the final gate.
+- Final candidate/package run `36515744781` passed all 100 unit/smoke tests (1 skipped), workflow tracker validation, deterministic rebuild, ZIP/hash/index inspection and the package job. Deterministic artifact commit: `971d29d4145411e0c78703326246b770c82d95c3`. ZIP SHA-256: `35a50dad9f17f0d0a47c2cea7892d769a1b613ab2743bbbd61a1fc59267ae53f`.
+- Target-device acceptance remains required for visible overlay rendering, real provider recovery/classification, long-pause resume, handoff latency, icon cache refresh and actual FFmpeg transfer-rate comparison. Modes 0–2 are intentionally unchanged.
+
 ## 0.7.21 — 2026-09-28
 
 - Committed scope: HLS-12, HLS-13, HLS-14 and HLS-15. Base `4a415f9eaeb48c77ef2fcaa895db90d7e66ab183`; branch `release/0.7.21`; main implementation `f91e3f25c012267a86d91c344a68ee5b941438e2`; capacity/test correction `568300582687d75c0ddfacab9b4a0a2e3cf31dff`.

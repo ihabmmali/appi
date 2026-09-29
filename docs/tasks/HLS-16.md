@@ -1,12 +1,12 @@
 ---
 id: HLS-16
 role: implementation
-status: ready
+status: review
 delivery: unreleased
 verification: failed
-owner: unassigned
-base_commit: unset
-artifact: none
+owner: builder-publisher-0.7.22
+base_commit: fd0bd5b08228c34b09de684f7b4b1f865a09e2d2
+artifact: 971d29d4145411e0c78703326246b770c82d95c3
 ---
 # HLS-16 — Replace invisible Buffered Look Ahead debug overlay with a target-device-proven renderer
 
@@ -78,3 +78,9 @@ The repaired overlay should be available early enough in the next development cy
 - seek epoch refill progress.
 
 Do not delay HLS-16 until after HLS-19/HLS-21 validation if doing so would force another blind diagnostic cycle.
+
+
+## 0.7.22 candidate evidence
+0.7.22 candidate replaces the primary overlay renderer with bundled modeless WindowXMLDialog and retains a logged WindowDialog compatibility fallback. Automated overlay tests verify the target renderer, numeric live text and non-fatal fallback. Target Fire TV visibility remains pending.
+
+Final package gate run `36515744781` passed all 100 unit/smoke tests (1 skipped), workflow tracker validation, deterministic rebuild and ZIP/index inspection. Candidate artifact commit: `971d29d4145411e0c78703326246b770c82d95c3`; ZIP SHA-256: `35a50dad9f17f0d0a47c2cea7892d769a1b613ab2743bbbd61a1fc59267ae53f`.
