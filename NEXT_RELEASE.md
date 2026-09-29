@@ -1,35 +1,17 @@
 # Next Appi release
 
-Planning status: committed. Version: 0.7.22.
+Planning status: not committed. Version: not assigned.
 
-0.7.22 candidate implementation is packaged and in review on `release/0.7.22`. Final gate run `36515744781` passed 100 tests (1 skipped), tracker validation, deterministic build/index inspection and packaging; artifact commit `971d29d4145411e0c78703326246b770c82d95c3`. Current baseline and fallback: [PROJECT_STATE.md](PROJECT_STATE.md).
-
-0.7.21 is published. The next-release scope is committed: HLS-16, HLS-17, HLS-18, HLS-19, HLS-20, HLS-21, UI-5, UI-6 and DOWNLOAD-1. HLS-12, HLS-13, HLS-14 and HLS-15 remain in review for target-device acceptance of the shipped 0.7.21 behavior; any follow-up repair must be triaged and explicitly committed.
+Appi 0.7.22 is published. Current baseline and fallback details: [PROJECT_STATE.md](PROJECT_STATE.md).
 
 ## Proposed scope
 
 | Task | Selection | Priority | Reason |
 | --- | --- | --- | --- |
-| [HLS-16](docs/tasks/HLS-16.md) | committed | diagnostic dependency / confirmed overlay regression | 0.7.21 buffering appears to work well, but the replacement WindowDialog debug overlay is still invisible on Fire TV |
-| [HLS-17](docs/tasks/HLS-17.md) | committed | buffering status UX | Startup window shows the intentional 50% startup target; label it separately from configured total capacity while preserving the working 0.7.21 algorithm |
-| [HLS-18](docs/tasks/HLS-18.md) | committed | buffering configuration | Expose all behavior-affecting Buffered Look Ahead thresholds, including during-playback watermarks, while defaulting exactly to the proven 0.7.21 values |
-| [HLS-19](docs/tasks/HLS-19.md) | committed | buffering resilience | Add configurable Appi-owned retry/recovery for true buffer depletion without changing the working 0.7.21 reservoir algorithm |
-| [HLS-20](docs/tasks/HLS-20.md) | committed | startup latency | Measure reservoir-ready through Kodi AV-start, then remove only proven Appi-side handoff delay while preserving the working 0.7.21 reservoir |
-| [HLS-21](docs/tasks/HLS-21.md) | committed | timeout root cause | Capture a rolling pre-failure reservoir/segment/throughput timeline and prove whether 0.7.21 timeout exits are true buffer exhaustion or another blocking condition |
-| [DOWNLOAD-1](docs/tasks/DOWNLOAD-1.md) | committed | download performance | Generate FFmpeg scripts using explicit first-video/first-audio mapping, stream copy and `-threads 0` per the user's tested faster command |
-| [UI-5](docs/tasks/UI-5.md) | committed | settings UX | Remove the redundant About-inside-About click and show installed version directly |
-| [UI-6](docs/tasks/UI-6.md) | committed | artwork/cache UX | 0.7.21 source contains the approved flat icon, but Kodi still shows an older graphic; force a new artwork resource path to bypass texture caching |
+| [HLS-22](docs/tasks/HLS-22.md) | candidate | producer throughput | Benchmark Appi against FFmpeg on the same stream/network/VPN and optimize producer transport without changing the proven reservoir policy |
 | [PLAY-1](docs/tasks/PLAY-1.md) | backlog | investigation | Resume persistence is working; only investigate the playback-start Trakt API error |
 | [HLS-1](docs/tasks/HLS-1.md) | backlog | investigation | Use buffered-mode/diagnostic evidence to diagnose any underlying provider stalls that remain |
 | [UI-1](docs/tasks/UI-1.md) | backlog | investigation | Skin comparison needed |
-
-## Future release candidates
-
-These items are explicitly **not** part of the currently committed release. They are candidates for the following release cycle.
-
-| Task | Selection | Priority | Reason |
-| --- | --- | --- | --- |
-| [HLS-22](docs/tasks/HLS-22.md) | future candidate | producer throughput | FFmpeg can ingest the same HLS stream far faster on the same network/VPN; benchmark and optimize Appi's transport layer without changing the proven reservoir policy |
 
 ## How to plan the release
 
@@ -41,6 +23,8 @@ These items are explicitly **not** part of the currently committed release. They
 6. Copy shipped task IDs and scope changes into RELEASE_NOTES, then reset this planning file for the next cycle.
 
 ## Scope decisions
+
+2026-09-29: Appi 0.7.22 published through PR #11 / merge `92131c95c1d047eb7a683e8e5e2e6abe10e1a518`. Final publication gate `36626983906` and Pages deployment `36627135052` succeeded. Shipped scope: HLS-16, HLS-17, HLS-18, HLS-19, HLS-20, HLS-21, UI-5, UI-6 and DOWNLOAD-1. Their delivery is released while target-device verification remains review/partial. The release index intentionally retains 0.7.21 and 0.7.8 in addition to current 0.7.22. Planning is reset; HLS-22 is a candidate for the next cycle but is not committed.
 
 2026-09-28: HLS-22 added at user request as a **candidate for the release after the currently committed release**, and is explicitly excluded from current scope. The motivating A/B observation is that FFmpeg can ingest the same HLS stream dramatically faster through the same network/VPN than Appi appears to fill its reservoir. Future work should benchmark persistent connection reuse, request/TTFB overhead and bounded segment concurrency while preserving the HLS-13 reservoir and settings-backed parameter rule.
 
@@ -170,7 +154,3 @@ These items are explicitly **not** part of the currently committed release. They
 Committed next-release scope: HLS-16, HLS-17, HLS-18, HLS-19, HLS-20, HLS-21, UI-5, UI-6 and DOWNLOAD-1. HLS-12, HLS-13, HLS-14 and HLS-15 are shipped in 0.7.21 and remain review/partial pending target-device acceptance. PLAY-1, HLS-1 and UI-1 remain backlog investigations; target-device acceptance for earlier shipped tasks remains tracked in their canonical task records.
 
 Final lifecycle verification is pending after review-state evidence.
-
-Publication rebase completed onto current `main`; final package/index verification now also requires 0.7.21 and 0.7.8 to remain visible alongside 0.7.22.
-
-HLS-22 tracker normalization completed after inheriting the future-task record from current `main`; final publication gate rerun requested.
