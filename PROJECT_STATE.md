@@ -20,6 +20,7 @@ Updated: 2026-09-28. Start with [AGENTS.md](AGENTS.md) for role routing.
 - HLS-17 is a UI-only candidate: 0.7.21 intentionally uses a 50% startup target (126→63, 128→64, 256→128 MB) while retaining full configured capacity and 80% high-water refill. Preserve the working 0.7.21 reservoir algorithm.
 - HLS-18 is a candidate to expose all behavior-affecting Buffered Look Ahead thresholds as validated settings. Defaults remain the proven 0.7.21 values, including startup/high/low/critical = 50/80/60/15%, so default behavior remains unchanged.
 - HLS-19 is a candidate for resilience after true reservoir depletion. It must add Appi-owned retry/recovery around the working 0.7.21 algorithm, not alter normal startup/refill/watermark/track-balancing/quality behavior. New device evidence: an extended pause can cause the video to exit silently; source has a plausible 10-second player-idle cleanup boundary that must distinguish pause from stop.
+- HLS-20 is a candidate for the separate startup handoff delay after the initial reservoir reaches target. There is no intentional post-fill sleep in 0.7.21; instrument ready -> setResolvedUrl -> local HLS dependency requests -> onAVStarted and repair only the proven Appi-controlled delay.
 - After seek, 0.7.21 shows a noticeable resume delay. This may be normal fresh-epoch reserve rebuilding; HLS-16 must make the seek/recovery fill state visible before this delay is judged a playback defect.
 - HLS-15 shows actual active-epoch contiguous playable KB/MB and target during normal preparation/recovery without requiring detailed debug.
 - Existing HLS modes 0–2 were intentionally left unchanged. Buffered mode does not automatically downgrade quality and reports measured throughput deficit when reserve is critical.
@@ -27,7 +28,7 @@ Updated: 2026-09-28. Start with [AGENTS.md](AGENTS.md) for role routing.
 - PLAY-1 remains a backlog Trakt-error investigation. HLS-1 and UI-1 remain backlog investigations.
 - UI-5 is a candidate to remove the redundant nested About action and show installed version directly in the About settings pane.
 - UI-6 is a candidate to force-refresh the approved flat Appi icon by changing the manifest-referenced artwork filename. The exact 0.7.21 artifact source already contains the approved icon bytes, so Kodi texture caching is the leading explanation for the older graphic still appearing.
-- [NEXT_RELEASE.md](NEXT_RELEASE.md): HLS-16, HLS-17, HLS-18, HLS-19, UI-5 and UI-6 are candidates; no scope is currently committed. [KNOWN_ISSUES.md](KNOWN_ISSUES.md): full task index.
+- [NEXT_RELEASE.md](NEXT_RELEASE.md): HLS-16, HLS-17, HLS-18, HLS-19, HLS-20, UI-5 and UI-6 are candidates; no scope is currently committed. [KNOWN_ISSUES.md](KNOWN_ISSUES.md): full task index.
 
 ## Context on demand
 

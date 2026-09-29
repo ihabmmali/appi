@@ -130,3 +130,7 @@ Target-device observations confirm the 50% startup target exactly: 126 MB config
 
 ## Recovery-layer preservation boundary
 [HLS-19](HLS-19.md) is explicitly constrained to wrap this released 0.7.21 reservoir with depletion/stall recovery. It must not change healthy-provider startup/refill/watermark/track-balancing/quality behavior merely to add resilience.
+
+
+## Startup-handoff preservation boundary
+[HLS-20](HLS-20.md) may optimize only the post-reservoir handoff to Kodi after measuring it. It must not reduce startup fill or alter the released producer/consumer reservoir merely to shorten perceived startup latency.

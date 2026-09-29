@@ -31,6 +31,7 @@ Updated: 2026-09-28. Each linked task is the canonical requirements/status/evide
 | HLS-17 | ready | implementation | [Clarify startup target versus configured buffer capacity](docs/tasks/HLS-17.md) |
 | HLS-18 | ready | implementation | [Make Buffered Look Ahead algorithm thresholds configurable](docs/tasks/HLS-18.md) |
 | HLS-19 | ready | implementation | [Add resilient in-session recovery for depleted or stalled Buffered Look Ahead playback](docs/tasks/HLS-19.md) |
+| HLS-20 | ready | implementation | [Diagnose and reduce post-fill startup handoff delay](docs/tasks/HLS-20.md) |
 | HLS-11 | review | implementation | [Repair multi-variant HLS seek, resume-point and recovery timeout](docs/tasks/HLS-11.md) |
 | HLS-12 | review | implementation | [Replace Buffered Look Ahead seek/resume with fresh buffer epochs](docs/tasks/HLS-12.md) |
 | SUB-1 | review | review | [Restore downloaded subtitle persistence across playback sessions](docs/tasks/SUB-1.md) |

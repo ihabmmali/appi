@@ -2,7 +2,7 @@
 
 Planning status: open. Version: not assigned. Current baseline and fallback: [PROJECT_STATE.md](PROJECT_STATE.md).
 
-0.7.21 is published. No next-release scope is currently committed. HLS-16, HLS-17, HLS-18, HLS-19, UI-5 and UI-6 are current candidates. HLS-12, HLS-13, HLS-14 and HLS-15 remain in review for target-device acceptance of the shipped 0.7.21 behavior; any follow-up repair must be triaged and explicitly committed.
+0.7.21 is published. No next-release scope is currently committed. HLS-16, HLS-17, HLS-18, HLS-19, HLS-20, UI-5 and UI-6 are current candidates. HLS-12, HLS-13, HLS-14 and HLS-15 remain in review for target-device acceptance of the shipped 0.7.21 behavior; any follow-up repair must be triaged and explicitly committed.
 
 ## Proposed scope
 
@@ -12,6 +12,7 @@ Planning status: open. Version: not assigned. Current baseline and fallback: [PR
 | [HLS-17](docs/tasks/HLS-17.md) | candidate | buffering status UX | Startup window shows the intentional 50% startup target; label it separately from configured total capacity while preserving the working 0.7.21 algorithm |
 | [HLS-18](docs/tasks/HLS-18.md) | candidate | buffering configuration | Expose all behavior-affecting Buffered Look Ahead thresholds, including during-playback watermarks, while defaulting exactly to the proven 0.7.21 values |
 | [HLS-19](docs/tasks/HLS-19.md) | candidate | buffering resilience | Add configurable Appi-owned retry/recovery for true buffer depletion without changing the working 0.7.21 reservoir algorithm |
+| [HLS-20](docs/tasks/HLS-20.md) | candidate | startup latency | Measure reservoir-ready through Kodi AV-start, then remove only proven Appi-side handoff delay while preserving the working 0.7.21 reservoir |
 | [UI-5](docs/tasks/UI-5.md) | candidate | settings UX | Remove the redundant About-inside-About click and show installed version directly |
 | [UI-6](docs/tasks/UI-6.md) | candidate | artwork/cache UX | 0.7.21 source contains the approved flat icon, but Kodi still shows an older graphic; force a new artwork resource path to bypass texture caching |
 | [PLAY-1](docs/tasks/PLAY-1.md) | backlog | investigation | Resume persistence is working; only investigate the playback-start Trakt API error |
@@ -28,6 +29,8 @@ Planning status: open. Version: not assigned. Current baseline and fallback: [PR
 6. Copy shipped task IDs and scope changes into RELEASE_NOTES, then reset this planning file for the next cycle.
 
 ## Scope decisions
+
+2026-09-28: HLS-20 added after the user reiterated a noticeable delay between initial reservoir fill completing and actual playback beginning. This gap had not been isolated as its own task. 0.7.21 has no deliberate post-fill sleep, so HLS-20 must instrument reservoir-ready -> plugin ready observation -> setResolvedUrl -> local playlist/key/map/segment requests -> onAVStarted. Key/init-map on-demand fetch and Kodi decoder startup are plausible boundaries but not assumed causal. Preserve the working HLS-13 reservoir and do not reduce startup fill to make the delay look shorter.
 
 2026-09-28: Additional target-device evidence for HLS-19/HLS-16: an extended pause can cause buffered playback to exit silently, while starting/resuming the item again works; source has a plausible 10-second player-idle retirement boundary that must be verified against Kodi's paused-state reporting. Separately, seek now has a noticeable resume delay that may simply be fresh-epoch reserve rebuilding, but the broken debug overlay prevents confirmation. HLS-16 must display seek/recovery fill state; HLS-19 must make pause distinct from stop and preserve the working 0.7.21 reservoir.
 
