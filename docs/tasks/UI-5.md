@@ -36,7 +36,7 @@ That action opens a dialog displaying `ADDON.getAddonInfo('version')`, producing
 - UI-2's requirement to derive version from installed metadata remains satisfied.
 
 ## Authorization
-Requested by the user on 2026-09-28 after observing that the current About category contains another About item that must be clicked to see the version. This is a ready candidate and is not committed until explicitly included under AGENTS.md.
+Requested by the user on 2026-09-28 after observing that the current About category contains another About item that must be clicked to see the version. On 2026-09-28 the user explicitly instructed that all current candidates be committed for the next release. UI-5 is committed next-release scope.
 
 ## Evidence
 Current `resources/settings.xml` defines `<category id="about"...>` containing `<setting id="about" type="action"...>`. Current `app.py` handles that action by opening a dialog containing `ADDON.getAddonInfo('version')`.

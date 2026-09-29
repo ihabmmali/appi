@@ -1,21 +1,21 @@
 # Next Appi release
 
-Planning status: open. Version: not assigned. Current baseline and fallback: [PROJECT_STATE.md](PROJECT_STATE.md).
+Planning status: committed. Version: not assigned. Current baseline and fallback: [PROJECT_STATE.md](PROJECT_STATE.md).
 
-0.7.21 is published. No next-release scope is currently committed. HLS-16, HLS-17, HLS-18, HLS-19, HLS-20, HLS-21, UI-5 and UI-6 are current candidates. HLS-12, HLS-13, HLS-14 and HLS-15 remain in review for target-device acceptance of the shipped 0.7.21 behavior; any follow-up repair must be triaged and explicitly committed.
+0.7.21 is published. The next-release scope is committed: HLS-16, HLS-17, HLS-18, HLS-19, HLS-20, HLS-21, UI-5 and UI-6. HLS-12, HLS-13, HLS-14 and HLS-15 remain in review for target-device acceptance of the shipped 0.7.21 behavior; any follow-up repair must be triaged and explicitly committed.
 
 ## Proposed scope
 
 | Task | Selection | Priority | Reason |
 | --- | --- | --- | --- |
-| [HLS-16](docs/tasks/HLS-16.md) | candidate | diagnostic dependency / confirmed overlay regression | 0.7.21 buffering appears to work well, but the replacement WindowDialog debug overlay is still invisible on Fire TV |
-| [HLS-17](docs/tasks/HLS-17.md) | candidate | buffering status UX | Startup window shows the intentional 50% startup target; label it separately from configured total capacity while preserving the working 0.7.21 algorithm |
-| [HLS-18](docs/tasks/HLS-18.md) | candidate | buffering configuration | Expose all behavior-affecting Buffered Look Ahead thresholds, including during-playback watermarks, while defaulting exactly to the proven 0.7.21 values |
-| [HLS-19](docs/tasks/HLS-19.md) | candidate | buffering resilience | Add configurable Appi-owned retry/recovery for true buffer depletion without changing the working 0.7.21 reservoir algorithm |
-| [HLS-20](docs/tasks/HLS-20.md) | candidate | startup latency | Measure reservoir-ready through Kodi AV-start, then remove only proven Appi-side handoff delay while preserving the working 0.7.21 reservoir |
-| [HLS-21](docs/tasks/HLS-21.md) | candidate | timeout root cause | Capture a rolling pre-failure reservoir/segment/throughput timeline and prove whether 0.7.21 timeout exits are true buffer exhaustion or another blocking condition |
-| [UI-5](docs/tasks/UI-5.md) | candidate | settings UX | Remove the redundant About-inside-About click and show installed version directly |
-| [UI-6](docs/tasks/UI-6.md) | candidate | artwork/cache UX | 0.7.21 source contains the approved flat icon, but Kodi still shows an older graphic; force a new artwork resource path to bypass texture caching |
+| [HLS-16](docs/tasks/HLS-16.md) | committed | diagnostic dependency / confirmed overlay regression | 0.7.21 buffering appears to work well, but the replacement WindowDialog debug overlay is still invisible on Fire TV |
+| [HLS-17](docs/tasks/HLS-17.md) | committed | buffering status UX | Startup window shows the intentional 50% startup target; label it separately from configured total capacity while preserving the working 0.7.21 algorithm |
+| [HLS-18](docs/tasks/HLS-18.md) | committed | buffering configuration | Expose all behavior-affecting Buffered Look Ahead thresholds, including during-playback watermarks, while defaulting exactly to the proven 0.7.21 values |
+| [HLS-19](docs/tasks/HLS-19.md) | committed | buffering resilience | Add configurable Appi-owned retry/recovery for true buffer depletion without changing the working 0.7.21 reservoir algorithm |
+| [HLS-20](docs/tasks/HLS-20.md) | committed | startup latency | Measure reservoir-ready through Kodi AV-start, then remove only proven Appi-side handoff delay while preserving the working 0.7.21 reservoir |
+| [HLS-21](docs/tasks/HLS-21.md) | committed | timeout root cause | Capture a rolling pre-failure reservoir/segment/throughput timeline and prove whether 0.7.21 timeout exits are true buffer exhaustion or another blocking condition |
+| [UI-5](docs/tasks/UI-5.md) | committed | settings UX | Remove the redundant About-inside-About click and show installed version directly |
+| [UI-6](docs/tasks/UI-6.md) | committed | artwork/cache UX | 0.7.21 source contains the approved flat icon, but Kodi still shows an older graphic; force a new artwork resource path to bypass texture caching |
 | [PLAY-1](docs/tasks/PLAY-1.md) | backlog | investigation | Resume persistence is working; only investigate the playback-start Trakt API error |
 | [HLS-1](docs/tasks/HLS-1.md) | backlog | investigation | Use buffered-mode/diagnostic evidence to diagnose any underlying provider stalls that remain |
 | [UI-1](docs/tasks/UI-1.md) | backlog | investigation | Skin comparison needed |
@@ -30,6 +30,8 @@ Planning status: open. Version: not assigned. Current baseline and fallback: [PR
 6. Copy shipped task IDs and scope changes into RELEASE_NOTES, then reset this planning file for the next cycle.
 
 ## Scope decisions
+
+2026-09-28: user explicitly instructed that **all current candidates, diagnostics or otherwise, be committed for the next release**. Committed scope is HLS-16, HLS-17, HLS-18, HLS-19, HLS-20, HLS-21, UI-5 and UI-6. HLS-16 is an early diagnostic dependency for HLS-19/HLS-21; HLS-21 remains an investigation/evidence task but is nevertheless committed release scope. PLAY-1, HLS-1 and UI-1 remain backlog because they were not candidates. This commitment authorizes release scope selection only; implementation/integration/publication still follow their separate lifecycle authority.
 
 2026-09-28: HLS-16 is elevated from a cosmetic/debug convenience to a practical diagnostic dependency for HLS-19/HLS-21. The user correctly noted that current reservoir-depletion/recovery diagnosis would have been much easier with the requested overlay working. Implement/validate the live metrics early enough to avoid another blind target-device diagnostic cycle; retain HLS-21's persisted failure snapshot because playback exit can remove the overlay.
 
@@ -150,4 +152,4 @@ Planning status: open. Version: not assigned. Current baseline and fallback: [PR
 
 ## Readiness
 
-No next-release scope is committed. HLS-12, HLS-13, HLS-14 and HLS-15 are shipped in 0.7.21 and remain review/partial pending target-device acceptance. PLAY-1, HLS-1 and UI-1 remain backlog investigations; target-device acceptance for earlier shipped tasks remains tracked in their canonical task records.
+Committed next-release scope: HLS-16, HLS-17, HLS-18, HLS-19, HLS-20, HLS-21, UI-5 and UI-6. HLS-12, HLS-13, HLS-14 and HLS-15 are shipped in 0.7.21 and remain review/partial pending target-device acceptance. PLAY-1, HLS-1 and UI-1 remain backlog investigations; target-device acceptance for earlier shipped tasks remains tracked in their canonical task records.

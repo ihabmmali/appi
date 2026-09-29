@@ -101,7 +101,7 @@ Diagnostics must record recovery entry, retries, successful recovery, exhaustion
 - Target-device acceptance must demonstrate ordinary playback, deliberate/observed recovery, and an extended pause/resume cycle without regression to the working 0.7.21 buffering behavior.
 
 ## Authorization
-Requested by the user on 2026-09-28 after observing that a sufficiently delayed stream / emptied reservoir can still end in timeout and buffering failure. The user explicitly required that the new resilience **must not impact the currently working 0.7.21 algorithm**. This is a ready candidate and is not committed until explicitly included under AGENTS.md.
+Requested by the user on 2026-09-28 after observing that a sufficiently delayed stream / emptied reservoir can still end in timeout and buffering failure. The user explicitly required that the new resilience **must not impact the currently working 0.7.21 algorithm**. On 2026-09-28 the user explicitly instructed that all current candidates be committed for the next release. HLS-19 is committed next-release scope.
 
 ## Evidence
 0.7.21 currently has a hard-coded 20-second recovery wait for an uncached playback request and converts recovery expiry into HTTP 503 for Kodi to retry. Background prefetch itself keeps retrying failed media, but Appi does not yet own a robust end-to-end playback recovery window when Kodi reaches an empty reservoir.

@@ -77,7 +77,7 @@ HLS-16 may additionally expose handoff timing in its detailed overlay after play
 - Target-device verification records reservoir-ready -> `setResolvedUrl` -> first local request -> `onAVStarted` timings before and after the repair.
 
 ## Authorization
-Created from the user's repeated target-device observation that there is a noticeable delay after initial buffer filling completes and before playback actually starts. On 2026-09-28 the user asked whether the cause had already been identified and whether a fix was being tracked. Source review shows the gap was not yet isolated as a dedicated task. This is a ready candidate and is not committed to a future release until explicitly included under AGENTS.md.
+Created from the user's repeated target-device observation that there is a noticeable delay after initial buffer filling completes and before playback actually starts. On 2026-09-28 the user asked whether the cause had already been identified and whether a fix was being tracked. Source review shows the gap was not yet isolated as a dedicated task. On 2026-09-28 the user explicitly instructed that all current candidates be committed for the next release. HLS-20 is committed next-release scope.
 
 ## Evidence
 0.7.21 has no deliberate post-fill sleep. `request_playback()` polls readiness every 0.1 seconds, and `prepare()` sets `ready=True` immediately after the startup reservoir is satisfied. The plugin then eventually calls `setResolvedUrl()`. Master/media playlists are cacheable in the local proxy, while key/map resources can remain on-demand. The exact target-device timing boundary is therefore unresolved.

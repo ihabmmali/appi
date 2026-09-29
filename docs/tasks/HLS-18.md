@@ -83,7 +83,7 @@ With default settings, playback then continues toward the unchanged 0.7.21 80% h
 - Target-device verification confirms default 0.7.21 behavior plus at least one deliberately modified startup threshold and one deliberately modified during-playback watermark.
 
 ## Authorization
-Requested by the user on 2026-09-28 after confirming that 0.7.21's buffering algorithm is the first version that has worked reliably for them. The user then broadened the request: all thresholds, including during-playback thresholds, should be configurable while defaulting to the current 0.7.21 values. This remains a ready candidate and is not committed until explicitly included under AGENTS.md.
+Requested by the user on 2026-09-28 after confirming that 0.7.21's buffering algorithm is the first version that has worked reliably for them. The user then broadened the request: all thresholds, including during-playback thresholds, should be configurable while defaulting to the current 0.7.21 values. On 2026-09-28 the user explicitly instructed that all current candidates be committed for the next release. HLS-18 is committed next-release scope.
 
 ## Evidence
 0.7.21 source hard-codes `STARTUP_WATER_RATIO = 0.50`, `HIGH_WATER_RATIO = 0.80`, `LOW_WATER_RATIO = 0.60`, `CRITICAL_WATER_RATIO = 0.15`, `REQUEST_TIMEOUT = 15`, `STARTUP_TIMEOUT = 180`, `SEEK_RESERVE_SECONDS = 12`, `MIN_SEEK_RESERVE_BYTES = 4 MiB`, and `PREFETCH_LEAD_SECONDS = 24`. Target-device observations 126->63 MB, 128->64 MB and 256->128 MB match the default 50% startup calculation exactly.

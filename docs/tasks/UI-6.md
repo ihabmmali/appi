@@ -39,7 +39,7 @@ Because the approved bytes are already present in the 0.7.21 source while the ta
 - Package tests verify handoff -> source asset -> ZIP member identity.
 
 ## Authorization
-Reported by the user on 2026-09-28 after installing 0.7.21: Kodi appears to show the very first Appi graphic again. This is logged as a ready candidate and is not committed until explicitly included under AGENTS.md.
+Reported by the user on 2026-09-28 after installing 0.7.21: Kodi appears to show the very first Appi graphic again. On 2026-09-28 the user explicitly instructed that all current candidates be committed for the next release. UI-6 is committed next-release scope.
 
 ## Outcome and next action
 Force an artwork cache miss by versioning the icon resource path while preserving the approved artwork bytes.

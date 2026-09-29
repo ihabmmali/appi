@@ -39,7 +39,7 @@ A third repair must therefore be evidence-driven and may replace the GUI mechani
 - HLS-13 buffering performance is unchanged.
 
 ## Authorization
-Created from failed target-device acceptance of HLS-14 on published Appi 0.7.21 on 2026-09-28. This is a ready candidate and is not committed to a future release until explicitly included under AGENTS.md.
+Created from failed target-device acceptance of HLS-14 on published Appi 0.7.21 on 2026-09-28. On 2026-09-28 the user explicitly instructed that all current candidates, diagnostics or otherwise, be committed for the next release. HLS-16 is committed next-release scope and should be treated as an early diagnostic dependency for HLS-19/HLS-21.
 
 ## Evidence
 The 0.7.21 modeless `WindowDialog` renderer passes automated lifecycle tests but remains invisible on the user's Fire TV during confirmed Buffered Look Ahead playback. Meanwhile the user reports the buffering itself appears to work well, isolating the remaining issue to the rendering/UI path.

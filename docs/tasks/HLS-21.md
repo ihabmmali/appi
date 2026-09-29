@@ -99,7 +99,7 @@ The classification must include the underlying numeric evidence rather than bein
 ## Authorization
 Created from the user's 2026-09-28 target-device observation of repeated runtime failures: A/V freezes while subtitles continue, playback may briefly catch up, Appi reports a timeout, then playback exits. The user specifically requested confirmation whether the timeout is caused by the look-ahead buffer emptying before refill can catch up, which would imply insufficient reserve for that stall pattern.
 
-This is a ready investigation candidate and is not committed to a future release until explicitly included under AGENTS.md.
+On 2026-09-28 the user explicitly instructed that all current candidates, diagnostics or otherwise, be committed for the next release. HLS-21 is committed next-release scope as the investigation/diagnostic evidence task supporting HLS-19.
 
 ## Outcome and next action
 Instrument and classify the next runtime timeout before changing buffer-size defaults or reservoir behavior. Preserve the working 0.7.21 producer/consumer algorithm while determining the true failure boundary.

@@ -54,7 +54,7 @@ Where useful after playback begins, the detailed overlay may additionally expose
 - Automated regression test locks the 0.7.21 50/80/60/15 policy while testing only presentation semantics.
 
 ## Authorization
-Raised by the user on 2026-09-28 after observing exact half-capacity startup targets across 126, 128 and 256 MB settings. Source review confirms this is UI ambiguity around the intentional 50% startup target, not the buffer setting being ignored. This is a ready candidate and is not committed until explicitly included under AGENTS.md.
+Raised by the user on 2026-09-28 after observing exact half-capacity startup targets across 126, 128 and 256 MB settings. Source review confirms this is UI ambiguity around the intentional 50% startup target, not the buffer setting being ignored. On 2026-09-28 the user explicitly instructed that all current candidates be committed for the next release. HLS-17 is committed next-release scope.
 
 ## Evidence
 `BufferedHlsSession.__init__` sets `max_bytes = buffer_mb * MiB`, `startup_target_bytes = max_bytes * 0.50`, and `high_water_bytes = max_bytes * 0.80`. Startup waits for `startup_target_bytes` and reports that value as `buffer_target_bytes`.
