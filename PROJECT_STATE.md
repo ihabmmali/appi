@@ -1,37 +1,30 @@
 # Appi project state
 
-Updated: 2026-09-28. Start with [AGENTS.md](AGENTS.md) for role routing.
+Updated: 2026-09-29. Start with [AGENTS.md](AGENTS.md) for role routing.
 
 ## Current baseline
 
 - Repository: https://github.com/ihabmmali/appi ; default branch: main.
-- Current published packaged add-on: **0.7.21**. The experimental 0.8.0 archive is not the main baseline.
-- Publication: PR #10, merge `d9e0be64681fa2dbe9cc434f81375a9c0992a3e1`. Final strengthened candidate run `36381180991` passed 94 tests (1 skipped), workflow validation, deterministic rebuild and package inspection; final pre-integration evidence run `36381370108` also passed with no generated artifact drift.
-- Deterministic artifact commit: `26216385f185476b778f73b8dae5e7abfe73f339`. Published 0.7.21 ZIP SHA-256: `0e8c615d40cf9f42e0345c61e11a7b244fc443c8858902d53fffda92c1935c81`. Post-merge verification run `36381516837` and Pages deployment run `36381516378` passed. Install page: https://ihabmmali.github.io/appi/ .
-- 0.7.21 ships the HLS-12/HLS-13/HLS-14/HLS-15 Buffered Look Ahead repair set. Automated evidence is positive; target-device acceptance on the user's problematic higher-bitrate HLS stream remains required. Keep **0.7.8** as the practical fallback until that acceptance is complete.
+- Current published packaged add-on: **0.7.22**. The experimental 0.8.0 archive is not the main baseline.
+- Publication: PR #11, merge `92131c95c1d047eb7a683e8e5e2e6abe10e1a518`. Final publication gate run `36626983906` passed 100 tests (1 skipped), workflow tracker validation, deterministic rebuild, ZIP/index inspection and packaging.
+- Final artifact commit: `6f78d101be5069d79f3a4328cb6a90a2df9cd47f`. Published 0.7.22 ZIP SHA-256: `35a50dad9f17f0d0a47c2cea7892d769a1b613ab2743bbbd61a1fc59267ae53f`. Pages deployment run `36627135052` succeeded. Install page: https://ihabmmali.github.io/appi/ .
+- The published index intentionally keeps **0.7.21** and **0.7.8** visible alongside 0.7.22; 0.7.14 and 0.7.12 are also retained.
+- Keep **0.7.8** as the historical known-good fallback while newer Buffered Look Ahead behavior completes target-device acceptance.
 - **0.7.17 failed target-device startup acceptance** because its language lists contained empty option values; 0.7.18 corrected that crash trigger and target-device retest confirmed Kodi starts normally.
 
 ## Current work
 
-- **0.7.21 is published.** Shipped scope: HLS-12, HLS-13, HLS-14 and HLS-15. All four remain review/partial until target-device acceptance.
-- HLS-12 replaces stateful random-access recovery with fresh authoritative buffer epochs for seek and saved-position resume; automated tests cover stale completion rejection, timeline alignment, retry and repeated seek behavior.
-- HLS-13 replaces the fixed 12-second/equal-share model with a shared capacity-driven reservoir: 50% startup target, 80% high-water, 60% low-water, 15% critical reserve, dynamic video/audio allocation, continuous refill, measured throughput and inactivity-based transfer timeout. Target-device follow-up is positive: the user reports buffering appears to work well on 0.7.21.
-- HLS-14 failed target-device acceptance: the guarded modeless `WindowDialog` remains invisible on Fire TV despite buffering itself working. HLS-16 is the committed successor and may replace the rendering mechanism entirely. HLS-16 is also a practical diagnostic dependency for HLS-19/HLS-21, not merely cosmetic UI work.
-- HLS-17 is a UI-only candidate: 0.7.21 intentionally uses a 50% startup target (126→63, 128→64, 256→128 MB) while retaining full configured capacity and 80% high-water refill. Preserve the working 0.7.21 reservoir algorithm.
-- HLS-18 is committed to expose all behavior-affecting Buffered Look Ahead thresholds as validated settings. Defaults remain the proven 0.7.21 values, including startup/high/low/critical = 50/80/60/15%, so default behavior remains unchanged.
-- HLS-19 is committed for resilience after true reservoir depletion. It must add Appi-owned retry/recovery around the working 0.7.21 algorithm, not alter normal startup/refill/watermark/track-balancing/quality behavior. New device evidence: an extended pause can cause the video to exit silently; source has a plausible 10-second player-idle cleanup boundary that must distinguish pause from stop.
-- HLS-20 is committed for the separate startup handoff delay after the initial reservoir reaches target. There is no intentional post-fill sleep in 0.7.21; instrument ready -> setResolvedUrl -> local HLS dependency requests -> onAVStarted and repair only the proven Appi-controlled delay.
-- HLS-21 is committed to classify repeated runtime timeout exits. New device evidence: A/V freezes while subtitles continue, playback may briefly catch up, a Buffered Look Ahead timeout appears, then playback stops. Prove whether contiguous reserve actually reaches zero versus a missing next segment, sustained throughput deficit, required-track starvation or recovery timeout while progress continues.
-- After seek, 0.7.21 shows a noticeable resume delay. This may be normal fresh-epoch reserve rebuilding; HLS-16 must make the seek/recovery fill state visible before this delay is judged a playback defect.
-- HLS-15 shows actual active-epoch contiguous playable KB/MB and target during normal preparation/recovery without requiring detailed debug.
-- Existing HLS modes 0–2 were intentionally left unchanged. Buffered mode does not automatically downgrade quality and reports measured throughput deficit when reserve is critical.
-- AUDIO-1, HLS-10 and HLS-11 remain review records for the 0.7.20 behavior they shipped; HLS-12/HLS-14 supersede the unresolved Buffered Look Ahead seek/overlay directions in 0.7.21.
-- HLS-22 is a future-release candidate, explicitly excluded from the currently committed release. It will benchmark Appi's HLS producer against FFmpeg on the same stream/network/VPN and investigate persistent connection reuse, request overhead and bounded concurrency without changing the proven reservoir policy.
-- PLAY-1 remains a backlog Trakt-error investigation. HLS-1 and UI-1 remain backlog investigations.
-- DOWNLOAD-1 is committed to change generated FFmpeg download scripts to the user's tested fast remux form with explicit first-video/first-audio mapping, `-c copy` and `-threads 0`, while preserving safe script/partial-file handling unless measured otherwise.
-- UI-5 is committed to remove the redundant nested About action and show installed version directly in the About settings pane.
-- UI-6 is committed to force-refresh the approved flat Appi icon by changing the manifest-referenced artwork filename. The exact 0.7.21 artifact source already contains the approved icon bytes, so Kodi texture caching is the leading explanation for the older graphic still appearing.
-- [NEXT_RELEASE.md](NEXT_RELEASE.md): committed next-release scope is HLS-16, HLS-17, HLS-18, HLS-19, HLS-20, HLS-21, UI-5, UI-6 and DOWNLOAD-1. PLAY-1, HLS-1 and UI-1 remain backlog. [KNOWN_ISSUES.md](KNOWN_ISSUES.md): full task index.
+- **0.7.22 is published.** Shipped scope: HLS-16, HLS-17, HLS-18, HLS-19, HLS-20, HLS-21, UI-5, UI-6 and DOWNLOAD-1. Delivery is released; task verification remains review/partial where documented Fire TV/provider checks are still outstanding.
+- HLS-19 now owns transient depleted-segment recovery inside Appi under configurable retry/timeout bounds and separates paused/buffering/stopped lifecycle handling; target-device stall and long-pause acceptance remain pending.
+- HLS-18 exposes advanced Buffered Look Ahead thresholds/timers while retaining the proven 0.7.21 defaults. HLS-17 clarifies startup target versus configured capacity without changing the reservoir policy.
+- HLS-20 instruments reservoir-ready through Kodi AV start and preloads known key/map dependencies. HLS-21 records a bounded pre-failure reservoir/track/transfer timeline and evidence-based classification for future real-device failures.
+- HLS-16 changes the detailed overlay's primary renderer to a bundled modeless `WindowXMLDialog` with a logged compatibility fallback. Fire TV visibility still needs target-device confirmation.
+- UI-5 displays installed version directly in the About settings pane. UI-6 references the same approved flat icon bytes through a new resource path to bypass Kodi artwork caching.
+- DOWNLOAD-1 generates FFmpeg remux scripts using explicit first-video/first-audio mapping, `-c copy` and `-threads 0`, while preserving safe quoting and atomic partial-file handling.
+- Existing HLS modes 0–2 remain intentionally unchanged.
+- HLS-22 is the next-cycle candidate to benchmark Appi producer throughput against FFmpeg on the same stream/network/VPN and investigate connection reuse/request overhead/bounded concurrency without changing the reservoir policy. It is **not committed** to a release yet.
+- PLAY-1, HLS-1 and UI-1 remain backlog investigations.
+- [NEXT_RELEASE.md](NEXT_RELEASE.md) has been reset: no next-release scope or version is currently committed. [KNOWN_ISSUES.md](KNOWN_ISSUES.md) remains the canonical task index.
 
 ## Context on demand
 
