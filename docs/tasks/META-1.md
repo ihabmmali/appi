@@ -1,11 +1,11 @@
 ---
 id: META-1
 role: implementation
-status: ready
+status: active
 delivery: unreleased
 verification: pending
-owner: unassigned
-base_commit: unset
+owner: builder-publisher-2026-09-30
+base_commit: e359459e1e3734e1c60608632b2213fe33bc92e7
 artifact: none
 ---
 # META-1 — Surface media runtime and season episode counts

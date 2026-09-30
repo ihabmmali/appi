@@ -1,11 +1,11 @@
 ---
 id: HLS-25
 role: implementation
-status: ready
+status: active
 delivery: unreleased
 verification: pending
-owner: unassigned
-base_commit: unset
+owner: builder-publisher-2026-09-30
+base_commit: e359459e1e3734e1c60608632b2213fe33bc92e7
 artifact: none
 ---
 # HLS-25 — Make Buffered Look Ahead pause/resume consumer-safe
