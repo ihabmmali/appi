@@ -669,7 +669,7 @@ class ReleaseSettingsTests(unittest.TestCase):
     def test_icon_exact_copy_and_manifest_reference(self):
         manifest=ET.parse(ROOT/'plugin.video.appi/addon.xml').getroot()
         icon=manifest.findtext('./extension/assets/icon')
-        self.assertEqual(manifest.get('version'),'0.7.23')
+        self.assertEqual(manifest.get('version'),'0.7.24')
         self.assertNotEqual(icon, 'resources/icon.png')
         self.assertEqual((ROOT/'plugin.video.appi'/icon).read_bytes(),
                          (ROOT/'artwork/appi-icon-selected.png').read_bytes())

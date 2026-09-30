@@ -13,7 +13,7 @@ STRINGS = PLUGIN / 'resources' / 'language' / 'resource.language.en_gb' / 'strin
 class SettingsLocalizationTests(unittest.TestCase):
     def test_stable_browser_and_download_batch_features_are_packaged(self):
         addon = ET.parse(PLUGIN / 'addon.xml').getroot()
-        self.assertEqual(addon.attrib.get('version'), '0.7.23')
+        self.assertEqual(addon.attrib.get('version'), '0.7.24')
         isa = addon.find("./requires/import[@addon='inputstream.adaptive']")
         self.assertIsNotNone(isa)
         self.assertNotEqual(isa.attrib.get('optional'), 'true')
@@ -23,7 +23,7 @@ class SettingsLocalizationTests(unittest.TestCase):
         self.assertEqual(helper.attrib.get('version'), '0.0.0')
 
     def test_release_zip_has_required_isa_and_exact_revised_icon(self):
-        package = PLUGIN / 'plugin.video.appi-0.7.23.zip'
+        package = PLUGIN / 'plugin.video.appi-0.7.24.zip'
         self.assertTrue(package.is_file(), package)
         with zipfile.ZipFile(package, 'r') as archive:
             manifest = ET.fromstring(archive.read('plugin.video.appi/addon.xml'))
@@ -64,7 +64,11 @@ class SettingsLocalizationTests(unittest.TestCase):
         self.assertIn('Fetch metadata for all Recently Played TV Shows', app)
         metadata = (PLUGIN / 'resources' / 'lib' / 'metadata.py').read_text(encoding='utf-8')
         self.assertIn('def show_payload', metadata)
-        self.assertIn("'episode_title', 'plot', 'imdb_rating', 'imdb_votes', 'directors'", metadata)
+        self.assertIn("'runtime_seconds'", metadata)
+        self.assertIn("'episode_title', 'plot', 'imdb_rating', 'imdb_votes'", metadata)
+        self.assertIn("tag.setDuration", app)
+        self.assertIn("season_episode_counts", app)
+        self.assertIn("season_label", app)
         self.assertIn("'worker_state': worker_state", metadata)
         downloads = (PLUGIN / 'resources' / 'lib' / 'downloads.py').read_text(encoding='utf-8')
         self.assertIn('def generate(catalog, item, show_key=', downloads)
