@@ -7,7 +7,7 @@ Implemented features, grouped by add-on version. A version listed here means its
 - HLS-24: release a successfully recovered exact sequential segment to Kodi immediately instead of waiting for the full recovery reserve; background refill continues and low reserve alone is not a terminal playback error. Fresh-epoch seek/cold-resume reserve gating remains intact.
 - HLS-22: add settings-backed bounded per-track producer concurrency (default 2, range 1–4), distinct segment claims and active/peak concurrency telemetry while retaining contiguous reserve accounting, duplicate suppression and stale-epoch cancellation.
 - HLS-23: make the debug-overlay setting a true master gate, close stale windows when disabled, render enabled telemetry as four bounded lines, and log renderer state transitions without sensitive stream data.
-- Existing HLS modes 0–2 and the HLS-13 reservoir thresholds/accounting remain unchanged. Automated release verification and target Fire TV/provider acceptance are still pending.
+- Existing HLS modes 0–2 and the HLS-13 reservoir thresholds/accounting remain unchanged. Final candidate run `36661752457` passed 103 unit/smoke tests (1 skipped), workflow validation and deterministic package/index inspection; target Fire TV/provider acceptance remains pending.
 
 ## 0.7.22 — 2026-09-28
 

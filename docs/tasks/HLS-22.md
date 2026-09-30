@@ -1,9 +1,9 @@
 ---
 id: HLS-22
 role: implementation
-status: active
+status: review
 delivery: unreleased
-verification: pending
+verification: partial
 owner: builder-publisher-2026-09-29
 base_commit: ff256d99b7097dcea3787c3a86582bec29354972
 artifact: none
@@ -16,7 +16,7 @@ Determine why Appi's Buffered Look Ahead producer appears to fill substantially 
 This task is committed scope for Appi 0.7.23. The optimization remains below the reservoir policy and must not alter modes 0–2.
 
 ## Scope
-Benchmark and optimize only the Buffered Look Ahead producer/transport layer in a future release. Preserve the proven reservoir thresholds/accounting, rendition selection, seek epochs, HLS-19 recovery behavior and playback modes 0–2. Any transport concurrency, connection reuse or scheduling change must be evidence-driven and settings-backed where behavior-affecting.
+Benchmark and optimize only the Buffered Look Ahead producer/transport layer in Appi 0.7.23. Preserve the proven reservoir thresholds/accounting, rendition selection, seek epochs, HLS-19 recovery behavior and playback modes 0–2. Any transport concurrency, connection reuse or scheduling change must be evidence-driven and settings-backed where behavior-affecting.
 
 This task was excluded from Appi 0.7.22 and is included in the 0.7.23 release scope.
 
@@ -142,3 +142,13 @@ Implementation session `builder-publisher-2026-09-29` uses base `ff256d99b7097dc
 The candidate adds settings-backed bounded producer concurrency with a conservative default of two future segment fetches per active track (range 1–4). Each worker claims a distinct segment index before download; the existing per-resource condition still suppresses duplicate network fetches, stale epoch completion remains ignored, and playable-reserve accounting remains contiguous through the first missing segment. Transfer telemetry now records concurrent-fetch count and session status exposes configured/active/peak producer concurrency alongside existing request latency and payload-throughput measurements.
 
 This is an Appi-side transport optimization supported by the user's FFmpeg/ISA A/B evidence and deterministic concurrency tests. It does **not** claim the provider-specific FFmpeg-vs-Appi target-device throughput comparison is complete; startup/refill before/after measurement on the Fire TV remains required for full acceptance. Persistent HTTP connection reuse is not claimed in this candidate.
+
+
+## 0.7.23 self-review
+Self-review completed by the builder/publisher thread against the exact release candidate. This is a self-review, not an independent review.
+
+Automated release run `36661752457` passed 103 unit/smoke tests (1 skipped), workflow tracker validation, deterministic rebuild, ZIP/hash/index inspection and packaging. Deterministic candidate artifact commit: `640b06e9ee2a464ad1c8e6af4b18b528b5fd5d1e`. Candidate ZIP SHA-256: `029e2a33b52f235746ce79f8e6140f569addefb549fcebf757c786a5171ca6ff`.
+
+Code review confirms bounded per-track concurrency is isolated to Buffered Look Ahead, the default is settings-backed at two workers (range 1–4), workers claim distinct future indices, per-resource duplicate suppression remains intact, stale epoch completion remains ignored, and contiguous reserve accounting still stops at the first missing segment. Existing playback modes 0–2 are untouched.
+
+Verification remains **partial** because the acceptance criteria explicitly require same-stream Fire TV/provider measurements against FFmpeg/ISA, including startup/refill timing and effective aggregate ingest rate. Persistent HTTP connection reuse was investigated as a hypothesis but is not implemented or claimed in this release. The release therefore ships the bounded-concurrency improvement without claiming the full provider-specific throughput investigation is complete.

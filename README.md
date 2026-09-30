@@ -18,6 +18,14 @@ Appi is a Kodi video add-on for user-configured movie and TV-show M3U catalogues
 
 Add `https://ihabmmali.github.io/appi/` in Kodi File Manager, then install the current `plugin.video.appi-<version>.zip`.
 
+## 0.7.23 — 2026-09-29
+
+- Buffered Look Ahead now releases an exact sequential segment as soon as recovery successfully caches it instead of holding Kodi behind the larger recovery-reserve rebuild. Background look-ahead refill continues; seek and cold-resume epochs retain their deliberate reserve gate.
+- The producer can fetch a small bounded number of future segments concurrently (default 2 per track, configurable 1–4) while preserving duplicate suppression, stale-epoch cancellation and contiguous playable-order accounting.
+- The detailed buffer overlay setting is now a true master switch. OFF is silent; ON renders four bounded telemetry lines instead of an overflowing single line.
+- Existing HLS modes 0–2 and the established reservoir watermarks remain unchanged.
+- Final candidate run `36661752457` passed 103 unit/smoke tests (1 skipped), workflow validation, deterministic rebuild and package/index inspection. Fire TV/provider acceptance remains separately required.
+
 ## 0.7.22 — 2026-09-28
 
 - Buffered Look Ahead now retries transient depleted-segment/provider failures inside Appi under configurable bounds instead of making Kodi's retry behavior the primary recovery mechanism. Pause/buffering/stopped lifecycle states are separated so long pauses are retained by default.

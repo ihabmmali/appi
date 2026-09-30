@@ -1,9 +1,9 @@
 ---
 id: HLS-23
 role: implementation
-status: active
+status: review
 delivery: unreleased
-verification: pending
+verification: partial
 owner: builder-publisher-2026-09-29
 base_commit: ff256d99b7097dcea3787c3a86582bec29354972
 artifact: none
@@ -112,3 +112,13 @@ For 0.7.23, change only the Buffered Look Ahead on-screen renderer and its instr
 
 ## Evidence
 Published 0.7.22 target-device evidence shows buffering/debug text while the setting is disabled and single-line detail overflowing the screen. Source inspection confirmed the simple recovery string deliberately bypassed the debug flag. Candidate implementation commit `65868eabc584c2d60bffca8804060b84683e32a1` makes OFF silent, closes existing windows, uses four bounded rows, and adds transition logs. Automated unit/smoke tests passed in run `36661239740`; tracker validation, packaging, and target-device acceptance are still pending at this checkpoint.
+
+
+## 0.7.23 self-review
+Self-review completed by the builder/publisher thread against the exact release candidate. This is a self-review, not an independent review.
+
+Automated release run `36661752457` passed 103 unit/smoke tests (1 skipped), workflow tracker validation, deterministic rebuild, ZIP/hash/index inspection and packaging. Deterministic candidate artifact commit: `640b06e9ee2a464ad1c8e6af4b18b528b5fd5d1e`. Candidate ZIP SHA-256: `029e2a33b52f235746ce79f8e6140f569addefb549fcebf757c786a5171ca6ff`.
+
+Review confirms the setting is now an authoritative master gate: disabled returns no Appi buffering/debug text and closes an existing renderer. Enabled telemetry is four bounded lines in the bundled 1180×180 textbox, with a bounded compatibility fallback. Transition logging contains renderer/mode state but no stream URLs.
+
+Verification remains **partial** because the task explicitly requires target Fire TV acceptance for OFF during refill/recovery/seek/pause-resume, enabled visibility, real UI scale and screen bounds. Mocked/unit renderer checks cannot satisfy that device requirement.

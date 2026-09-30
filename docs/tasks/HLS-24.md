@@ -1,9 +1,9 @@
 ---
 id: HLS-24
 role: implementation
-status: active
+status: review
 delivery: unreleased
-verification: pending
+verification: partial
 owner: builder-publisher-2026-09-29
 base_commit: ff256d99b7097dcea3787c3a86582bec29354972
 artifact: none
@@ -142,3 +142,13 @@ For 0.7.23, change only Buffered Look Ahead recovery delivery semantics needed t
 
 ## Evidence
 Published 0.7.22 target-device A/B evidence shows the same stream freezing/catching up/stopping in Buffered Look Ahead while Manual fixed-quality/ISA plays normally. Source inspection confirmed `recover_segment()` withheld an already downloaded sequential segment behind `_wait_reservoir()`, which could turn low reserve into a 504. Candidate implementation commit `65868eabc584c2d60bffca8804060b84683e32a1` releases that exact segment immediately for sequential playback while retaining seek/cold-resume reserve gating. Automated unit/smoke tests passed in run `36661239740`; tracker validation, packaging, and target-device acceptance are still pending at this checkpoint.
+
+
+## 0.7.23 self-review
+Self-review completed by the builder/publisher thread against the exact release candidate. This is a self-review, not an independent review.
+
+Automated release run `36661752457` passed 103 unit/smoke tests (1 skipped), workflow tracker validation, deterministic rebuild, ZIP/hash/index inspection and packaging. Deterministic candidate artifact commit: `640b06e9ee2a464ad1c8e6af4b18b528b5fd5d1e`. Candidate ZIP SHA-256: `029e2a33b52f235746ce79f8e6140f569addefb549fcebf757c786a5171ca6ff`.
+
+Review confirms ordinary sequential depletion still uses the existing bounded HLS-19 exact-segment retry policy, but once the requested segment is cached it is released without calling the full-reservoir wait. Background workers continue rebuilding reserve. Discontinuous seek/cold-resume remains deliberately gated by the fresh-epoch reserve. New exact-ready and first-byte telemetry makes the serving boundary observable. Existing playback modes 0–2 are untouched.
+
+Verification remains **partial** because the release-blocking defect was observed on the Fire TV/provider stream and final acceptance requires replaying that stream through 0.7.23, including depletion/recovery, longer playback, seek/resume and pause behavior. The deterministic tests prove the corrected control-flow boundary but cannot substitute for that target-device A/B.

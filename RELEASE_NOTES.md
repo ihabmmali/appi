@@ -2,6 +2,18 @@
 
 Each entry records the package shipped, its main user-visible changes, and verification at release time. For the current baseline and next tasks read [PROJECT_STATE.md](PROJECT_STATE.md) and [KNOWN_ISSUES.md](KNOWN_ISSUES.md); the [CHANGELOG.md](CHANGELOG.md) is the implemented feature history.
 
+## 0.7.23 — 2026-09-29
+
+- Committed scope: HLS-22, HLS-23 and release-blocking HLS-24. Base `ff256d99b7097dcea3787c3a86582bec29354972`; branch `release/0.7.23`.
+- HLS-24 separates exact sequential media delivery from reservoir restoration. After the required depleted segment is successfully recovered under the existing bounded HLS-19 retry policy, Appi releases it to Kodi immediately while look-ahead refill continues in the background. Discontinuous seek and cold non-zero resume retain the fresh-epoch reserve gate.
+- HLS-22 adds settings-backed bounded segment producer concurrency for Buffered Look Ahead: default two workers per active track, configurable from one to four. Workers claim distinct future segment indices; per-resource duplicate suppression, stale-epoch cancellation and contiguous playable-reserve accounting remain intact.
+- HLS-23 makes the detailed-buffer setting an authoritative master gate: OFF produces no Appi buffering/debug text and closes any existing renderer. ON uses four bounded telemetry lines in a 1180×180 textbox with a bounded compatibility fallback and transition-only logging.
+- Existing HLS modes 0–2 and the HLS-13 reservoir thresholds/accounting are intentionally unchanged.
+- Initial gate run `36661125190` correctly blocked packaging on three candidate-test/release-fixture failures. Run `36661239740` then passed all 103 unit/smoke tests (1 skipped) but stopped on legacy task-record template validation. After normalizing those task records, run `36661363028` passed verification and packaging. A final publication-policy correction retained 0.7.22 as the immediate visible rollback; final candidate run `36661752457` passed all 103 unit/smoke tests (1 skipped), workflow validation, deterministic rebuild, ZIP/hash/index inspection and packaging.
+- Final pre-integration deterministic artifact commit: `640b06e9ee2a464ad1c8e6af4b18b528b5fd5d1e`. ZIP SHA-256: `029e2a33b52f235746ce79f8e6140f569addefb549fcebf757c786a5171ca6ff`. The candidate index lists 0.7.23, 0.7.22, 0.7.21, 0.7.14, 0.7.12 and 0.7.8.
+- Publication is pending integration to `main` and successful GitHub Pages deployment at this checkpoint.
+- Target-device acceptance remains required for the problematic provider stream/recovery path, producer throughput comparison, overlay visibility/layout and seek/pause behavior. HLS-22/HLS-23/HLS-24 therefore remain review/partial rather than done.
+
 ## 0.7.22 — 2026-09-28
 
 - Committed scope: HLS-16, HLS-17, HLS-18, HLS-19, HLS-20, HLS-21, UI-5, UI-6 and DOWNLOAD-1. Base `fd0bd5b08228c34b09de684f7b4b1f865a09e2d2`; branch `release/0.7.22`.
