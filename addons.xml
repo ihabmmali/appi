@@ -1,6 +1,6 @@
 <?xml version='1.0' encoding='utf-8'?>
 <addons>
-  <addon id="plugin.video.appi" name="Appi" version="0.7.22" provider-name="Eyecon">
+  <addon id="plugin.video.appi" name="Appi" version="0.7.23" provider-name="Eyecon">
     <requires>
       <import addon="xbmc.python" version="3.0.1" />
       <import addon="inputstream.adaptive" version="21.0.0" />
@@ -19,7 +19,7 @@
       <platform>all</platform>
       <license>GPL-3.0-or-later</license>
       <source>https://github.com/ihabmmali/appi</source>
-      <news>0.7.21 - Rebuild Buffered Look Ahead with a deep byte reservoir, fresh seek epochs, numeric buffer status, and a skin-independent debug overlay.</news>
+      <news>0.7.23 - Release needed HLS segments immediately during recovery, add bounded producer concurrency, and make the debug overlay fully gated and multiline.</news>
     </extension>
   </addon>
   <addon id="repository.appi" name="Appi Repository" version="1.2.0" provider-name="Eyecon">

@@ -1,11 +1,11 @@
 ---
 id: HLS-23
 role: implementation
-status: ready
+status: review
 delivery: unreleased
-verification: pending
-owner: unassigned
-base_commit: unset
+verification: partial
+owner: builder-publisher-2026-09-29
+base_commit: ff256d99b7097dcea3787c3a86582bec29354972
 artifact: none
 ---
 # HLS-23 — Fix Buffered Look Ahead overlay gating and screen-safe layout
@@ -96,3 +96,29 @@ Created from target-device observations on published Appi 0.7.22 reported by the
 
 ## Outcome and next action
 Correct the overlay visibility contract and layout, instrument the unexplained full-debug disabled-state leak, and verify the renderer on the Fire TV without touching the buffering algorithm.
+
+
+## 0.7.23 implementation evidence
+Implementation session `builder-publisher-2026-09-29` uses base `ff256d99b7097dcea3787c3a86582bec29354972`.
+
+The candidate makes `buffered_debug_overlay` the master gate: when false, `status_text()` returns no text even during recovery/caching and `BufferOverlay.update()` closes any existing renderer. Enabled detail is four bounded lines rather than one pipe-delimited line. The bundled renderer changes to a 1180×180 textbox; the compatibility path uses a textbox when available and otherwise four bounded label rows. State-transition logging records effective enabled state, requested mode, renderer, pre-existing window and close reason without stream URLs.
+
+Automated coverage is added for OFF during recovery, enabled→visible→disabled closure, stale-text non-reappearance, and bounded multiline XML layout. Target Fire TV visibility/scale verification remains required.
+
+
+## Scope
+For 0.7.23, change only the Buffered Look Ahead on-screen renderer and its instrumentation: make the existing debug-overlay setting authoritative, close stale renderer state when disabled, use a bounded multiline layout when enabled, and keep GUI failures non-fatal. Do not alter reservoir/recovery behavior or HLS modes 0–2.
+
+
+## Evidence
+Published 0.7.22 target-device evidence shows buffering/debug text while the setting is disabled and single-line detail overflowing the screen. Source inspection confirmed the simple recovery string deliberately bypassed the debug flag. Candidate implementation commit `65868eabc584c2d60bffca8804060b84683e32a1` makes OFF silent, closes existing windows, uses four bounded rows, and adds transition logs. Automated unit/smoke tests passed in run `36661239740`; tracker validation, packaging, and target-device acceptance are still pending at this checkpoint.
+
+
+## 0.7.23 self-review
+Self-review completed by the builder/publisher thread against the exact release candidate. This is a self-review, not an independent review.
+
+Automated release run `36661752457` passed 103 unit/smoke tests (1 skipped), workflow tracker validation, deterministic rebuild, ZIP/hash/index inspection and packaging. Deterministic candidate artifact commit: `640b06e9ee2a464ad1c8e6af4b18b528b5fd5d1e`. Candidate ZIP SHA-256: `029e2a33b52f235746ce79f8e6140f569addefb549fcebf757c786a5171ca6ff`.
+
+Review confirms the setting is now an authoritative master gate: disabled returns no Appi buffering/debug text and closes an existing renderer. Enabled telemetry is four bounded lines in the bundled 1180×180 textbox, with a bounded compatibility fallback. Transition logging contains renderer/mode state but no stream URLs.
+
+Verification remains **partial** because the task explicitly requires target Fire TV acceptance for OFF during refill/recovery/seek/pause-resume, enabled visibility, real UI scale and screen bounds. Mocked/unit renderer checks cannot satisfy that device requirement.

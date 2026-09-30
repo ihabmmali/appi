@@ -2,6 +2,13 @@
 
 Implemented features, grouped by add-on version. A version listed here means its source/package was published in the repository; it does not by itself certify device testing. For details and earlier 0.7.x entries, see [README.md](README.md). This file is the concise ongoing release history; [RELEASE_NOTES.md](RELEASE_NOTES.md) records what each package shipped and how it was verified.
 
+## Unreleased — 0.7.23 candidate
+
+- HLS-24: release a successfully recovered exact sequential segment to Kodi immediately instead of waiting for the full recovery reserve; background refill continues and low reserve alone is not a terminal playback error. Fresh-epoch seek/cold-resume reserve gating remains intact.
+- HLS-22: add settings-backed bounded per-track producer concurrency (default 2, range 1–4), distinct segment claims and active/peak concurrency telemetry while retaining contiguous reserve accounting, duplicate suppression and stale-epoch cancellation.
+- HLS-23: make the debug-overlay setting a true master gate, close stale windows when disabled, render enabled telemetry as four bounded lines, and log renderer state transitions without sensitive stream data.
+- Existing HLS modes 0–2 and the HLS-13 reservoir thresholds/accounting remain unchanged. Final candidate run `36661752457` passed 103 unit/smoke tests (1 skipped), workflow validation and deterministic package/index inspection; target Fire TV/provider acceptance remains pending.
+
 ## 0.7.22 — 2026-09-28
 
 - Buffered Look Ahead now owns recovery for transient segment/provider stalls: it retries the exact needed media inside Appi under a bounded configurable policy instead of relying on repeated Kodi 503 retries, while stale/superseded seek epochs remain request-scoped.

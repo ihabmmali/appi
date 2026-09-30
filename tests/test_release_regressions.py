@@ -13,7 +13,7 @@ STRINGS = PLUGIN / 'resources' / 'language' / 'resource.language.en_gb' / 'strin
 class SettingsLocalizationTests(unittest.TestCase):
     def test_stable_browser_and_download_batch_features_are_packaged(self):
         addon = ET.parse(PLUGIN / 'addon.xml').getroot()
-        self.assertEqual(addon.attrib.get('version'), '0.7.22')
+        self.assertEqual(addon.attrib.get('version'), '0.7.23')
         isa = addon.find("./requires/import[@addon='inputstream.adaptive']")
         self.assertIsNotNone(isa)
         self.assertNotEqual(isa.attrib.get('optional'), 'true')
@@ -23,7 +23,7 @@ class SettingsLocalizationTests(unittest.TestCase):
         self.assertEqual(helper.attrib.get('version'), '0.0.0')
 
     def test_release_zip_has_required_isa_and_exact_revised_icon(self):
-        package = PLUGIN / 'plugin.video.appi-0.7.22.zip'
+        package = PLUGIN / 'plugin.video.appi-0.7.23.zip'
         self.assertTrue(package.is_file(), package)
         with zipfile.ZipFile(package, 'r') as archive:
             manifest = ET.fromstring(archive.read('plugin.video.appi/addon.xml'))

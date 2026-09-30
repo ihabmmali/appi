@@ -24,6 +24,7 @@ xa.Addon=Addon; sys.modules['xbmcaddon']=xa
 xg=types.ModuleType('xbmcgui')
 class Label:
     def setLabel(self,value): state['labels'].append(value)
+    def setText(self,value): state['labels'].append(value)
 class XMLDialog:
     def __init__(self,*args,**kwargs): state['xml']+=1; self.control=Label()
     def getControl(self,id): return self.control
@@ -47,8 +48,11 @@ assert state['shown']==1 and state['xml']==1
 assert '5.0 MB / 48.0 MB' in state['labels'][-1]
 assert '9.5 s ahead' in state['labels'][-1]
 assert 'epoch 3 (seek)' in state['labels'][-1]
-assert '20.0 MB cached total' in state['labels'][-1]
+assert '20.0 MB total' in state['labels'][-1]
+assert state['labels'][-1].count('\n') == 3
 assert any('WindowXMLDialog' in value for value in state['logs'])
+overlay.update(status,debug=False,playing=True)
+assert state['closed']==1
 overlay.update(None,debug=True,playing=True); assert state['closed']==1
 """
         result = subprocess.run(

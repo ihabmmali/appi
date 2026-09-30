@@ -89,6 +89,25 @@ class BufferedReleaseTests(unittest.TestCase):
         session._wait_reservoir = lambda *a: self.fail('sequential cached segment must not block')
         self.assertTrue(track.serve(0))
 
+    def test_depleted_sequential_segment_is_released_before_reserve_rebuild(self):
+        session = self.session(buffer_mb=32)
+        session.prepare()
+        track = next(iter(session.tracks.values()))
+        track.stop()
+        track.last_served = 0
+        track.last_requested = 0
+        target = track.segments[1].resource
+        if target.path and os.path.exists(target.path):
+            os.remove(target.path)
+        target.path = ''
+        session._wait_reservoir = lambda *a: self.fail(
+            'normal exact-segment delivery must not wait for reserve rebuild'
+        )
+        self.assertTrue(os.path.isfile(track.serve(1)))
+        names = [name for name, _ in session.drain_events()]
+        self.assertIn('buffer_required_segment_ready', names)
+        self.assertIn('buffer_recovery_media_released', names)
+
     def test_missing_seek_fails_within_bound_without_fallback_network_wait(self):
         session = self.session()
         session.prepare()
@@ -356,6 +375,40 @@ class BufferedReleaseTests(unittest.TestCase):
         with self.assertRaises(self.m.RecoveryTimeout):
             track.serve(5)
 
+    def test_prefetch_concurrency_fetches_future_segments_in_parallel_without_duplicates(self):
+        original = self.m._fetch_to_path
+        lock = threading.Lock()
+        gate = threading.Event()
+        active = {'count': 0, 'peak': 0}
+        calls = []
+
+        def concurrent_fetch(url, path, **kwargs):
+            is_segment = '/s' in url
+            if is_segment:
+                with lock:
+                    active['count'] += 1
+                    active['peak'] = max(active['peak'], active['count'])
+                    calls.append(url)
+                    if active['count'] >= 2:
+                        gate.set()
+                gate.wait(1.0)
+            try:
+                return original(url, path, **kwargs)
+            finally:
+                if is_segment:
+                    with lock:
+                        active['count'] -= 1
+
+        self.m._fetch_to_path = concurrent_fetch
+        session = self.session(tuning={'prefetch_concurrency': 2})
+        session.prepare()
+        self.assertTrue(session.ready, session.error)
+        self.assertGreaterEqual(active['peak'], 2)
+        self.assertEqual(len(calls), len(set(calls)))
+        status = session.status()
+        self.assertEqual(status['prefetch_concurrency'], 2)
+        self.assertGreaterEqual(status['peak_active_fetch_count'], 2)
+
     def test_tuning_validation_preserves_defaults_and_rejects_bad_watermark_order(self):
         defaults=self.m.validated_tuning({})
         self.assertEqual(defaults['startup_pct'],50)
@@ -381,6 +434,8 @@ class BufferedReleaseTests(unittest.TestCase):
         track=next(iter(session.tracks.values()))
         track.stop()
         index=min(20,len(track.segments)-1)
+        track.last_served=index-1
+        track.last_requested=index-1
         resource=track.segments[index].resource
         if resource.path and os.path.exists(resource.path):
             os.remove(resource.path)
@@ -398,7 +453,7 @@ class BufferedReleaseTests(unittest.TestCase):
         self.assertGreaterEqual(calls['count'],2)
         names=[name for name,_ in session.drain_events()]
         self.assertIn('buffer_recovery_retry',names)
-        self.assertIn('buffer_recovery',names)
+        self.assertIn('buffer_recovery_media_released',names)
 
     def test_failure_snapshot_contains_numeric_timeline_and_classification(self):
         session=self.session(buffer_mb=32)
@@ -492,13 +547,26 @@ class ReleaseSettingsTests(unittest.TestCase):
         self.assertIn('8.5 s ahead', m.status_text(status,True,True))
         self.assertEqual(status,before)
         status['recovering']=True
-        self.assertEqual(m.status_text(status,False,True),'Appi buffering — 3.0 MB / 32.0 MB')
+        self.assertEqual(m.status_text(status,False,True),'')
+        detailed=m.status_text(status,True,True)
+        self.assertIn('recovering', detailed)
+        self.assertGreaterEqual(detailed.count('\n'), 3)
         self.assertEqual(m.status_text(None,True,True),'')
+
+    def test_overlay_xml_is_bounded_multiline_textbox(self):
+        root=ET.parse(
+            ROOT/'plugin.video.appi/resources/skins/Default/1080i/AppiBufferOverlay.xml'
+        ).getroot()
+        control=root.find('.//control[@id="100"]')
+        self.assertIsNotNone(control)
+        self.assertEqual(control.get('type'),'textbox')
+        self.assertLessEqual(int(control.findtext('width')),1180)
+        self.assertGreaterEqual(int(control.findtext('height')),120)
 
     def test_icon_exact_copy_and_manifest_reference(self):
         manifest=ET.parse(ROOT/'plugin.video.appi/addon.xml').getroot()
         icon=manifest.findtext('./extension/assets/icon')
-        self.assertEqual(manifest.get('version'),'0.7.22')
+        self.assertEqual(manifest.get('version'),'0.7.23')
         self.assertNotEqual(icon, 'resources/icon.png')
         self.assertEqual((ROOT/'plugin.video.appi'/icon).read_bytes(),
                          (ROOT/'artwork/appi-icon-selected.png').read_bytes())
@@ -520,7 +588,8 @@ class ReleaseSettingsTests(unittest.TestCase):
             'buffered_low_water_pct':'60','buffered_critical_pct':'15',
             'buffered_media_timeout_s':'15','buffered_startup_timeout_s':'180',
             'buffered_seek_reserve_s':'12','buffered_min_seek_reserve_mb':'4',
-            'buffered_prefetch_lead_s':'24','buffered_recovery_timeout_s':'60',
+            'buffered_prefetch_lead_s':'24','buffered_prefetch_concurrency':'2',
+            'buffered_recovery_timeout_s':'60',
             'buffered_retry_delay_ms':'500','buffered_retry_attempts':'0',
             'buffered_recovery_reserve_s':'6','buffered_pause_retention_min':'0',
         }
