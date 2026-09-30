@@ -3,7 +3,7 @@ id: HLS-23
 role: implementation
 status: review
 delivery: released
-verification: partial
+verification: failed
 owner: builder-publisher-2026-09-29
 base_commit: ff256d99b7097dcea3787c3a86582bec29354972
 artifact: https://ihabmmali.github.io/appi/plugin.video.appi-0.7.23.zip
@@ -128,3 +128,15 @@ Verification remains **partial** because the task explicitly requires target Fir
 Appi 0.7.23 was integrated through PR #12, merge `9520fcc984b3f5796e840f217574bf0569dbb1f9`. Final exact-candidate verification run `36662004552` passed 103 unit/smoke tests (1 skipped), workflow validation, deterministic rebuild and package/index inspection. GitHub Pages deployment run `36662108681` completed successfully.
 
 Delivery is therefore **released**. Verification remains **partial** because the task's documented Fire TV/provider acceptance checks have not yet been rerun against 0.7.23.
+
+
+## 0.7.23 target-device acceptance failure
+Fire TV testing confirms the multiline layout repair works, but HLS-23 still fails its more important visibility/input acceptance.
+
+The full detailed overlay remains visible regardless of the debug setting. In addition, while the WindowXMLDialog overlay is active, the Fire TV center/select button no longer opens Kodi's normal playback OSD. Pressing Back closes the Appi window and immediately restores normal playback navigation.
+
+This demonstrates that:
+- target-device setting gating still does not match the 0.7.23 source/unit-test behavior; and
+- the WindowXMLDialog renderer is not acting as a truly passive overlay on this device.
+
+HLS-26 owns the successor repair. HLS-23 verification is therefore **failed**, while its multiline/screen-width portion has positive device evidence.

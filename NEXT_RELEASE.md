@@ -11,6 +11,7 @@ No product task is currently committed for the next release.
 | Task | Selection | Priority | Reason |
 | --- | --- | --- | --- |
 | [HLS-25](docs/tasks/HLS-25.md) | candidate | **release blocker** | 0.7.23 pause/resume can poison the buffered session on Kodi-side localhost write timeout and can misclassify duplicate/range re-reads as seek epochs; fix semantics rather than increasing timeouts |
+| [HLS-26](docs/tasks/HLS-26.md) | candidate | overlay correctness / playback UX | 0.7.23 multiline overlay still ignores the OFF setting and WindowXMLDialog blocks Kodi playback OSD until Back dismisses it; make OFF absolute and investigate a passive renderer |
 | [META-1](docs/tasks/META-1.md) | candidate | metadata / TV UX | Surface optional movie/episode runtime from TMDb Helper/Kodi metadata and show local episode counts on every season folder |
 | [PLAY-1](docs/tasks/PLAY-1.md) | backlog | investigation | Resume persistence is working; only investigate the playback-start Trakt API error |
 | [HLS-1](docs/tasks/HLS-1.md) | backlog | investigation | Use buffered-mode/diagnostic evidence to diagnose any underlying provider stalls that remain |
@@ -26,6 +27,8 @@ No product task is currently committed for the next release.
 6. Copy shipped task IDs and scope changes into RELEASE_NOTES, then reset this planning file for the next cycle.
 
 ## Scope decisions
+
+2026-09-29: HLS-26 added after 0.7.23 Fire TV testing. HLS-23's multiline layout works, but the full debug overlay remains visible regardless of the setting and the WindowXMLDialog blocks Kodi's normal playback OSD/navigation until Back closes it. HLS-23 verification is failed. HLS-26 must first make OFF absolute on the target device, instrument actual setting propagation, and then determine whether a truly passive renderer is viable. The user accepts Back-to-dismiss as a fallback for an explicitly enabled overlay, but not an always-on overlay.
 
 2026-09-29: HLS-25 added as a release-blocking correctness candidate after 0.7.23 target-device pause/resume failure. Source confirms the localhost proxy's 30-second socket timeout can surface as a fatal `TimeoutError` through `do_GET()` while Kodi is paused, and `_Track._serve_segment()` still treats any index other than `last_requested + 1` as a seek. Range parsing currently occurs after track serving, so same-resource range re-reads can be falsely promoted to fresh epochs. Do not tune timeouts or reservoir size; make Kodi-consumer disconnect/write-timeout non-fatal and classify duplicate/re-read versus genuine timeline discontinuity correctly. HLS-19 target-device verification is now failed.
 
