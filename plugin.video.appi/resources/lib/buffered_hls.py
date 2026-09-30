@@ -120,6 +120,11 @@ def _safe_status(response):
         return 200
 
 
+def _write_to_client(writer, data):
+    """Single body-write boundary so local Kodi consumer failures stay local."""
+    return writer.write(data)
+
+
 class PlaybackCancelled(Exception):
     pass
 
@@ -520,6 +525,7 @@ class _Track:
         self.downloaded_total = 0
         self.failed = ''
         self.recovering = False
+        self.resume_pending = False
         self._serve_lock = threading.Lock()
         self._condition = threading.Condition()
         self._stop = threading.Event()
@@ -744,22 +750,76 @@ class _Track:
                 self._condition.wait(timeout=0.25)
         return False
 
-    def serve(self, index):
-        return self._serve_segment(index)
+    def serve(self, index, request_context=None):
+        return self._serve_segment(index, request_context=request_context)
 
-    def _serve_segment(self, index):
+    def _classify_request(self, index, range_requested=False):
+        previous_requested = self.last_requested
+        previous_served = self.last_served
+        resuming = bool(
+            self.resume_pending or self.session._player_state == 'paused'
+        )
+        self.resume_pending = False
+
+        if previous_requested < 0:
+            return ('cold-resume', True) if index > 0 else ('sequential', False)
+
+        expected = previous_requested + 1
+        if range_requested and index in {previous_requested, previous_served}:
+            return 'range-reread', False
+        if index in {previous_requested, previous_served}:
+            return 'duplicate', False
+        if index == expected:
+            return 'sequential', False
+        if index in {previous_requested - 1, previous_served - 1}:
+            return 'recent-reread', False
+        if resuming and index == expected + 1:
+            return 'adjacent', False
+        if index > expected:
+            return 'forward-discontinuity', True
+        return 'backward-discontinuity', True
+
+    def _serve_segment(self, index, request_context=None):
         if index < 0 or index >= len(self.segments):
             raise IndexError('HLS segment index outside playlist')
 
+        request_context = request_context or {}
+        range_requested = bool(request_context.get('range'))
         with self._serve_lock:
-            expected = self.last_requested + 1
-            is_seek = index != expected
+            previous_requested = self.last_requested
+            previous_served = self.last_served
+            classification, is_seek = self._classify_request(
+                index, range_requested=range_requested
+            )
             if is_seek:
-                reason = 'cold-resume' if self.last_served < 0 and index > 0 else 'seek'
+                reason = 'cold-resume' if classification == 'cold-resume' else 'seek'
                 epoch = self.session._coordinate_seek(self, index, reason=reason)
             else:
                 epoch = self.session.epoch
-                self.last_requested = index
+                self.last_requested = max(self.last_requested, index)
+
+        if classification != 'sequential':
+            reserve_bytes, reserve_seconds, _ = self.session._playable_reserve()
+            self.session._event(
+                'buffer_consumer_request',
+                stage='request-classification',
+                track_id=self.id,
+                requested_index=index,
+                segment_sequence=self.segments[index].sequence,
+                range_request=range_requested,
+                range_class='byte-range' if range_requested else 'none',
+                player_state=self.session._player_state,
+                epoch_id=epoch,
+                epoch_reason=self.session.epoch_reason,
+                previous_last_requested=previous_requested,
+                previous_last_served=previous_served,
+                request_classification=classification,
+                cached_ahead_bytes=reserve_bytes,
+                buffered_seconds=reserve_seconds,
+                total_cached_bytes=self.session.disk_bytes(),
+                session_retained=True,
+                termination_reason='',
+            )
 
         ahead, count = self._ahead(index)
         needs_reserve = is_seek or not self._cached(index)
@@ -773,6 +833,7 @@ class _Track:
                 cached_segments_ahead=count,
                 requested_index=index,
                 random_access=is_seek,
+                request_classification=classification,
             )
             try:
                 self.session.recover_segment(self, index, epoch, random_access=is_seek)
@@ -1674,6 +1735,38 @@ class BufferedHlsSession:
         fields['observed_at'] = round(time.time(), 3)
         self.events.put((name, fields))
 
+    def _consumer_io_event(self, resource, exc, stage, requested_range=''):
+        reserve_bytes, reserve_seconds, _ = self._playable_reserve()
+        metadata = resource.metadata or {}
+        self._event(
+            'buffer_consumer_io_error',
+            stage=stage,
+            error_type=type(exc).__name__,
+            error_category='timeout' if isinstance(exc, TimeoutError) else 'disconnect',
+            resource_kind=resource.kind,
+            track_id=metadata.get('track_id') or '',
+            requested_index=_int(metadata.get('index'), -1),
+            segment_sequence=_int(metadata.get('sequence'), -1),
+            range_request=bool(requested_range),
+            range_class='byte-range' if requested_range else 'none',
+            player_state=self._player_state,
+            epoch_id=self.epoch,
+            epoch_reason=self.epoch_reason,
+            previous_last_requested=(
+                self.tracks.get(metadata.get('track_id')).last_requested
+                if self.tracks.get(metadata.get('track_id')) else -1
+            ),
+            previous_last_served=(
+                self.tracks.get(metadata.get('track_id')).last_served
+                if self.tracks.get(metadata.get('track_id')) else -1
+            ),
+            cached_ahead_bytes=reserve_bytes,
+            buffered_seconds=reserve_seconds,
+            total_cached_bytes=self.disk_bytes(),
+            session_retained=True,
+            termination_reason='',
+        )
+
     def drain_events(self):
         values = []
         while True:
@@ -1732,6 +1825,8 @@ class BufferedHlsSession:
                     self.send_error(404)
                     return
                 session._serving.add(resource_id)
+                stage = 'provider-read'
+                requested = self.headers.get('Range', '')
                 try:
                     if resource.kind == 'playlist':
                         session._mark_handoff(
@@ -1749,20 +1844,23 @@ class BufferedHlsSession:
                         self.send_header('Content-Length', str(len(data)))
                         self.send_header('Cache-Control', 'no-store')
                         self.end_headers()
-                        self.wfile.write(data)
+                        stage = 'kodi-write'
+                        _write_to_client(self.wfile, data)
                         return
                     if resource.kind in {'key', 'map'}:
                         session._mark_handoff('first_key_or_map_request', resource_kind=resource.kind)
                     elif resource.kind == 'segment':
                         session._mark_handoff('first_media_segment_request', resource_kind=resource.kind)
-                    path, content_type = session.serve_file(resource_id)
+                    stage = 'provider-read'
+                    path, content_type = session.serve_file(
+                        resource_id, request_context={'range': requested}
+                    )
                     with session._download_lock:
                         handle = open(path, 'rb')
                         size = os.fstat(handle.fileno()).st_size
                         session._pins.add(path)
                     try:
                         start, end = 0, size - 1
-                        requested = self.headers.get('Range', '')
                         if requested:
                             match = re.fullmatch(r'bytes=(\d+)-(\d*)', requested)
                             if not match or int(match.group(1)) >= size:
@@ -1787,10 +1885,12 @@ class BufferedHlsSession:
                         handle.seek(start)
                         remaining = end - start + 1
                         while remaining > 0:
+                            stage = 'local-file-read'
                             chunk = handle.read(min(256 * 1024, remaining))
                             if not chunk:
                                 break
-                            self.wfile.write(chunk)
+                            stage = 'kodi-write'
+                            _write_to_client(self.wfile, chunk)
                             if resource.kind == 'segment':
                                 session._mark_handoff('first_media_bytes_served', resource_kind=resource.kind)
                                 if remaining == end - start + 1:
@@ -1808,11 +1908,34 @@ class BufferedHlsSession:
                     finally:
                         handle.close()
                         session._pins.discard(path)
-                except (BrokenPipeError, ConnectionResetError):
-                    pass
+                except (BrokenPipeError, ConnectionResetError, TimeoutError) as exc:
+                    if stage == 'kodi-write':
+                        session._consumer_io_event(
+                            resource, exc, stage=stage, requested_range=requested
+                        )
+                    else:
+                        session._event(
+                            'buffer_request_io_error',
+                            stage=stage,
+                            error_type=type(exc).__name__,
+                            resource_kind=resource.kind,
+                            session_retained=False,
+                            termination_reason='non-consumer-io-error',
+                        )
+                        session.fail(
+                            'Buffered stream failed ({}). Please retry playback.'.format(
+                                type(exc).__name__
+                            ),
+                            type(exc).__name__,
+                        )
+                        try:
+                            self.send_error(502)
+                        except Exception:
+                            pass
                 except RecoveryExhausted as exc:
                     session._event(
                         'buffer_recovery_exhausted',
+                        stage='provider-read',
                         error_type=type(exc).__name__,
                         reason=str(exc),
                     )
@@ -1833,6 +1956,14 @@ class BufferedHlsSession:
                     except Exception:
                         pass
                 except Exception as exc:
+                    session._event(
+                        'buffer_request_error',
+                        stage=stage,
+                        error_type=type(exc).__name__,
+                        resource_kind=resource.kind,
+                        session_retained=False,
+                        termination_reason='request-error',
+                    )
                     session.fail(
                         'Buffered stream failed ({}). Please retry playback.'.format(
                             type(exc).__name__
@@ -1935,14 +2066,17 @@ class BufferedHlsSession:
                 return handle.read(), content_type
         return self._serve_playlist(resource)
 
-    def serve_file(self, resource_id):
+    def serve_file(self, resource_id, request_context=None):
         self.last_access = time.monotonic()
         resource = self.resources[resource_id]
         if resource.kind == 'segment':
             track = self.tracks.get(resource.metadata.get('track_id'))
             if not track:
                 raise RuntimeError('segment track is unavailable')
-            path = track.serve(_int(resource.metadata.get('index'), -1))
+            path = track.serve(
+                _int(resource.metadata.get('index'), -1),
+                request_context=request_context,
+            )
             return path, resource.content_type or 'video/mp2t'
         self._ensure_binary(resource)
         return resource.path, resource.content_type or 'application/octet-stream'
@@ -2489,6 +2623,8 @@ class BufferedHlsManager:
                         epoch_id=session.epoch,
                         paused_s=round(time.monotonic() - session._paused_since, 3),
                     )
+                    for track in list(session.tracks.values()):
+                        track.resume_pending = True
                     session._paused_since = 0.0
 
                 handoff = os.path.join(self.control, 'handoff-' + session.token + '.json')

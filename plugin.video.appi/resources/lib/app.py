@@ -24,7 +24,10 @@ from . import refresh_logic
 from . import refresh_state
 from . import search_history
 from . import subtitle_store
-from .catalog import build_tv_groups, item_ref, show_cache_name, sort_movies, sort_shows
+from .catalog import (
+    build_tv_groups, item_ref, season_episode_counts, season_label,
+    show_cache_name, sort_movies, sort_shows,
+)
 from .http import fetch_text, probe_stream
 from .m3u import dedupe, parse_m3u
 
@@ -688,6 +691,12 @@ def _apply_metadata(list_item, payload, data):
             tag.setTitle(data['episode_title'])
         except Exception:
             pass
+    runtime_seconds = data.get('runtime_seconds')
+    if runtime_seconds is not None:
+        try:
+            tag.setDuration(int(runtime_seconds))
+        except Exception:
+            pass
     rating = data.get('imdb_rating')
     if rating is not None:
         try:
@@ -1256,12 +1265,14 @@ def show_recent_show(key):
         tuples.append(playable)
 
     tvg_id = summary.get('tvg_id') or ''
+    counts = season_episode_counts(_load_show_episodes(key))
     for season in summary.get('seasons') or []:
-        info = {'mediatype': 'season', 'title': 'Season {}'.format(season), 'season': int(season)}
+        label = season_label(season, counts.get(int(season), 0))
+        info = {'mediatype': 'season', 'title': label, 'season': int(season)}
         if tvg_id:
             info['imdbnumber'] = tvg_id
         tuples.append(_folder_tuple(
-            'Season {}'.format(season),
+            label,
             _url('episodes', show_key=key, season=season),
             info,
             [
@@ -1279,12 +1290,14 @@ def show_seasons(key):
     tvg_id = (summary or {}).get('tvg_id') or ''
     xbmcplugin.setContent(HANDLE, 'seasons')
     directory_items = []
+    counts = season_episode_counts(_load_show_episodes(key))
     for season in seasons:
-        info = {'mediatype': 'season', 'title': 'Season {}'.format(season), 'season': int(season)}
+        label = season_label(season, counts.get(int(season), 0))
+        info = {'mediatype': 'season', 'title': label, 'season': int(season)}
         if tvg_id:
             info['imdbnumber'] = tvg_id
         directory_items.append(_folder_tuple(
-            'Season {}'.format(season),
+            label,
             _url('episodes', show_key=key, season=season),
             info,
             [

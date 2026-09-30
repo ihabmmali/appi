@@ -17,14 +17,26 @@ from . import subtitle_store
 ADDON = xbmcaddon.Addon()
 
 
+def _setting_value(setting):
+    """Read through a fresh Addon object so long-running services see changes."""
+    try:
+        return xbmcaddon.Addon().getSetting(setting)
+    except Exception:
+        return ADDON.getSetting(setting)
+
+
+def _enabled_state(setting, default=True):
+    value = _setting_value(setting)
+    return value, (default if value == '' else value.lower() == 'true')
+
+
 def _enabled(setting, default=True):
-    value = ADDON.getSetting(setting)
-    return default if value == '' else value.lower() == 'true'
+    return _enabled_state(setting, default)[1]
 
 
 def _integer(setting, default):
     try:
-        value = ADDON.getSetting(setting)
+        value = _setting_value(setting)
         return int(value) if value != '' else int(default)
     except (TypeError, ValueError):
         return int(default)
@@ -280,7 +292,20 @@ class AppiPlayer(xbmc.Player):
 
 
 def run():
-    monitor = xbmc.Monitor()
+    class ServiceMonitor(xbmc.Monitor):
+        def __init__(self):
+            super().__init__()
+            self.settings_changed = False
+
+        def onSettingsChanged(self):
+            self.settings_changed = True
+
+        def consume_settings_changed(self):
+            changed = self.settings_changed
+            self.settings_changed = False
+            return changed
+
+    monitor = ServiceMonitor()
     buffered_manager = buffered_hls.BufferedHlsManager()
     player = AppiPlayer(buffered_manager)
     overlay = BufferOverlay()
@@ -292,6 +317,7 @@ def run():
     focused_value = ''
     focused_since = 0.0
     queued_focus = ''
+    last_overlay_setting = None
     while not monitor.abortRequested():
         playing = player.isPlayingVideo()
         paused = bool(xbmc.getCondVisibility('Player.Paused'))
@@ -312,8 +338,31 @@ def run():
             status = session.status() if session else None
             if status and active_video:
                 status['recovering'] = status['recovering'] or caching
-            overlay.update(status if session and session.ready else None,
-                           _enabled('buffered_debug_overlay', False), active_video)
+            raw_debug, debug_enabled = _enabled_state(
+                'buffered_debug_overlay', False
+            )
+            settings_event = monitor.consume_settings_changed()
+            overlay_state = (raw_debug, debug_enabled)
+            if overlay_state != last_overlay_setting or settings_event:
+                decision = (
+                    'close' if not debug_enabled
+                    else ('update' if session and session.ready and active_video else 'hidden')
+                )
+                xbmc.log(
+                    'Appi buffered overlay setting: raw={!r} effective={} changed={} '
+                    'settings_event={} renderer_exists={} decision={}'.format(
+                        raw_debug, debug_enabled,
+                        overlay_state != last_overlay_setting,
+                        settings_event, bool(overlay.window), decision,
+                    ),
+                    getattr(xbmc, 'LOGINFO', 1),
+                )
+                last_overlay_setting = overlay_state
+            overlay.update(
+                status if session and session.ready else None,
+                debug_enabled,
+                active_video,
+            )
             if session and active_video:
                 diagnostics.event('buffer_status', **{k: v for k, v in status.items()
                                   if k in {'cached_ahead_bytes', 'buffer_target_bytes',

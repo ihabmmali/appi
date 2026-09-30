@@ -335,6 +335,17 @@ def _int(value):
         return 0
 
 
+def _runtime_seconds(value):
+    """Kodi JSON-RPC video runtime/duration values are normalized to seconds."""
+    if value in (None, ''):
+        return None
+    try:
+        seconds = int(float(value))
+    except (TypeError, ValueError):
+        return None
+    return seconds if seconds > 0 else None
+
+
 def _normalise_result(item, payload):
     properties = item.get('customproperties') or {}
     lower_props = {str(key).casefold(): value for key, value in properties.items()}
@@ -372,6 +383,11 @@ def _normalise_result(item, payload):
         '_source_imdb_id': source_imdb_id,
         'tmdb_id': lower_props.get('tmdb_id') or (item.get('uniqueid') or {}).get('tmdb') or '',
     }
+    runtime_seconds = _runtime_seconds(
+        item.get('runtime') if item.get('runtime') is not None else item.get('duration')
+    )
+    if runtime_seconds is not None:
+        result['runtime_seconds'] = runtime_seconds
     if payload.get('media_type') == 'episode':
         title = item.get('title') or item.get('label') or ''
         if title and title.casefold() != (payload.get('title') or '').casefold():
@@ -417,7 +433,7 @@ def process_one():
     try:
         properties = [
             'title', 'plot', 'year', 'cast', 'director', 'thumbnail', 'art',
-            'imdbnumber', 'uniqueid', 'customproperties',
+            'imdbnumber', 'uniqueid', 'customproperties', 'runtime',
         ]
         request = {
             'directory': _helper_url(payload),
@@ -425,17 +441,33 @@ def process_one():
             'properties': properties,
             'limits': {'start': 0, 'end': 1},
         }
-        try:
-            result = _jsonrpc('Files.GetDirectory', request)
-        except RuntimeError as exc:
-            if 'invalid' not in str(exc).casefold() or 'param' not in str(exc).casefold():
-                raise
-            # customproperties was added to newer JSON-RPC versions. Older Kodi
-            # builds can still provide every requested field except IMDb ratings.
-            request['properties'] = [
-                value for value in properties if value != 'customproperties'
-            ]
-            result = _jsonrpc('Files.GetDirectory', request)
+        # Kodi/TMDb Helper combinations vary in support for runtime and
+        # customproperties. Probe only compatibility variants after an
+        # Invalid params response so a missing optional property never makes
+        # the whole metadata lookup fail.
+        property_variants = [
+            properties,
+            [value for value in properties if value != 'runtime'],
+            [value for value in properties if value != 'customproperties'],
+            [
+                value for value in properties
+                if value not in {'runtime', 'customproperties'}
+            ],
+        ]
+        result = None
+        last_invalid = None
+        for candidate in property_variants:
+            request['properties'] = candidate
+            try:
+                result = _jsonrpc('Files.GetDirectory', request)
+                break
+            except RuntimeError as exc:
+                text = str(exc).casefold()
+                if 'invalid' not in text or 'param' not in text:
+                    raise
+                last_invalid = exc
+        if result is None:
+            raise last_invalid or RuntimeError('Kodi JSON-RPC rejected metadata properties')
         files = result.get('files') or []
         if not files:
             raise RuntimeError('TMDb Helper returned no match')
@@ -480,7 +512,8 @@ def process_one():
                 )
                 data = {
                     name: data[name] for name in (
-                        'episode_title', 'plot', 'imdb_rating', 'imdb_votes', 'directors'
+                        'episode_title', 'plot', 'imdb_rating', 'imdb_votes',
+                        'directors', 'runtime_seconds'
                     ) if data.get(name) not in (None, '', [], {})
                 }
             connection.execute(
