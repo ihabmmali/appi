@@ -10,6 +10,7 @@ No product task is currently committed for the next release.
 
 | Task | Selection | Priority | Reason |
 | --- | --- | --- | --- |
+| [META-1](docs/tasks/META-1.md) | candidate | metadata / TV UX | Surface optional movie/episode runtime from TMDb Helper/Kodi metadata and show local episode counts on every season folder |
 | [PLAY-1](docs/tasks/PLAY-1.md) | backlog | investigation | Resume persistence is working; only investigate the playback-start Trakt API error |
 | [HLS-1](docs/tasks/HLS-1.md) | backlog | investigation | Use buffered-mode/diagnostic evidence to diagnose any underlying provider stalls that remain |
 | [UI-1](docs/tasks/UI-1.md) | backlog | investigation | Skin comparison needed |
@@ -24,6 +25,8 @@ No product task is currently committed for the next release.
 6. Copy shipped task IDs and scope changes into RELEASE_NOTES, then reset this planning file for the next cycle.
 
 ## Scope decisions
+
+2026-09-29: META-1 added as a user-requested candidate. Extend metadata to surface runtime/length where TMDb Helper/Kodi exposes it, with graceful fallback when unsupported; do not infer missing duration. Independently, derive each season folder's episode count from Appi's local episode catalogue and show the count in both normal and Recently Played season views.
 
 2026-09-29: Appi 0.7.23 published through PR #12 / merge `9520fcc984b3f5796e840f217574bf0569dbb1f9`. Final exact-candidate gate `36662004552` and Pages deployment `36662108681` succeeded. Shipped scope: HLS-22, HLS-23 and HLS-24. Their delivery is released while target-device verification remains review/partial. The install index retains 0.7.22, 0.7.21 and 0.7.8 plus 0.7.14 and 0.7.12. Planning is reset; no next-release product scope is committed.
 
