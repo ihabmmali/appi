@@ -18,13 +18,13 @@ Appi is a Kodi video add-on for user-configured movie and TV-show M3U catalogues
 
 Add `https://ihabmmali.github.io/appi/` in Kodi File Manager, then install the current `plugin.video.appi-<version>.zip`.
 
-## 0.7.24 candidate — 2026-09-30
+## 0.7.24 — 2026-09-30
 
 - Buffered Look Ahead treats Kodi-side localhost write timeout/disconnect during pause/resume as a consumer-request ending rather than a provider/session failure, retaining the buffered session for the next request.
 - Duplicate/current, same-resource Range, recent re-read and adjacent resume requests remain in the active epoch; real forward/backward discontinuities and cold non-zero starts still use fresh seek epochs.
 - The detailed buffer setting is re-read from current Kodi settings in the persistent service so OFF is authoritative. The accepted Back-to-dismiss behavior is preserved when the display is intentionally ON.
 - Optional runtime metadata is applied using Kodi's native duration field when available, and season folders show locally available episode counts.
-- Candidate run `36763427233` passed 108 tests (1 skipped), workflow validation, deterministic rebuild and package/index inspection. Target Fire TV acceptance remains separately required.
+- Final exact-candidate run `36763721939` passed 108 tests (1 skipped), workflow validation, deterministic rebuild and package/index inspection. Pages deployment `36763934374` succeeded; target Fire TV acceptance remains separately required.
 
 ## 0.7.23 — 2026-09-29
 

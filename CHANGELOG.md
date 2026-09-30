@@ -2,12 +2,12 @@
 
 Implemented features, grouped by add-on version. A version listed here means its source/package was published in the repository; it does not by itself certify device testing. For details and earlier 0.7.x entries, see [README.md](README.md). This file is the concise ongoing release history; [RELEASE_NOTES.md](RELEASE_NOTES.md) records what each package shipped and how it was verified.
 
-## Unreleased — 0.7.24 candidate
+## 0.7.24 — 2026-09-30
 
 - HLS-25 separates Kodi localhost consumer-write timeout/disconnect from provider transport failures and explicitly classifies duplicate, Range, recent re-read, adjacent-resume and true-discontinuity requests so false seek epochs no longer invalidate a healthy reservoir.
 - HLS-26 refreshes the debug-overlay setting from Kodi at runtime, making OFF authoritative in the persistent service while preserving the established multiline renderer and Back-to-dismiss interaction when ON.
 - META-1 adds optional movie/episode runtime through Kodi's native duration tag and locally derived season-folder episode counts with singular/plural labels.
-- Existing HLS modes 0–2, reservoir watermarks, producer-concurrency defaults and HLS-24 exact-segment release remain unchanged. Candidate run `36763427233` passed 108 tests (1 skipped), workflow validation and deterministic package/index inspection.
+- Existing HLS modes 0–2, reservoir watermarks, producer-concurrency defaults and HLS-24 exact-segment release remain unchanged. Final exact-candidate run `36763721939` passed 108 tests (1 skipped), workflow validation, deterministic rebuild and package/index inspection; target-device acceptance remains pending.
 
 ## 0.7.23 — 2026-09-29
 

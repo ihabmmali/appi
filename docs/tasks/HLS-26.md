@@ -2,11 +2,11 @@
 id: HLS-26
 role: implementation
 status: review
-delivery: unreleased
+delivery: released
 verification: partial
 owner: builder-publisher-2026-09-30
 base_commit: e359459e1e3734e1c60608632b2213fe33bc92e7
-artifact: none
+artifact: https://ihabmmali.github.io/appi/plugin.video.appi-0.7.24.zip
 ---
 # HLS-26 — Make the Buffered debug overlay setting authoritative and non-blocking
 
@@ -157,3 +157,8 @@ Release gate run `36763219643` passed all 108 unit/smoke tests (1 skipped). Pack
 Self-review completed against artifact commit `dec2cb5f491aba7568e2f6d7ba28be91ba247369`. Release run `36763427233` passed 108 unit/smoke tests (1 skipped), tracker validation and deterministic package inspection. Automated coverage proves fresh settings reads and OFF/ON/OFF boolean propagation at the service boundary.
 
 No renderer replacement or focus workaround was introduced. Verification remains partial because OFF-before-playback and ON→OFF behavior must still be confirmed on the target Fire TV; Back-to-dismiss remains the accepted ON-state interaction.
+
+## 0.7.24 publication evidence
+Released through PR #14 / merge `cda54a246c5d440116dfe05717da0392e62f13f8`. Final exact-candidate gate `36763721939` passed 108 tests (1 skipped), workflow validation, deterministic rebuild, ZIP/hash/index inspection and packaging. GitHub Pages deployment `36763934374` succeeded. Published artifact SHA-256: `6eee9e80e0a0e0766c62ea199052113fdf75b5fab0bf1eb25da2c0b06823451d`.
+
+Delivery is released. Verification remains partial/review until this task's documented target-device acceptance checks are completed.
