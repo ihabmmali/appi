@@ -1,16 +1,15 @@
 # Next Appi release
 
-Planning status: release candidate. Version: 0.7.23.
+Planning status: open. Version: not assigned.
 
-Appi 0.7.22 is published. Current baseline and fallback details: [PROJECT_STATE.md](PROJECT_STATE.md).
+Appi 0.7.23 is published. Current baseline and fallback details: [PROJECT_STATE.md](PROJECT_STATE.md).
 
 ## Proposed scope
 
+No product task is currently committed for the next release.
+
 | Task | Selection | Priority | Reason |
 | --- | --- | --- | --- |
-| [HLS-24](docs/tasks/HLS-24.md) | committed | **release blocker** | Same stream is stable in Manual/ISA but Buffered mode freezes/catches up/stops; serve recovered exact segments immediately instead of blocking Kodi on full recovery-reserve rebuild |
-| [HLS-22](docs/tasks/HLS-22.md) | committed | producer throughput / root-cause dependency | Same-stream Manual/ISA stability plus prior FFmpeg speed evidence suggests Appi's producer transport may itself be causing unnecessary depletion |
-| [HLS-23](docs/tasks/HLS-23.md) | committed | overlay regression | 0.7.22 displays buffering/debug text while the setting is disabled and detailed text overflows the screen; make OFF fully silent and use bounded multiline layout |
 | [PLAY-1](docs/tasks/PLAY-1.md) | backlog | investigation | Resume persistence is working; only investigate the playback-start Trakt API error |
 | [HLS-1](docs/tasks/HLS-1.md) | backlog | investigation | Use buffered-mode/diagnostic evidence to diagnose any underlying provider stalls that remain |
 | [UI-1](docs/tasks/UI-1.md) | backlog | investigation | Skin comparison needed |
@@ -25,6 +24,9 @@ Appi 0.7.22 is published. Current baseline and fallback details: [PROJECT_STATE.
 6. Copy shipped task IDs and scope changes into RELEASE_NOTES, then reset this planning file for the next cycle.
 
 ## Scope decisions
+
+2026-09-29: Appi 0.7.23 published through PR #12 / merge `9520fcc984b3f5796e840f217574bf0569dbb1f9`. Final exact-candidate gate `36662004552` and Pages deployment `36662108681` succeeded. Shipped scope: HLS-22, HLS-23 and HLS-24. Their delivery is released while target-device verification remains review/partial. The install index retains 0.7.22, 0.7.21 and 0.7.8 plus 0.7.14 and 0.7.12. Planning is reset; no next-release product scope is committed.
+
 
 2026-09-29: user explicitly instructed that **everything tracked so far be committed for the next release, including the debug-message display bug**. HLS-22, HLS-23 and HLS-24 are now committed next-release scope. HLS-24 is release-blocking; HLS-23 owns overlay setting leakage and screen-safe multiline layout; HLS-22 owns the Appi-vs-ISA/FFmpeg producer-throughput investigation/optimization. PLAY-1, HLS-1 and UI-1 remain backlog investigations because they are not current candidates. This is release-scope commitment only; implementation/integration/publication remain separately authorized lifecycle actions.
 
