@@ -19,6 +19,9 @@ Do not replace the current renderer with an experimental or skin-specific workar
 
 This is a successor to HLS-23 target-device verification. The multiline formatting introduced in 0.7.23 is acceptable and should be preserved.
 
+## Scope
+Repair the authoritative runtime setting boundary only. Preserve the current multiline renderer and user-accepted Back-to-dismiss behavior; do not introduce a new focus/window mechanism or alter buffering/recovery behavior.
+
 ## 0.7.23 target-device evidence
 The user reports:
 
@@ -142,3 +145,10 @@ The mandatory requirement is strict adherence to the debug-display switch:
 - while ON, Back may dismiss the display for the remainder of that playback session.
 
 Do not make a speculative renderer replacement part of acceptance.
+
+## 0.7.24 implementation evidence
+Source implementation: `4cfd2939567113d34e73ecb97d3c5fed9d7089bd`. Automated coverage: `94c62ee25271b13a13b78038f344bcf51e8d0ffc`.
+
+The persistent service now reads `buffered_debug_overlay` through a fresh `xbmcaddon.Addon()` instance, records raw/effective transition state and makes OFF suppress/close the renderer. The renderer itself is unchanged, preserving the accepted Back-to-dismiss interaction.
+
+Release gate run `36763219643` passed all 108 unit/smoke tests (1 skipped). Packaging was blocked only by task-record Scope validation. Fire TV OFF-before-playback and ON-to-OFF acceptance remain pending.
