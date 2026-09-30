@@ -160,3 +160,11 @@ Published in Appi 0.7.22 through PR #11 / merge `92131c95c1d047eb7a683e8e5e2e6ab
 The user reports that buffering **appears better** in 0.7.22, but explicitly notes that more testing is required. Treat this as preliminary positive evidence only, not full target-device acceptance.
 
 Overlay behavior is separately defective and tracked by HLS-23; do not infer buffering/recovery failure from the overlay regression.
+
+
+## 0.7.22 failed same-stream A/B acceptance
+Target-device testing on 2026-09-29 shows the same provider stream that freezes/catches up/stops in Buffered Look Ahead plays perfectly in Manual fixed-quality/InputStream Adaptive mode with no stutter.
+
+This fails HLS-19's intended resilience outcome. Source review identifies a successor correctness defect: 0.7.22 can fetch the exact missing segment successfully but still withhold it from Kodi until the larger recovery reserve is rebuilt. HLS-24 owns that repair.
+
+Do not treat 0.7.22's preliminary "buffering appears better" observation as acceptance; same-stream A/B evidence shows Buffered mode is currently degrading a stream that does not require such intervention.

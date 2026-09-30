@@ -8,7 +8,8 @@ Appi 0.7.22 is published. Current baseline and fallback details: [PROJECT_STATE.
 
 | Task | Selection | Priority | Reason |
 | --- | --- | --- | --- |
-| [HLS-22](docs/tasks/HLS-22.md) | candidate | producer throughput | Benchmark Appi against FFmpeg on the same stream/network/VPN and optimize producer transport without changing the proven reservoir policy |
+| [HLS-24](docs/tasks/HLS-24.md) | candidate | **release blocker** | Same stream is stable in Manual/ISA but Buffered mode freezes/catches up/stops; serve recovered exact segments immediately instead of blocking Kodi on full recovery-reserve rebuild |
+| [HLS-22](docs/tasks/HLS-22.md) | candidate | producer throughput / root-cause dependency | Same-stream Manual/ISA stability plus prior FFmpeg speed evidence suggests Appi's producer transport may itself be causing unnecessary depletion |
 | [HLS-23](docs/tasks/HLS-23.md) | candidate | overlay regression | 0.7.22 displays buffering/debug text while the setting is disabled and detailed text overflows the screen; make OFF fully silent and use bounded multiline layout |
 | [PLAY-1](docs/tasks/PLAY-1.md) | backlog | investigation | Resume persistence is working; only investigate the playback-start Trakt API error |
 | [HLS-1](docs/tasks/HLS-1.md) | backlog | investigation | Use buffered-mode/diagnostic evidence to diagnose any underlying provider stalls that remain |
@@ -24,6 +25,8 @@ Appi 0.7.22 is published. Current baseline and fallback details: [PROJECT_STATE.
 6. Copy shipped task IDs and scope changes into RELEASE_NOTES, then reset this planning file for the next cycle.
 
 ## Scope decisions
+
+2026-09-29: HLS-24 added as a release-blocking candidate after a same-stream A/B test. The failing stream plays perfectly in Manual fixed-quality/InputStream Adaptive mode but Buffered Look Ahead freezes A/V, briefly catches up, then silently stops. Source review identifies a concrete 0.7.22 recovery flaw: after the exact requested segment is fetched, Appi still blocks that segment behind the full recovery-reserve rebuild and can fail with HTTP 504 if the reserve target is not reached. HLS-24 must decouple exact-segment delivery from background reservoir restoration. This A/B also raises HLS-22 from a generic optimization to a likely root-cause dependency because Appi's own producer may be slower than ISA/FFmpeg.
 
 2026-09-29: HLS-23 added after 0.7.22 target-device testing. The simple `Appi buffering` overlay currently bypasses the debug setting by design, and the existing automated test explicitly expects that behavior; the user requires the disabled setting to suppress all BufferOverlay text. The full detailed display also sometimes appears while disabled and requires instrumentation. The detailed renderer is one long single-line label and overflows screen width; replace it with bounded multiline layout. Buffering appears improved, but HLS-19 verification remains partial pending more testing.
 

@@ -128,3 +128,9 @@ User-observed A/B evidence: FFmpeg can ingest the same HLS media substantially f
 
 ## Outcome and next action
 After the current committed release is completed, benchmark Appi's producer against FFmpeg on the same stream, then optimize the transport layer only where measurements justify it.
+
+
+## 0.7.22 same-stream ISA evidence
+The user tested the exact stream that fails in Buffered Look Ahead using Manual fixed-quality mode. Manual mode delegates the provider master URL to InputStream Adaptive and plays without stutter or failure.
+
+This materially strengthens the HLS-22 hypothesis: Appi's own proxy/producer transport may be creating depletion that ISA does not experience. Benchmark against both FFmpeg and the stable Manual/ISA control case. Keep HLS-24's recovery-gating correctness repair separate; faster producer transport must not be used to hide a serving-path deadlock/block.

@@ -22,8 +22,9 @@ Updated: 2026-09-29. Start with [AGENTS.md](AGENTS.md) for role routing.
 - UI-5 displays installed version directly in the About settings pane. UI-6 references the same approved flat icon bytes through a new resource path to bypass Kodi artwork caching.
 - DOWNLOAD-1 generates FFmpeg remux scripts using explicit first-video/first-audio mapping, `-c copy` and `-threads 0`, while preserving safe quoting and atomic partial-file handling.
 - Existing HLS modes 0–2 remain intentionally unchanged.
-- HLS-22 is the next-cycle candidate to benchmark Appi producer throughput against FFmpeg on the same stream/network/VPN and investigate connection reuse/request overhead/bounded concurrency without changing the reservoir policy. It is **not committed** to a release yet.
+- HLS-22 is the next-cycle candidate to benchmark Appi producer throughput against FFmpeg/ISA on the same stream/network/VPN and investigate connection reuse/request overhead/bounded concurrency without changing the reservoir policy. The same-stream Manual/ISA success now makes Appi producer overhead a likely contributor rather than merely a performance opportunity. It is **not committed** to a release yet.
 - HLS-23 is a next-cycle candidate from 0.7.22 target-device testing: the overlay can appear while disabled and detailed telemetry overflows horizontally. OFF must suppress all BufferOverlay text, and enabled debug telemetry must use a bounded multiline screen-safe layout.
+- HLS-24 is a next-cycle **release-blocking candidate**: the same provider stream plays perfectly in Manual/ISA but Buffered Look Ahead freezes, briefly catches up and silently stops. Source review shows 0.7.22 can withhold an already recovered exact segment until the full recovery reserve is rebuilt, then fail with HTTP 504. Required-segment delivery must be decoupled from background refill.
 - PLAY-1, HLS-1 and UI-1 remain backlog investigations.
 - [NEXT_RELEASE.md](NEXT_RELEASE.md) has been reset: no next-release scope or version is currently committed. [KNOWN_ISSUES.md](KNOWN_ISSUES.md) remains the canonical task index.
 
