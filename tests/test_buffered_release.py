@@ -434,6 +434,8 @@ class BufferedReleaseTests(unittest.TestCase):
         track=next(iter(session.tracks.values()))
         track.stop()
         index=min(20,len(track.segments)-1)
+        track.last_served=index-1
+        track.last_requested=index-1
         resource=track.segments[index].resource
         if resource.path and os.path.exists(resource.path):
             os.remove(resource.path)
