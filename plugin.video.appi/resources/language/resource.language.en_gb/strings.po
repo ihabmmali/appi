@@ -587,7 +587,7 @@ msgid "Buffered Look Ahead detailed debug overlay"
 msgstr ""
 
 msgctxt "#32907"
-msgid "Show cached-ahead MB and playable seconds during buffered playback. The simple buffering indicator is always enabled."
+msgid "Show Buffered Look Ahead status and detailed telemetry on screen. When disabled, Appi shows no buffering/debug overlay text."
 msgstr ""
 
 msgctxt "#32908"
@@ -841,4 +841,12 @@ msgstr ""
 
 msgctxt "#32980"
 msgid "Version read from the installed Appi add-on metadata. This field is read-only."
+msgstr ""
+
+msgctxt "#32981"
+msgid "Producer segment concurrency (per track)"
+msgstr ""
+
+msgctxt "#32982"
+msgid "Maximum future HLS segment fetches per active track. Default 2 reduces per-request latency overhead while contiguous playable-reserve accounting still stops at any missing segment."
 msgstr ""

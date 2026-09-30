@@ -65,6 +65,14 @@ Media `urlopen` timeout is now an inactivity/no-progress bound (15 seconds), not
 
 The normal recovery display and the optional detailed debug overlay both consume the same active-epoch reserve metrics. The detailed overlay no longer injects a label into fullscreen window 12005; it uses a modeless `xbmcgui.WindowDialog`, with guarded creation/show/update/close operations so GUI failure remains non-fatal. Detailed text includes playable bytes/target, seconds ahead, water state, epoch and, when known, selected bitrate and measured provider throughput. The service exports the same watermarks and epoch fields to sanitized diagnostics.
 
+## Buffered Look Ahead — 0.7.23 candidate
+
+Normal sequential depletion recovery is no longer a reserve gate. Appi retries/fetches the exact media Kodi requested and releases that file as soon as it is safely cached; background producers then continue toward the configured recovery/high-water targets. A low recovery reserve by itself does not fail a session while required media is still progressing. Discontinuous seek and cold non-zero resume remain different: those requests create a fresh epoch and retain the deliberate target-reserve gate before release.
+
+Producer prefetch is settings-backed and bounded per active track (default two workers, range one to four). Workers claim distinct future indices so they can overlap request/TTFB cost without duplicate segment fetches. The existing per-resource condition remains the final duplicate-download guard, stale epochs cannot publish completion, and the playable reservoir remains contiguous: later cached segments never count through a missing earlier segment.
+
+The optional overlay setting is now an authoritative master gate. OFF creates no Appi buffer text and closes an existing renderer. ON renders four bounded telemetry rows in a 1180-pixel textbox (or bounded fallback rows) and logs only renderer/mode transitions. Modes 0–2 remain outside these changes.
+
 ## Settings parser safety — 0.7.18
 
 Kodi's native string-option parser expects a text child in every static option. No preference therefore uses the non-empty `none` sentinel (normalized to no preference in Python), never an empty XML option. Source/ZIP checks validate option text and listed defaults. The 0.7.17 empty options are retained only in the archived regression fixture; that release failed startup acceptance.

@@ -156,6 +156,7 @@ _TUNING_DEFAULTS = {
     'seek_reserve_s': 12,
     'min_seek_reserve_mb': 4,
     'prefetch_lead_s': 24,
+    'prefetch_concurrency': 2,
     'recovery_timeout_s': 60,
     'retry_delay_ms': 500,
     'retry_attempts': 0,
@@ -172,7 +173,8 @@ def validated_tuning(values=None):
         'low_water_pct': (1, 99), 'critical_pct': (0, 98),
         'media_timeout_s': (1, 120), 'startup_timeout_s': (30, 600),
         'seek_reserve_s': (1, 120), 'min_seek_reserve_mb': (1, 256),
-        'prefetch_lead_s': (0, 120), 'recovery_timeout_s': (5, 600),
+        'prefetch_lead_s': (0, 120), 'prefetch_concurrency': (1, 4),
+        'recovery_timeout_s': (5, 600),
         'retry_delay_ms': (100, 10000), 'retry_attempts': (0, 100),
         'recovery_reserve_s': (1, 120), 'pause_retention_min': (0, 1440),
     }
@@ -205,6 +207,7 @@ def tuning_from_addon(addon=None):
         'seek_reserve_s': 'buffered_seek_reserve_s',
         'min_seek_reserve_mb': 'buffered_min_seek_reserve_mb',
         'prefetch_lead_s': 'buffered_prefetch_lead_s',
+        'prefetch_concurrency': 'buffered_prefetch_concurrency',
         'recovery_timeout_s': 'buffered_recovery_timeout_s',
         'retry_delay_ms': 'buffered_retry_delay_ms',
         'retry_attempts': 'buffered_retry_attempts',
@@ -520,15 +523,26 @@ class _Track:
         self._serve_lock = threading.Lock()
         self._condition = threading.Condition()
         self._stop = threading.Event()
-        self._thread = threading.Thread(target=self._prefetch_loop, name='AppiHlsPrefetch', daemon=True)
-        self._thread.start()
+        self._claims = set()
+        worker_count = max(1, int(self.session.prefetch_concurrency))
+        self._threads = [
+            threading.Thread(
+                target=self._prefetch_loop,
+                name='AppiHlsPrefetch-{}-{}'.format(self.id, worker + 1),
+                daemon=True,
+            )
+            for worker in range(worker_count)
+        ]
+        for thread in self._threads:
+            thread.start()
 
     def stop(self):
         self._stop.set()
         with self._condition:
             self._condition.notify_all()
-        if self._thread.is_alive():
-            self._thread.join(timeout=2.0)
+        for thread in self._threads:
+            if thread.is_alive():
+                thread.join(timeout=2.0)
 
     def replace_segments(self, segments):
         with self._condition:
@@ -635,7 +649,7 @@ class _Track:
             self._condition.notify_all()
         return previous
 
-    def _next_missing(self):
+    def _next_missing(self, claim=False):
         if self.session._stop.is_set():
             return None
         if self.epoch != self.session.epoch:
@@ -646,14 +660,17 @@ class _Track:
         if self.session._pause_track(self):
             return None
         for index in range(start, len(self.segments)):
-            if not self._cached(index):
+            if not self._cached(index) and index not in self._claims:
+                if claim:
+                    self._claims.add(index)
                 return index
         return None
 
     def _prefetch_loop(self):
         while not self._stop.is_set() and not self.session._stop.is_set():
+            index = None
             with self._condition:
-                index = self._next_missing()
+                index = self._next_missing(claim=True)
                 if index is None:
                     self._condition.wait(timeout=0.25)
                     continue
@@ -690,6 +707,11 @@ class _Track:
                 )
                 if self._stop.wait(self.session.retry_delay):
                     break
+            finally:
+                if index is not None:
+                    with self._condition:
+                        self._claims.discard(index)
+                        self._condition.notify_all()
 
     def _reserve_state(self, index, reserve_seconds):
         ahead, count = self._ahead(index)
@@ -880,6 +902,7 @@ class BufferedHlsSession:
             self.tuning['prefetch_lead_s']
             if 'prefetch_lead_s' in supplied_tuning else PREFETCH_LEAD_SECONDS
         )
+        self.prefetch_concurrency = int(self.tuning['prefetch_concurrency'])
         self.recovery_timeout = float(self.tuning['recovery_timeout_s'])
         self.retry_delay = float(self.tuning['retry_delay_ms']) / 1000.0
         self.retry_attempts = int(self.tuning['retry_attempts'])
@@ -917,6 +940,11 @@ class BufferedHlsSession:
         self._recovery_started_at = 0.0
         self._recovery_attempt = 0
         self._recovery_last_error = ''
+        self._recovery_target_bytes = 0
+        self._recovery_track_id = ''
+        self._recovery_requested_index = -1
+        self._active_fetches = 0
+        self._peak_active_fetches = 0
         self._telemetry = []
         self._last_telemetry_at = 0.0
         self._transfer_history = []
@@ -1038,6 +1066,9 @@ class BufferedHlsSession:
         self._recovery_started_at = time.monotonic()
         self._recovery_attempt = 0
         self._recovery_last_error = ''
+        self._recovery_target_bytes = int(target_bytes)
+        self._recovery_track_id = track.id
+        self._recovery_requested_index = int(index)
         start_bytes, _, _ = self._playable_reserve()
         self._event(
             'buffer_recovery_started',
@@ -1100,6 +1131,42 @@ class BufferedHlsSession:
                     self._recovery_attempt, self._recovery_last_error or 'provider did not deliver target segment'
                 )
             )
+        exact_ready_at = time.monotonic()
+        new_bytes, new_seconds, _ = self._playable_reserve()
+        self._event(
+            'buffer_required_segment_ready',
+            epoch_id=epoch,
+            track_id=track.id,
+            requested_index=index,
+            segment_sequence=segment.sequence,
+            exact_segment_wait_ms=round(
+                (exact_ready_at - self._recovery_started_at) * 1000.0, 2
+            ),
+            cached_ahead_bytes=new_bytes,
+            buffered_seconds=new_seconds,
+            recovery_target_bytes=target_bytes,
+            random_access=random_access,
+        )
+        if not random_access:
+            # Sequential playback must never hold the exact media Kodi needs
+            # behind a larger look-ahead target. Producer threads keep refilling
+            # toward recovery/high water after this request is released.
+            self._event(
+                'buffer_recovery_media_released',
+                epoch_id=epoch,
+                track_id=track.id,
+                requested_index=index,
+                segment_sequence=segment.sequence,
+                cached_ahead_bytes=new_bytes,
+                buffered_seconds=new_seconds,
+                recovery_target_bytes=target_bytes,
+                result='continuing-low-reserve'
+                if new_bytes < target_bytes else 'recovered',
+            )
+            self._notify_tracks()
+            self._maybe_complete_background_recovery()
+            return True
+
         remaining = max(0.0, deadline - time.monotonic())
         recovered = remaining > 0 and self._wait_reservoir(epoch, target_bytes, remaining)
         if epoch != self.epoch:
@@ -1136,6 +1203,36 @@ class BufferedHlsSession:
         self._recovery_started_at = 0.0
         self._recovery_attempt = 0
         self._recovery_last_error = ''
+        self._recovery_target_bytes = 0
+        self._recovery_track_id = ''
+        self._recovery_requested_index = -1
+        return True
+
+    def _maybe_complete_background_recovery(self):
+        if not self._recovery_started_at or self._epoch_preparing:
+            return False
+        target_bytes = max(
+            1, int(self._recovery_target_bytes or self.recovery_reserve_bytes())
+        )
+        reserve_bytes, reserve_seconds, _ = self._playable_reserve()
+        if reserve_bytes < target_bytes and not self._all_required_cached():
+            return False
+        self._event(
+            'buffer_recovery',
+            epoch_id=self.epoch,
+            track_id=self._recovery_track_id,
+            requested_index=self._recovery_requested_index,
+            buffered_seconds=reserve_seconds,
+            cached_ahead_bytes=reserve_bytes,
+            recovery_target_bytes=target_bytes,
+            result='background-reserve-restored',
+        )
+        self._recovery_started_at = 0.0
+        self._recovery_attempt = 0
+        self._recovery_last_error = ''
+        self._recovery_target_bytes = 0
+        self._recovery_track_id = ''
+        self._recovery_requested_index = -1
         return True
 
     def _coordinate_seek(self, source_track, source_index, reason='seek'):
@@ -1344,6 +1441,7 @@ class BufferedHlsSession:
     def status(self):
         tracks = list(self.tracks.values())
         reserve_bytes, seconds, count = self._playable_reserve()
+        self._maybe_complete_background_recovery()
         target_bytes = self.epoch_target_bytes if self._epoch_preparing else self.high_water_bytes
         ratio = min(1.0, reserve_bytes / float(max(1, target_bytes)))
         percent = 100 if self.ready and not self._epoch_preparing else min(99, int(ratio * 100))
@@ -1412,6 +1510,9 @@ class BufferedHlsSession:
             'buffer_state': state, 'buffer_trend': trend,
             'selected_bitrate_mbps': selected_mbps,
             'throughput_mbps': throughput_mbps,
+            'prefetch_concurrency': self.prefetch_concurrency,
+            'active_fetch_count': self._active_fetches,
+            'peak_active_fetch_count': self._peak_active_fetches,
             'throughput_limited': throughput_limited,
             'limitation_message': limitation_message,
             'epoch_id': self.epoch, 'epoch_reason': self.epoch_reason,
@@ -1692,6 +1793,17 @@ class BufferedHlsSession:
                             self.wfile.write(chunk)
                             if resource.kind == 'segment':
                                 session._mark_handoff('first_media_bytes_served', resource_kind=resource.kind)
+                                if remaining == end - start + 1:
+                                    reserve_bytes, reserve_seconds, _ = session._playable_reserve()
+                                    session._event(
+                                        'buffer_segment_first_byte_served',
+                                        epoch_id=session.epoch,
+                                        track_id=resource.metadata.get('track_id') or '',
+                                        requested_index=_int(resource.metadata.get('index'), -1),
+                                        segment_sequence=_int(resource.metadata.get('sequence'), -1),
+                                        cached_ahead_bytes=reserve_bytes,
+                                        buffered_seconds=reserve_seconds,
+                                    )
                             remaining -= len(chunk)
                     finally:
                         handle.close()
@@ -2139,15 +2251,25 @@ class BufferedHlsSession:
             if self.disk_bytes() + self._reserved_bytes > self.max_bytes - reservation_bytes:
                 raise RuntimeError('Buffer capacity is temporarily occupied')
             self._reserved_bytes += reservation_bytes
-        try:
-            fetched = _fetch_to_path(
-                resource.upstream_url,
-                path,
-                timeout=self.media_timeout,
-                byte_range=resource.byte_range,
-                stop=_EpochStop(self, epoch),
-                max_bytes=segment_limit,
+        with self._metrics_lock:
+            self._active_fetches += 1
+            self._peak_active_fetches = max(
+                self._peak_active_fetches, self._active_fetches
             )
+            concurrent_fetches = self._active_fetches
+        try:
+            try:
+                fetched = _fetch_to_path(
+                    resource.upstream_url,
+                    path,
+                    timeout=self.media_timeout,
+                    byte_range=resource.byte_range,
+                    stop=_EpochStop(self, epoch),
+                    max_bytes=segment_limit,
+                )
+            finally:
+                with self._metrics_lock:
+                    self._active_fetches = max(0, self._active_fetches - 1)
         except Exception:
             with self._download_lock:
                 self._reserved_bytes = max(0, self._reserved_bytes - reservation_bytes)
@@ -2181,6 +2303,7 @@ class BufferedHlsSession:
             'bytes': fetched.byte_count,
             'throughput_mbps': fetched.throughput_mbps,
             'http_status': fetched.status,
+            'concurrent_fetches': concurrent_fetches,
         }
         if segment is not None:
             fields.update({

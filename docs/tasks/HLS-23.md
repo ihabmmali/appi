@@ -1,11 +1,11 @@
 ---
 id: HLS-23
 role: implementation
-status: ready
+status: active
 delivery: unreleased
 verification: pending
-owner: unassigned
-base_commit: unset
+owner: builder-publisher-2026-09-29
+base_commit: ff256d99b7097dcea3787c3a86582bec29354972
 artifact: none
 ---
 # HLS-23 — Fix Buffered Look Ahead overlay gating and screen-safe layout
@@ -96,3 +96,11 @@ Created from target-device observations on published Appi 0.7.22 reported by the
 
 ## Outcome and next action
 Correct the overlay visibility contract and layout, instrument the unexplained full-debug disabled-state leak, and verify the renderer on the Fire TV without touching the buffering algorithm.
+
+
+## 0.7.23 implementation evidence
+Implementation session `builder-publisher-2026-09-29` uses base `ff256d99b7097dcea3787c3a86582bec29354972`.
+
+The candidate makes `buffered_debug_overlay` the master gate: when false, `status_text()` returns no text even during recovery/caching and `BufferOverlay.update()` closes any existing renderer. Enabled detail is four bounded lines rather than one pipe-delimited line. The bundled renderer changes to a 1180×180 textbox; the compatibility path uses a textbox when available and otherwise four bounded label rows. State-transition logging records effective enabled state, requested mode, renderer, pre-existing window and close reason without stream URLs.
+
+Automated coverage is added for OFF during recovery, enabled→visible→disabled closure, stale-text non-reappearance, and bounded multiline XML layout. Target Fire TV visibility/scale verification remains required.

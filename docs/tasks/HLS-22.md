@@ -1,11 +1,11 @@
 ---
 id: HLS-22
 role: implementation
-status: ready
+status: active
 delivery: unreleased
 verification: pending
-owner: unassigned
-base_commit: unset
+owner: builder-publisher-2026-09-29
+base_commit: ff256d99b7097dcea3787c3a86582bec29354972
 artifact: none
 ---
 # HLS-22 — Optimize Buffered Look Ahead producer throughput
@@ -13,12 +13,12 @@ artifact: none
 ## Objective
 Determine why Appi's Buffered Look Ahead producer appears to fill substantially more slowly than FFmpeg can ingest the same HLS stream through the same network/VPN path, then remove Appi-side transport bottlenecks without changing the proven reservoir algorithm.
 
-This is explicitly a candidate for the release **after** the currently committed release. It is not part of the current release scope.
+This task is committed scope for Appi 0.7.23. The optimization remains below the reservoir policy and must not alter modes 0–2.
 
 ## Scope
 Benchmark and optimize only the Buffered Look Ahead producer/transport layer in a future release. Preserve the proven reservoir thresholds/accounting, rendition selection, seek epochs, HLS-19 recovery behavior and playback modes 0–2. Any transport concurrency, connection reuse or scheduling change must be evidence-driven and settings-backed where behavior-affecting.
 
-This task remains explicitly excluded from Appi 0.7.22.
+This task was excluded from Appi 0.7.22 and is included in the 0.7.23 release scope.
 
 ## User evidence
 The user tested the same media using FFmpeg and observed that FFmpeg could download the entire stream dramatically faster than Appi appears to fill its look-ahead reservoir under the same network and VPN conditions.
@@ -134,3 +134,11 @@ After the current committed release is completed, benchmark Appi's producer agai
 The user tested the exact stream that fails in Buffered Look Ahead using Manual fixed-quality mode. Manual mode delegates the provider master URL to InputStream Adaptive and plays without stutter or failure.
 
 This materially strengthens the HLS-22 hypothesis: Appi's own proxy/producer transport may be creating depletion that ISA does not experience. Benchmark against both FFmpeg and the stable Manual/ISA control case. Keep HLS-24's recovery-gating correctness repair separate; faster producer transport must not be used to hide a serving-path deadlock/block.
+
+
+## 0.7.23 implementation evidence
+Implementation session `builder-publisher-2026-09-29` uses base `ff256d99b7097dcea3787c3a86582bec29354972`.
+
+The candidate adds settings-backed bounded producer concurrency with a conservative default of two future segment fetches per active track (range 1–4). Each worker claims a distinct segment index before download; the existing per-resource condition still suppresses duplicate network fetches, stale epoch completion remains ignored, and playable-reserve accounting remains contiguous through the first missing segment. Transfer telemetry now records concurrent-fetch count and session status exposes configured/active/peak producer concurrency alongside existing request latency and payload-throughput measurements.
+
+This is an Appi-side transport optimization supported by the user's FFmpeg/ISA A/B evidence and deterministic concurrency tests. It does **not** claim the provider-specific FFmpeg-vs-Appi target-device throughput comparison is complete; startup/refill before/after measurement on the Fire TV remains required for full acceptance. Persistent HTTP connection reuse is not claimed in this candidate.

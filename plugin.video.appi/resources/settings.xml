@@ -134,6 +134,11 @@
           <constraints><minimum>0</minimum><maximum>120</maximum></constraints>
           <control type="edit" format="integer"><heading>32967</heading></control>
         </setting>
+        <setting id="buffered_prefetch_concurrency" type="integer" label="32981" help="32982">
+          <level>2</level><default>2</default>
+          <constraints><minimum>1</minimum><maximum>4</maximum></constraints>
+          <control type="edit" format="integer"><heading>32981</heading></control>
+        </setting>
         <setting id="buffered_recovery_timeout_s" type="integer" label="32969" help="32970">
           <level>2</level><default>60</default>
           <constraints><minimum>5</minimum><maximum>600</maximum></constraints>

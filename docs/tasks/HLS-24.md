@@ -1,11 +1,11 @@
 ---
 id: HLS-24
 role: implementation
-status: ready
+status: active
 delivery: unreleased
 verification: pending
-owner: unassigned
-base_commit: unset
+owner: builder-publisher-2026-09-29
+base_commit: ff256d99b7097dcea3787c3a86582bec29354972
 artifact: none
 ---
 # HLS-24 — Stop Buffered Look Ahead from starving Kodi during recovery
@@ -126,3 +126,11 @@ On 2026-09-29 the user explicitly instructed that everything tracked so far be c
 
 ## Outcome and next action
 Repair the exact-segment/recovery-reserve coupling first, then compare the same stream against Manual/ISA. Use HLS-21/HLS-22 telemetry to determine whether Appi producer throughput also contributes to depletion.
+
+
+## 0.7.23 implementation evidence
+Implementation session `builder-publisher-2026-09-29` uses base `ff256d99b7097dcea3787c3a86582bec29354972`.
+
+The candidate separates ordinary sequential media delivery from reservoir restoration. `recover_segment()` still applies HLS-19 retry/no-progress bounds to the exact requested segment, but once that segment is safely cached it emits exact-ready telemetry and returns it immediately for normal sequential playback. It no longer calls `_wait_reservoir()` before serving that media. Producer threads continue filling in the background and the session clears recovery state only when the configured recovery reserve is restored (or all required remaining media is cached).
+
+Discontinuous seek/cold-resume requests deliberately retain the HLS-12 fresh-epoch reserve gate. New telemetry records exact-segment-ready and first-byte-served boundaries with requested track/index/sequence and reserve state, making it possible to prove that cached required media is not held behind a larger reserve target. Tests cover sequential depleted-media release without invoking the reserve wait; target Fire TV reproduction/A-B acceptance remains mandatory.
