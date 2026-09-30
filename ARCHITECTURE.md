@@ -1,6 +1,6 @@
 # Appi architecture
 
-Updated for the 0.7.20 release candidate (2026-09-27). Source describes implemented behavior; accepted requirements and decisions describe intended behavior.
+Updated for the 0.7.24 release candidate (2026-09-30). Source describes implemented behavior; accepted requirements and decisions describe intended behavior.
 
 ## Project goals and binding rules
 
@@ -72,6 +72,14 @@ Normal sequential depletion recovery is no longer a reserve gate. Appi retries/f
 Producer prefetch is settings-backed and bounded per active track (default two workers, range one to four). Workers claim distinct future indices so they can overlap request/TTFB cost without duplicate segment fetches. The existing per-resource condition remains the final duplicate-download guard, stale epochs cannot publish completion, and the playable reservoir remains contiguous: later cached segments never count through a missing earlier segment.
 
 The optional overlay setting is now an authoritative master gate. OFF creates no Appi buffer text and closes an existing renderer. ON renders four bounded telemetry rows in a 1180-pixel textbox (or bounded fallback rows) and logs only renderer/mode transitions. Modes 0–2 remain outside these changes.
+
+## 0.7.24 consumer/request and metadata boundaries
+
+Buffered Look Ahead's localhost server now separates the Kodi consumer-write boundary from provider reads. Broken pipe, reset or timeout while writing a response to Kodi is a non-fatal request termination with bounded diagnostics; provider/read failures remain governed by existing recovery/failure behavior. Range context is supplied before segment classification. Sequential, duplicate/current, same-resource Range, immediately recent and first adjacent post-pause requests remain in the active epoch; true forward/backward discontinuities and cold non-zero starts retain fresh-epoch recenter/reserve behavior.
+
+The persistent playback service re-reads settings through a fresh Kodi Addon object, so the detailed-buffer OFF state cannot depend on a service-start settings snapshot. The renderer itself remains the established bounded multiline dialog and preserves Back-to-dismiss when intentionally enabled.
+
+Metadata runtime is optional and normalized to seconds. Kodi JSON-RPC property compatibility is probed without making runtime mandatory; supported values are applied through `VideoInfoTag.setDuration`. Season counts are derived only from Appi's locally indexed per-show episodes and do not require a remote metadata request.
 
 ## Settings parser safety — 0.7.18
 

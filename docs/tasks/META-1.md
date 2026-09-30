@@ -1,9 +1,9 @@
 ---
 id: META-1
 role: implementation
-status: active
+status: review
 delivery: unreleased
-verification: pending
+verification: partial
 owner: builder-publisher-2026-09-30
 base_commit: e359459e1e3734e1c60608632b2213fe33bc92e7
 artifact: none
@@ -86,3 +86,8 @@ Source implementation: `4cfd2939567113d34e73ecb97d3c5fed9d7089bd`. Automated cov
 Metadata lookup requests optional `runtime`, normalizes supported numeric runtime/duration to seconds, retries compatible JSON-RPC property combinations after Invalid params, caches `runtime_seconds` and applies it through Kodi's native duration tag. Season labels use locally derived counts with correct singular/plural wording.
 
 Release gate run `36763219643` passed all 108 unit/smoke tests (1 skipped). Packaging was blocked only by task-record Scope validation; target-device presentation remains pending.
+
+## 0.7.24 self-review
+Self-review completed against artifact commit `dec2cb5f491aba7568e2f6d7ba28be91ba247369`. Release run `36763427233` passed 108 unit/smoke tests (1 skipped), tracker validation and deterministic package inspection. Tests cover runtime present, absent and unsupported plus local season-count singular/plural behavior.
+
+Review confirms runtime is stored in seconds, missing/unsupported runtime is non-fatal, episode runtime stays episode-specific and season counts are derived without a new network call. Verification remains partial pending target-device presentation acceptance.

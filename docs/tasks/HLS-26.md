@@ -1,9 +1,9 @@
 ---
 id: HLS-26
 role: implementation
-status: active
+status: review
 delivery: unreleased
-verification: pending
+verification: partial
 owner: builder-publisher-2026-09-30
 base_commit: e359459e1e3734e1c60608632b2213fe33bc92e7
 artifact: none
@@ -152,3 +152,8 @@ Source implementation: `4cfd2939567113d34e73ecb97d3c5fed9d7089bd`. Automated cov
 The persistent service now reads `buffered_debug_overlay` through a fresh `xbmcaddon.Addon()` instance, records raw/effective transition state and makes OFF suppress/close the renderer. The renderer itself is unchanged, preserving the accepted Back-to-dismiss interaction.
 
 Release gate run `36763219643` passed all 108 unit/smoke tests (1 skipped). Packaging was blocked only by task-record Scope validation. Fire TV OFF-before-playback and ON-to-OFF acceptance remain pending.
+
+## 0.7.24 self-review
+Self-review completed against artifact commit `dec2cb5f491aba7568e2f6d7ba28be91ba247369`. Release run `36763427233` passed 108 unit/smoke tests (1 skipped), tracker validation and deterministic package inspection. Automated coverage proves fresh settings reads and OFF/ON/OFF boolean propagation at the service boundary.
+
+No renderer replacement or focus workaround was introduced. Verification remains partial because OFF-before-playback and ON→OFF behavior must still be confirmed on the target Fire TV; Back-to-dismiss remains the accepted ON-state interaction.

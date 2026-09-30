@@ -1,9 +1,9 @@
 ---
 id: HLS-25
 role: implementation
-status: active
+status: review
 delivery: unreleased
-verification: pending
+verification: partial
 owner: builder-publisher-2026-09-30
 base_commit: e359459e1e3734e1c60608632b2213fe33bc92e7
 artifact: none
@@ -165,3 +165,8 @@ Source implementation: `4cfd2939567113d34e73ecb97d3c5fed9d7089bd`. Automated cov
 The localhost handler now parses Range context before segment classification, records Kodi body-write timeout/disconnect as a retained consumer request, and leaves provider-stage failures on the fatal/recovery path. Duplicate, same-resource Range, recent re-read and adjacent pause/resume traffic remain in the current epoch; true discontinuities and cold non-zero starts retain fresh-epoch behavior.
 
 Release gate run `36763219643` passed all 108 unit/smoke tests (1 skipped). Packaging was blocked only because this task record lacked the required Scope section; no implementation test failed. Fire TV pause/resume and true-seek acceptance remain pending.
+
+## 0.7.24 self-review
+Self-review completed by the builder/publisher thread against artifact commit `dec2cb5f491aba7568e2f6d7ba28be91ba247369`. Release run `36763427233` passed 108 unit/smoke tests (1 skipped), workflow validation, deterministic rebuild, ZIP/hash/index inspection and packaging. ZIP SHA-256: `6eee9e80e0a0e0766c62ea199052113fdf75b5fab0bf1eb25da2c0b06823451d`.
+
+Review confirms local Kodi body-write timeout/disconnect does not call the fatal session path, request Range context reaches classification before segment serving, and only true forward/backward discontinuities or cold non-zero starts create fresh epochs. Existing modes 0–2 and reservoir/producer settings are unchanged. Verification remains partial because the documented Fire TV pause/resume, subtitle-search pause and true-seek checks are still required.
