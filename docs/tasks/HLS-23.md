@@ -92,7 +92,7 @@ Do not spam normal logs; log state transitions and anomalous disabled-state rend
 - HLS-13/HLS-19 buffering and recovery behavior is unchanged.
 
 ## Authorization
-Created from target-device observations on published Appi 0.7.22 reported by the user on 2026-09-29. This is a ready candidate for the next release and is not committed until explicitly included under AGENTS.md.
+Created from target-device observations on published Appi 0.7.22 reported by the user on 2026-09-29. On 2026-09-29 the user explicitly instructed that everything tracked so far be committed, specifically including the debug-message display bug. HLS-23 is committed next-release scope.
 
 ## Outcome and next action
 Correct the overlay visibility contract and layout, instrument the unexplained full-debug disabled-state leak, and verify the renderer on the Fire TV without touching the buffering algorithm.

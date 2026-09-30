@@ -1,6 +1,6 @@
 # Next Appi release
 
-Planning status: not committed. Version: not assigned.
+Planning status: committed. Version: not assigned.
 
 Appi 0.7.22 is published. Current baseline and fallback details: [PROJECT_STATE.md](PROJECT_STATE.md).
 
@@ -8,9 +8,9 @@ Appi 0.7.22 is published. Current baseline and fallback details: [PROJECT_STATE.
 
 | Task | Selection | Priority | Reason |
 | --- | --- | --- | --- |
-| [HLS-24](docs/tasks/HLS-24.md) | candidate | **release blocker** | Same stream is stable in Manual/ISA but Buffered mode freezes/catches up/stops; serve recovered exact segments immediately instead of blocking Kodi on full recovery-reserve rebuild |
-| [HLS-22](docs/tasks/HLS-22.md) | candidate | producer throughput / root-cause dependency | Same-stream Manual/ISA stability plus prior FFmpeg speed evidence suggests Appi's producer transport may itself be causing unnecessary depletion |
-| [HLS-23](docs/tasks/HLS-23.md) | candidate | overlay regression | 0.7.22 displays buffering/debug text while the setting is disabled and detailed text overflows the screen; make OFF fully silent and use bounded multiline layout |
+| [HLS-24](docs/tasks/HLS-24.md) | committed | **release blocker** | Same stream is stable in Manual/ISA but Buffered mode freezes/catches up/stops; serve recovered exact segments immediately instead of blocking Kodi on full recovery-reserve rebuild |
+| [HLS-22](docs/tasks/HLS-22.md) | committed | producer throughput / root-cause dependency | Same-stream Manual/ISA stability plus prior FFmpeg speed evidence suggests Appi's producer transport may itself be causing unnecessary depletion |
+| [HLS-23](docs/tasks/HLS-23.md) | committed | overlay regression | 0.7.22 displays buffering/debug text while the setting is disabled and detailed text overflows the screen; make OFF fully silent and use bounded multiline layout |
 | [PLAY-1](docs/tasks/PLAY-1.md) | backlog | investigation | Resume persistence is working; only investigate the playback-start Trakt API error |
 | [HLS-1](docs/tasks/HLS-1.md) | backlog | investigation | Use buffered-mode/diagnostic evidence to diagnose any underlying provider stalls that remain |
 | [UI-1](docs/tasks/UI-1.md) | backlog | investigation | Skin comparison needed |
@@ -25,6 +25,8 @@ Appi 0.7.22 is published. Current baseline and fallback details: [PROJECT_STATE.
 6. Copy shipped task IDs and scope changes into RELEASE_NOTES, then reset this planning file for the next cycle.
 
 ## Scope decisions
+
+2026-09-29: user explicitly instructed that **everything tracked so far be committed for the next release, including the debug-message display bug**. HLS-22, HLS-23 and HLS-24 are now committed next-release scope. HLS-24 is release-blocking; HLS-23 owns overlay setting leakage and screen-safe multiline layout; HLS-22 owns the Appi-vs-ISA/FFmpeg producer-throughput investigation/optimization. PLAY-1, HLS-1 and UI-1 remain backlog investigations because they are not current candidates. This is release-scope commitment only; implementation/integration/publication remain separately authorized lifecycle actions.
 
 2026-09-29: HLS-24 added as a release-blocking candidate after a same-stream A/B test. The failing stream plays perfectly in Manual fixed-quality/InputStream Adaptive mode but Buffered Look Ahead freezes A/V, briefly catches up, then silently stops. Source review identifies a concrete 0.7.22 recovery flaw: after the exact requested segment is fetched, Appi still blocks that segment behind the full recovery-reserve rebuild and can fail with HTTP 504 if the reserve target is not reached. HLS-24 must decouple exact-segment delivery from background reservoir restoration. This A/B also raises HLS-22 from a generic optimization to a likely root-cause dependency because Appi's own producer may be slower than ISA/FFmpeg.
 

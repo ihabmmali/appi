@@ -121,7 +121,7 @@ Concurrent work must commit completed media into contiguous playable order. A fa
 ## Authorization
 Requested by the user on 2026-09-28 after observing that FFmpeg can ingest the same stream much faster than Appi's buffer appears to fill on the same network/VPN connection.
 
-The user explicitly requested that this be tracked as a **candidate for the release after the one currently being implemented**. HLS-22 is therefore a future-release candidate and is explicitly excluded from the currently committed release.
+On 2026-09-29 the user explicitly instructed that everything tracked so far be committed for the next release, including the debug-display defect. HLS-22 is now committed next-release scope. It remains constrained to optimize producer transport without changing the proven reservoir policy.
 
 ## Evidence
 User-observed A/B evidence: FFmpeg can ingest the same HLS media substantially faster than Appi appears to fill its look-ahead reservoir on the same network/VPN path. Current Appi source uses synchronous per-resource Python HTTP fetches from one prefetch worker per track, which makes connection/request overhead and bounded future-segment concurrency valid hypotheses to measure in the next release cycle. No implementation or target-device optimization result is claimed yet.

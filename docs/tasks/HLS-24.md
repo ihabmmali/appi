@@ -122,7 +122,7 @@ A diagnostic report should make it obvious if an exact segment sat cached while 
 ## Authorization
 Created from the user's repeated 0.7.22 target-device failure report and same-stream A/B test on 2026-09-29. The user explicitly stated that the buffering mechanism is degrading playback rather than solving the problem and that the issue needs to be solved.
 
-This is logged as a ready release-blocking candidate. It is not committed to release scope until explicitly selected under AGENTS.md.
+On 2026-09-29 the user explicitly instructed that everything tracked so far be committed for the next release. HLS-24 is committed next-release scope and remains release-blocking.
 
 ## Outcome and next action
 Repair the exact-segment/recovery-reserve coupling first, then compare the same stream against Manual/ISA. Use HLS-21/HLS-22 telemetry to determine whether Appi producer throughput also contributes to depletion.
