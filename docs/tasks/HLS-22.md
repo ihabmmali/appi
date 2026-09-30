@@ -2,11 +2,11 @@
 id: HLS-22
 role: implementation
 status: review
-delivery: unreleased
+delivery: released
 verification: partial
 owner: builder-publisher-2026-09-29
 base_commit: ff256d99b7097dcea3787c3a86582bec29354972
-artifact: none
+artifact: https://ihabmmali.github.io/appi/plugin.video.appi-0.7.23.zip
 ---
 # HLS-22 — Optimize Buffered Look Ahead producer throughput
 
@@ -152,3 +152,9 @@ Automated release run `36661752457` passed 103 unit/smoke tests (1 skipped), wor
 Code review confirms bounded per-track concurrency is isolated to Buffered Look Ahead, the default is settings-backed at two workers (range 1–4), workers claim distinct future indices, per-resource duplicate suppression remains intact, stale epoch completion remains ignored, and contiguous reserve accounting still stops at the first missing segment. Existing playback modes 0–2 are untouched.
 
 Verification remains **partial** because the acceptance criteria explicitly require same-stream Fire TV/provider measurements against FFmpeg/ISA, including startup/refill timing and effective aggregate ingest rate. Persistent HTTP connection reuse was investigated as a hypothesis but is not implemented or claimed in this release. The release therefore ships the bounded-concurrency improvement without claiming the full provider-specific throughput investigation is complete.
+
+
+## 0.7.23 publication
+Appi 0.7.23 was integrated through PR #12, merge `9520fcc984b3f5796e840f217574bf0569dbb1f9`. Final exact-candidate verification run `36662004552` passed 103 unit/smoke tests (1 skipped), workflow validation, deterministic rebuild and package/index inspection. GitHub Pages deployment run `36662108681` completed successfully.
+
+Delivery is therefore **released**. Verification remains **partial** because the task's documented Fire TV/provider acceptance checks have not yet been rerun against 0.7.23.

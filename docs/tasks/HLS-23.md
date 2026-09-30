@@ -2,11 +2,11 @@
 id: HLS-23
 role: implementation
 status: review
-delivery: unreleased
+delivery: released
 verification: partial
 owner: builder-publisher-2026-09-29
 base_commit: ff256d99b7097dcea3787c3a86582bec29354972
-artifact: none
+artifact: https://ihabmmali.github.io/appi/plugin.video.appi-0.7.23.zip
 ---
 # HLS-23 — Fix Buffered Look Ahead overlay gating and screen-safe layout
 
@@ -122,3 +122,9 @@ Automated release run `36661752457` passed 103 unit/smoke tests (1 skipped), wor
 Review confirms the setting is now an authoritative master gate: disabled returns no Appi buffering/debug text and closes an existing renderer. Enabled telemetry is four bounded lines in the bundled 1180×180 textbox, with a bounded compatibility fallback. Transition logging contains renderer/mode state but no stream URLs.
 
 Verification remains **partial** because the task explicitly requires target Fire TV acceptance for OFF during refill/recovery/seek/pause-resume, enabled visibility, real UI scale and screen bounds. Mocked/unit renderer checks cannot satisfy that device requirement.
+
+
+## 0.7.23 publication
+Appi 0.7.23 was integrated through PR #12, merge `9520fcc984b3f5796e840f217574bf0569dbb1f9`. Final exact-candidate verification run `36662004552` passed 103 unit/smoke tests (1 skipped), workflow validation, deterministic rebuild and package/index inspection. GitHub Pages deployment run `36662108681` completed successfully.
+
+Delivery is therefore **released**. Verification remains **partial** because the task's documented Fire TV/provider acceptance checks have not yet been rerun against 0.7.23.
