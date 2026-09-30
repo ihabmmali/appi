@@ -1836,6 +1836,7 @@ class BufferedHlsSession:
                             resource_kind=resource.kind,
                         )
                         data, content_type = session.serve(resource_id)
+                        stage = 'kodi-write'
                         self.send_response(200)
                         self.send_header(
                             'Content-Type',
@@ -1844,7 +1845,6 @@ class BufferedHlsSession:
                         self.send_header('Content-Length', str(len(data)))
                         self.send_header('Cache-Control', 'no-store')
                         self.end_headers()
-                        stage = 'kodi-write'
                         _write_to_client(self.wfile, data)
                         return
                     if resource.kind in {'key', 'map'}:
@@ -1874,6 +1874,7 @@ class BufferedHlsSession:
                             if end < start:
                                 self.send_error(416)
                                 return
+                        stage = 'kodi-write'
                         self.send_response(206 if requested else 200)
                         self.send_header('Content-Type', content_type or 'application/octet-stream')
                         self.send_header('Content-Length', str(end - start + 1))

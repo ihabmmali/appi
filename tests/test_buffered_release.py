@@ -178,6 +178,109 @@ class BufferedReleaseTests(unittest.TestCase):
             self.assertEqual(response.headers['Content-Range'], 'bytes 4-9/1024')
             self.assertEqual(len(response.read()), 6)
 
+    def test_duplicate_range_recent_and_pause_resume_requests_do_not_create_false_epochs(self):
+        session = self.session()
+        session.prepare()
+        track = next(iter(session.tracks.values()))
+
+        track.serve(0)
+        baseline_epoch = session.epoch
+        track.serve(0)
+        self.assertEqual(session.epoch, baseline_epoch)
+        track.serve(0, request_context={'range': 'bytes=4-9'})
+        self.assertEqual(session.epoch, baseline_epoch)
+        track.serve(1)
+        track.serve(0)
+        self.assertEqual(session.epoch, baseline_epoch)
+
+        track.resume_pending = True
+        track.serve(3)
+        self.assertEqual(session.epoch, baseline_epoch)
+
+        track.serve(10)
+        forward_epoch = session.epoch
+        self.assertGreater(forward_epoch, baseline_epoch)
+        track.serve(2)
+        self.assertGreater(session.epoch, forward_epoch)
+
+        classifications = [
+            fields.get('request_classification')
+            for name, fields in session.drain_events()
+            if name == 'buffer_consumer_request'
+        ]
+        for expected in (
+            'duplicate', 'range-reread', 'recent-reread', 'adjacent',
+            'forward-discontinuity', 'backward-discontinuity',
+        ):
+            self.assertIn(expected, classifications)
+
+    def test_kodi_side_write_timeout_retains_buffered_session(self):
+        session = self.session()
+        session.prepare()
+        track = next(iter(session.tracks.values()))
+        url = session._local_url(track.segments[0].resource.id)
+        original_write = self.m._write_to_client
+        state = {'raised': False}
+
+        def timeout_once(writer, data):
+            if not state['raised']:
+                state['raised'] = True
+                raise TimeoutError('simulated paused Kodi consumer')
+            return original_write(writer, data)
+
+        self.m._write_to_client = timeout_once
+        try:
+            try:
+                with urlopen(url, timeout=3) as response:
+                    response.read()
+            except Exception:
+                pass
+        finally:
+            self.m._write_to_client = original_write
+
+        self.assertFalse(session.error)
+        events = [
+            fields for name, fields in session.drain_events()
+            if name == 'buffer_consumer_io_error'
+        ]
+        self.assertTrue(events)
+        self.assertEqual(events[-1]['stage'], 'kodi-write')
+        self.assertTrue(events[-1]['session_retained'])
+
+        with urlopen(url, timeout=3) as response:
+            self.assertEqual(len(response.read()), 1024)
+        self.assertFalse(session.error)
+
+    def test_provider_side_timeout_remains_terminal_at_http_boundary(self):
+        session = self.session()
+        session.prepare()
+        track = next(iter(session.tracks.values()))
+        resource = track.segments[0].resource
+        url = session._local_url(resource.id)
+        original_serve_file = session.serve_file
+
+        def provider_timeout(resource_id, request_context=None):
+            raise TimeoutError('simulated provider inactivity')
+
+        session.serve_file = provider_timeout
+        try:
+            try:
+                with urlopen(url, timeout=3) as response:
+                    response.read()
+            except Exception:
+                pass
+        finally:
+            session.serve_file = original_serve_file
+
+        self.assertTrue(session.error)
+        events = [
+            fields for name, fields in session.drain_events()
+            if name == 'buffer_request_io_error'
+        ]
+        self.assertTrue(events)
+        self.assertEqual(events[-1]['stage'], 'provider-read')
+        self.assertFalse(events[-1]['session_retained'])
+
     def test_manager_retries_navigation_independence_and_stale_stop(self):
         manager = self.m.BufferedHlsManager(root=self.temp.name)
         self.addCleanup(manager.shutdown)
