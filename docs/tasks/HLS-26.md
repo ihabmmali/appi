@@ -11,7 +11,11 @@ artifact: none
 # HLS-26 — Make the Buffered debug overlay setting authoritative and non-blocking
 
 ## Objective
-Fix Appi 0.7.23 so the Buffered Look Ahead debug overlay is shown **only** when its setting is enabled, and investigate/replace the current dialog renderer if necessary so an enabled overlay does not prevent Kodi's normal playback OSD/navigation from opening.
+Fix Appi 0.7.23 so the Buffered Look Ahead debug overlay is shown **only** when its setting is enabled.
+
+Preserve the current user-accepted **Back-to-dismiss** behavior unless there is a well-documented Kodi mechanism that is demonstrably skin-independent and allows passive on-video statistics without interfering with the normal playback OSD/navigation.
+
+Do not replace the current renderer with an experimental or skin-specific workaround merely to make the overlay coexist with Kodi's OSD.
 
 This is a successor to HLS-23 target-device verification. The multiline formatting introduced in 0.7.23 is acceptable and should be preserved.
 
@@ -59,25 +63,28 @@ If the long-running service's `xbmcaddon.Addon` object does not reliably observe
 
 Do not require Kodi or Appi restart merely to turn the overlay OFF.
 
-## Passive-overlay investigation
-The overlay should ideally remain visible while allowing Kodi's standard playback OSD to function normally.
+## Overlay interaction policy
+The existing Back-to-dismiss interaction is the **default preservation path**, not merely a last-resort fallback.
 
-Before another WindowXMLDialog iteration:
-1. prove whether `WindowXMLDialog` can be made non-focusable/non-intercepting for this use on the target device;
-2. if not, evaluate a renderer that attaches passive controls to the active fullscreen-video window rather than opening a separate dialog/window;
-3. keep the renderer isolated from buffering and playback logic;
-4. do not steal focus, remap Select/Back, or consume the normal playback OSD/navigation actions.
+Do not change the renderer solely to make Kodi's normal playback OSD work concurrently unless the proposed mechanism is:
+- documented in Kodi's supported/public behavior rather than relying on an undocumented window-stack trick;
+- skin-independent;
+- demonstrably non-focus-stealing/non-intercepting on the target Fire TV;
+- compatible with normal playback navigation across the supported Kodi environment.
 
-Do not assume a renderer is suitable because mocked Python tests can create it. Fire TV target-device input behavior is required evidence.
+If all of those conditions are met, a passive renderer may be considered after evidence/review.
 
-If Kodi's Python GUI API cannot provide a genuinely passive persistent overlay reliably across supported skins/devices, the acceptable fallback is:
+Otherwise retain the current interaction:
 - setting OFF = no overlay at all;
 - setting ON = display the diagnostic overlay;
-- Back may dismiss it for the remainder of the current playback session;
-- dismissal must not stop playback or buffering;
-- the limitation/workaround must be explicit.
+- Back dismisses it for the remainder of the current playback session;
+- after dismissal, Kodi's normal OSD/navigation remains available;
+- dismissal does not stop playback or buffering;
+- if the setting is still ON, a new playback session may show the overlay again.
 
-The user has stated that this fallback interaction is acceptable provided the ON/OFF setting itself works correctly.
+Do not pursue experimental attachment to skin controls, skin-specific XML targets, undocumented window IDs, focus hacks, key remapping, or another custom-window mechanism merely to avoid the Back press.
+
+The user's priority is **strict adherence to the debug-display setting**, not simultaneous Appi-overlay/Kodi-OSD visibility.
 
 ## Layout
 Preserve the successful HLS-23 multiline layout:
@@ -98,16 +105,13 @@ Mandatory:
 - Automated tests cover raw/effective OFF, ON->OFF transition and no recreation after OFF.
 - Target Fire TV acceptance is mandatory.
 
-Preferred:
-- With debug ON, Fire TV center/select still opens Kodi's normal playback OSD and its settings/subtitles/timeline controls remain usable.
-- The debug overlay does not become the active/focused navigation window.
-
-Acceptable fallback if Kodi cannot provide a passive custom overlay:
-- debug ON may use the current dialog renderer;
-- Back dismisses it for the current playback session;
-- Kodi OSD/navigation works after dismissal;
-- this limitation is documented;
-- OFF must still remain completely silent.
+Interaction acceptance:
+- The existing Back-to-dismiss behavior is acceptable and should be preserved unless a documented, skin-independent passive-overlay mechanism is proven.
+- With debug ON, Back may dismiss the overlay for the remainder of the current playback session.
+- After dismissal, Kodi OSD/navigation must work normally.
+- A new playback session may show the overlay again if the setting remains ON.
+- OFF must remain completely silent.
+- Simultaneous visibility of Appi debug telemetry and Kodi's normal playback OSD is **not** a release requirement unless a documented skin-independent mechanism is found.
 
 ## Preservation constraints
 Do not change:
@@ -126,4 +130,15 @@ HLS-26 is a ready candidate and is not committed to release scope until explicit
 0.7.23 source contains an apparent master gate, but target-device behavior contradicts it. The current renderer is a `WindowXMLDialog`; pressing Back removes that window and immediately restores Kodi's normal playback OSD/navigation, providing strong evidence that the renderer itself is participating in the GUI input stack.
 
 ## Outcome and next action
-First prove and repair target-device setting propagation so OFF is absolute. Then determine whether a truly passive renderer is viable; if not, retain the user-accepted Back-to-dismiss behavior only for explicitly enabled debug sessions.
+First prove and repair target-device setting propagation so OFF is absolute and ON is the only state that permits the overlay to appear. Preserve the current Back-to-dismiss behavior. Only consider a different renderer if a documented, skin-independent, target-device-proven Kodi mechanism exists; otherwise do not spend another iteration redesigning the overlay window.
+
+
+## 2026-09-30 interaction-policy clarification
+The user explicitly clarified that OSD coexistence is secondary. Unless there is a **well-documented and skin-independent** Kodi method for persistent passive on-video statistics, keep the existing press-Back-to-dismiss behavior.
+
+The mandatory requirement is strict adherence to the debug-display switch:
+- OFF: never display debug statistics;
+- ON: display the debug statistics;
+- while ON, Back may dismiss the display for the remainder of that playback session.
+
+Do not make a speculative renderer replacement part of acceptance.
