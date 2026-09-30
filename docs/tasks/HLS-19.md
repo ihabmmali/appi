@@ -3,7 +3,7 @@ id: HLS-19
 role: implementation
 status: review
 delivery: released
-verification: partial
+verification: failed
 owner: builder-publisher-0.7.22
 base_commit: fd0bd5b08228c34b09de684f7b4b1f865a09e2d2
 artifact: https://ihabmmali.github.io/appi/plugin.video.appi-0.7.22.zip
@@ -168,3 +168,11 @@ Target-device testing on 2026-09-29 shows the same provider stream that freezes/
 This fails HLS-19's intended resilience outcome. Source review identifies a successor correctness defect: 0.7.22 can fetch the exact missing segment successfully but still withhold it from Kodi until the larger recovery reserve is rebuilt. HLS-24 owns that repair.
 
 Do not treat 0.7.22's preliminary "buffering appears better" observation as acceptance; same-stream A/B evidence shows Buffered mode is currently degrading a stream that does not require such intervention.
+
+
+## 0.7.23 pause/resume acceptance failure
+Target-device testing on 2026-09-29 confirms HLS-19's documented extended-pause acceptance still fails in published 0.7.23. Pausing — including while selecting subtitles — can produce `Buffered stream failed (TimeoutError)`; playback may briefly resume and then the buffered session stops silently.
+
+The observed failure occurred despite a previously healthy large contiguous reserve, so it is not evidence that the normal reservoir is too small.
+
+Source inspection identifies two successor correctness defects now owned by HLS-25: Kodi-side localhost write timeout can poison the whole session, and duplicate/re-read segment requests after pause can be falsely classified as seeks. HLS-19 verification is therefore **failed**, not partial, until the successor repair passes target-device pause/resume acceptance.

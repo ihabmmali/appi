@@ -86,3 +86,9 @@ Implementation session 2026-09-28: activated on `release/0.7.21` from base `4a41
 The user reports a clear delay after seeking before playback resumes. This may be expected behavior from the fresh-epoch reserve rebuild introduced by HLS-12, but the detailed overlay is currently broken, so the device cannot show whether the delay corresponds to healthy refill, provider stall, or retry.
 
 Do not treat the delay alone as an HLS-12 regression without telemetry. HLS-16 must expose the new-epoch fill/recovery state, and HLS-19 must expose retry/recovery state if provider delay is involved.
+
+
+## HLS-25 false-seek follow-up
+0.7.23 source still treats every request whose segment index is not exactly `last_requested + 1` as a seek. Target-device evidence shows unexpectedly high seek-epoch counts without corresponding user seeks.
+
+HLS-25 owns classification of duplicate/range/re-read requests so the HLS-12 fresh-epoch mechanism is invoked only for genuine timeline discontinuities. Preserve HLS-12 behavior for true forward/backward seek and cold non-zero resume.

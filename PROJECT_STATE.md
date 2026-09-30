@@ -18,6 +18,8 @@ Updated: 2026-09-29. Start with [AGENTS.md](AGENTS.md) for role routing.
 - HLS-22 adds settings-backed bounded producer concurrency (default 2, range 1–4) while preserving duplicate suppression, stale-epoch cancellation and contiguous playable-reserve accounting. Same-stream target-device throughput comparison against FFmpeg/ISA is still required.
 - HLS-23 makes the debug-overlay setting an authoritative master gate and uses bounded multiline telemetry. Fire TV visibility, scale and OFF/ON transition acceptance are still required.
 - Existing HLS modes 0–2 and the established HLS-13 reservoir thresholds/accounting remain intentionally unchanged.
+- HLS-25 is a next-cycle **release-blocking candidate** after 0.7.23 pause/resume failure. Kodi-side localhost write timeout/disconnect must not poison the session, and duplicate/range/re-read segment requests must not create false seek epochs. Do not address this by increasing timeouts or changing reservoir size.
+- HLS-19 verification is now failed on target device because its extended-pause acceptance still fails in 0.7.23 despite healthy reserve.
 - META-1 is a next-cycle candidate to surface optional movie/episode runtime through Kodi metadata and show locally derived episode counts on season folders.
 - PLAY-1, HLS-1 and UI-1 remain backlog investigations. No next-release product scope is currently committed; [NEXT_RELEASE.md](NEXT_RELEASE.md) is reset for the next planning cycle. [KNOWN_ISSUES.md](KNOWN_ISSUES.md) remains the canonical task index.
 

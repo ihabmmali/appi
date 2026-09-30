@@ -1,6 +1,6 @@
 # Appi task index
 
-Updated: 2026-09-28. Each linked task is the canonical requirements/status/evidence record. This index covers bugs, features and investigations. Preserve IDs and completed records; archive through Git/history instead of erasing evidence.
+Updated: 2026-09-29. Each linked task is the canonical requirements/status/evidence record. This index covers bugs, features and investigations. Preserve IDs and completed records; archive through Git/history instead of erasing evidence.
 
 | ID | Status | Role | Task |
 | --- | --- | --- | --- |
@@ -36,6 +36,7 @@ Updated: 2026-09-28. Each linked task is the canonical requirements/status/evide
 | HLS-22 | review | implementation | [Optimize Buffered Look Ahead producer throughput](docs/tasks/HLS-22.md) |
 | HLS-23 | review | implementation | [Fix Buffered Look Ahead overlay gating and screen-safe layout](docs/tasks/HLS-23.md) |
 | HLS-24 | review | implementation | [Stop Buffered Look Ahead from starving Kodi during recovery](docs/tasks/HLS-24.md) |
+| HLS-25 | ready | implementation | [Make Buffered Look Ahead pause/resume consumer-safe](docs/tasks/HLS-25.md) |
 | HLS-21 | review | research | [Prove whether Buffered Look Ahead timeouts are true reservoir depletion](docs/tasks/HLS-21.md) |
 | HLS-11 | review | implementation | [Repair multi-variant HLS seek, resume-point and recovery timeout](docs/tasks/HLS-11.md) |
 | HLS-12 | review | implementation | [Replace Buffered Look Ahead seek/resume with fresh buffer epochs](docs/tasks/HLS-12.md) |

@@ -158,3 +158,9 @@ Verification remains **partial** because the release-blocking defect was observe
 Appi 0.7.23 was integrated through PR #12, merge `9520fcc984b3f5796e840f217574bf0569dbb1f9`. Final exact-candidate verification run `36662004552` passed 103 unit/smoke tests (1 skipped), workflow validation, deterministic rebuild and package/index inspection. GitHub Pages deployment run `36662108681` completed successfully.
 
 Delivery is therefore **released**. Verification remains **partial** because the task's documented Fire TV/provider acceptance checks have not yet been rerun against 0.7.23.
+
+
+## 0.7.23 pause failure is separate from HLS-24
+After publication, the user confirmed that pause/resume can still terminate Buffered Look Ahead with a `TimeoutError` even when the reservoir was healthy. Source inspection indicates this is not a recurrence of HLS-24's exact-segment recovery-reserve gate: it is a localhost consumer/lifecycle and false-seek classification defect tracked by HLS-25.
+
+Keep HLS-24's exact-segment delivery repair intact while HLS-25 fixes pause safety.
