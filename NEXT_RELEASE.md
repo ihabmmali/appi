@@ -9,6 +9,7 @@ Appi 0.7.22 is published. Current baseline and fallback details: [PROJECT_STATE.
 | Task | Selection | Priority | Reason |
 | --- | --- | --- | --- |
 | [HLS-22](docs/tasks/HLS-22.md) | candidate | producer throughput | Benchmark Appi against FFmpeg on the same stream/network/VPN and optimize producer transport without changing the proven reservoir policy |
+| [HLS-23](docs/tasks/HLS-23.md) | candidate | overlay regression | 0.7.22 displays buffering/debug text while the setting is disabled and detailed text overflows the screen; make OFF fully silent and use bounded multiline layout |
 | [PLAY-1](docs/tasks/PLAY-1.md) | backlog | investigation | Resume persistence is working; only investigate the playback-start Trakt API error |
 | [HLS-1](docs/tasks/HLS-1.md) | backlog | investigation | Use buffered-mode/diagnostic evidence to diagnose any underlying provider stalls that remain |
 | [UI-1](docs/tasks/UI-1.md) | backlog | investigation | Skin comparison needed |
@@ -23,6 +24,8 @@ Appi 0.7.22 is published. Current baseline and fallback details: [PROJECT_STATE.
 6. Copy shipped task IDs and scope changes into RELEASE_NOTES, then reset this planning file for the next cycle.
 
 ## Scope decisions
+
+2026-09-29: HLS-23 added after 0.7.22 target-device testing. The simple `Appi buffering` overlay currently bypasses the debug setting by design, and the existing automated test explicitly expects that behavior; the user requires the disabled setting to suppress all BufferOverlay text. The full detailed display also sometimes appears while disabled and requires instrumentation. The detailed renderer is one long single-line label and overflows screen width; replace it with bounded multiline layout. Buffering appears improved, but HLS-19 verification remains partial pending more testing.
 
 2026-09-29: Appi 0.7.22 published through PR #11 / merge `92131c95c1d047eb7a683e8e5e2e6abe10e1a518`. Final publication gate `36626983906` and Pages deployment `36627135052` succeeded. Shipped scope: HLS-16, HLS-17, HLS-18, HLS-19, HLS-20, HLS-21, UI-5, UI-6 and DOWNLOAD-1. Their delivery is released while target-device verification remains review/partial. The release index intentionally retains 0.7.21 and 0.7.8 in addition to current 0.7.22. Planning is reset; HLS-22 is a candidate for the next cycle but is not committed.
 

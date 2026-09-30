@@ -88,3 +88,14 @@ Final package gate run `36515744781` passed all 100 unit/smoke tests (1 skipped)
 
 ## 0.7.22 publication
 Published in Appi 0.7.22 through PR #11 / merge `92131c95c1d047eb7a683e8e5e2e6abe10e1a518`. Final publication gate run `36626983906` passed 100 tests (1 skipped), workflow tracker validation, deterministic rebuild, ZIP/index inspection and packaging. GitHub Pages deployment run `36627135052` succeeded. Published ZIP SHA-256: `35a50dad9f17f0d0a47c2cea7892d769a1b613ab2743bbbd61a1fc59267ae53f`. Delivery is released; documented target-device acceptance remains review/partial.
+
+
+## 0.7.22 target-device verification failure
+The WindowXMLDialog path is now visible on the target device, but the renderer still fails acceptance:
+- `Appi buffering` appears even with the debug-overlay setting disabled;
+- the full detailed overlay can sometimes appear while the setting is disabled;
+- detailed text exceeds screen width because it is rendered as one long line.
+
+The simple disabled-state message is confirmed by source/tests to be intentional 0.7.22 behavior, but the user rejects that contract. The unexplained full-debug leak remains a defect requiring instrumentation. HLS-23 is the successor repair task.
+
+HLS-16 remains delivery=released and verification=failed for 0.7.22 rather than being treated as accepted merely because the renderer became visible.

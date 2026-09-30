@@ -15,7 +15,7 @@ Updated: 2026-09-29. Start with [AGENTS.md](AGENTS.md) for role routing.
 ## Current work
 
 - **0.7.22 is published.** Shipped scope: HLS-16, HLS-17, HLS-18, HLS-19, HLS-20, HLS-21, UI-5, UI-6 and DOWNLOAD-1. Delivery is released; task verification remains review/partial where documented Fire TV/provider checks are still outstanding.
-- HLS-19 now owns transient depleted-segment recovery inside Appi under configurable retry/timeout bounds and separates paused/buffering/stopped lifecycle handling; target-device stall and long-pause acceptance remain pending.
+- HLS-19 now owns transient depleted-segment recovery inside Appi under configurable retry/timeout bounds and separates paused/buffering/stopped lifecycle handling. Initial 0.7.22 device observation says buffering appears better, but more testing is required; stall and long-pause acceptance remain pending.
 - HLS-18 exposes advanced Buffered Look Ahead thresholds/timers while retaining the proven 0.7.21 defaults. HLS-17 clarifies startup target versus configured capacity without changing the reservoir policy.
 - HLS-20 instruments reservoir-ready through Kodi AV start and preloads known key/map dependencies. HLS-21 records a bounded pre-failure reservoir/track/transfer timeline and evidence-based classification for future real-device failures.
 - HLS-16 changes the detailed overlay's primary renderer to a bundled modeless `WindowXMLDialog` with a logged compatibility fallback. Fire TV visibility still needs target-device confirmation.
@@ -23,6 +23,7 @@ Updated: 2026-09-29. Start with [AGENTS.md](AGENTS.md) for role routing.
 - DOWNLOAD-1 generates FFmpeg remux scripts using explicit first-video/first-audio mapping, `-c copy` and `-threads 0`, while preserving safe quoting and atomic partial-file handling.
 - Existing HLS modes 0–2 remain intentionally unchanged.
 - HLS-22 is the next-cycle candidate to benchmark Appi producer throughput against FFmpeg on the same stream/network/VPN and investigate connection reuse/request overhead/bounded concurrency without changing the reservoir policy. It is **not committed** to a release yet.
+- HLS-23 is a next-cycle candidate from 0.7.22 target-device testing: the overlay can appear while disabled and detailed telemetry overflows horizontally. OFF must suppress all BufferOverlay text, and enabled debug telemetry must use a bounded multiline screen-safe layout.
 - PLAY-1, HLS-1 and UI-1 remain backlog investigations.
 - [NEXT_RELEASE.md](NEXT_RELEASE.md) has been reset: no next-release scope or version is currently committed. [KNOWN_ISSUES.md](KNOWN_ISSUES.md) remains the canonical task index.
 
