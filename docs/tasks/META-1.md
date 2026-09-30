@@ -69,7 +69,7 @@ If a season has zero locally indexed episodes because of malformed/incomplete ca
 - Automated tests cover runtime present/missing/unsupported and season counts including singular/plural cases.
 
 ## Authorization
-Requested by the user on 2026-09-29 as a feature request. META-1 is logged as a ready candidate and is not committed to release scope until explicitly selected under AGENTS.md.
+Requested by the user on 2026-09-29 as a feature request. On 2026-09-30 the user explicitly instructed that all current candidates be committed for the next release. META-1 is committed next-release scope.
 
 ## Evidence
 Current `metadata.py` does not request, normalize or cache runtime. Current `_apply_metadata()` does not set a duration field. Current `show_seasons()` and `show_recent_show()` label folders only as `Season N`, while Appi already has the locally indexed episodes needed to calculate an exact available-episode count.

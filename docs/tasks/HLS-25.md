@@ -144,7 +144,7 @@ This is a correctness fix around local consumer lifecycle and request classifica
 ## Authorization
 Reported by the user on 2026-09-29 from Appi 0.7.23 target-device testing, with source-level findings supplied by another diagnostic thread in the same project. The user explicitly instructed that this be treated as a candidate correctness fix / release blocker, not a timeout-tuning feature.
 
-HLS-25 is a ready release-blocking candidate and is not committed to release scope until explicitly selected under AGENTS.md.
+On 2026-09-30 the user explicitly instructed that all current candidates be committed for the next release. HLS-25 is committed next-release scope and remains release-blocking.
 
 ## Evidence
 Current 0.7.23 source confirms both key boundaries:

@@ -18,11 +18,11 @@ Updated: 2026-09-29. Start with [AGENTS.md](AGENTS.md) for role routing.
 - HLS-22 adds settings-backed bounded producer concurrency (default 2, range 1–4) while preserving duplicate suppression, stale-epoch cancellation and contiguous playable-reserve accounting. Same-stream target-device throughput comparison against FFmpeg/ISA is still required.
 - HLS-23's multiline telemetry is confirmed readable on Fire TV, but its target-device verification is now failed: the full overlay remains visible regardless of the setting and its WindowXMLDialog blocks Kodi's normal playback OSD until Back dismisses it.
 - Existing HLS modes 0–2 and the established HLS-13 reservoir thresholds/accounting remain intentionally unchanged.
-- HLS-26 is a next-cycle candidate whose mandatory requirement is strict debug-switch gating: OFF never shows telemetry; ON permits it. Preserve the current Back-to-dismiss behavior unless a well-documented, skin-independent, target-device-proven passive Kodi overlay mechanism exists. Simultaneous Appi-overlay/Kodi-OSD operation is not required.
-- HLS-25 is a next-cycle **release-blocking candidate** after 0.7.23 pause/resume failure. Kodi-side localhost write timeout/disconnect must not poison the session, and duplicate/range/re-read segment requests must not create false seek epochs. Do not address this by increasing timeouts or changing reservoir size.
+- HLS-26 is committed next-release scope. Its mandatory requirement is strict debug-switch gating: OFF never shows telemetry; ON permits it. Preserve the current Back-to-dismiss behavior unless a well-documented, skin-independent, target-device-proven passive Kodi overlay mechanism exists. Simultaneous Appi-overlay/Kodi-OSD operation is not required.
+- HLS-25 is committed **release-blocking** next-release scope after 0.7.23 pause/resume failure. Kodi-side localhost write timeout/disconnect must not poison the session, and duplicate/range/re-read segment requests must not create false seek epochs. Do not address this by increasing timeouts or changing reservoir size.
 - HLS-19 verification is now failed on target device because its extended-pause acceptance still fails in 0.7.23 despite healthy reserve.
-- META-1 is a next-cycle candidate to surface optional movie/episode runtime through Kodi metadata and show locally derived episode counts on season folders.
-- PLAY-1, HLS-1 and UI-1 remain backlog investigations. No next-release product scope is currently committed; [NEXT_RELEASE.md](NEXT_RELEASE.md) is reset for the next planning cycle. [KNOWN_ISSUES.md](KNOWN_ISSUES.md) remains the canonical task index.
+- META-1 is committed next-release scope to surface optional movie/episode runtime through Kodi metadata and show locally derived episode counts on season folders.
+- PLAY-1, HLS-1 and UI-1 remain backlog investigations. [NEXT_RELEASE.md](NEXT_RELEASE.md) commits HLS-25, HLS-26 and META-1 for the next release; version is not yet assigned. [KNOWN_ISSUES.md](KNOWN_ISSUES.md) remains the canonical task index.
 
 ## Context on demand
 

@@ -124,7 +124,7 @@ Do not change:
 ## Authorization
 Created from Appi 0.7.23 Fire TV target-device feedback on 2026-09-29. The user explicitly requires the setting switch to work as intended and reports that the current overlay window blocks normal playback navigation while active.
 
-HLS-26 is a ready candidate and is not committed to release scope until explicitly selected under AGENTS.md.
+On 2026-09-30 the user explicitly instructed that all current candidates be committed for the next release. HLS-26 is committed next-release scope, with strict debug-switch gating as the mandatory requirement and the documented Back-to-dismiss preservation policy unchanged.
 
 ## Evidence
 0.7.23 source contains an apparent master gate, but target-device behavior contradicts it. The current renderer is a `WindowXMLDialog`; pressing Back removes that window and immediately restores Kodi's normal playback OSD/navigation, providing strong evidence that the renderer itself is participating in the GUI input stack.
