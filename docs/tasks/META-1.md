@@ -2,11 +2,11 @@
 id: META-1
 role: implementation
 status: review
-delivery: unreleased
+delivery: released
 verification: partial
 owner: builder-publisher-2026-09-30
 base_commit: e359459e1e3734e1c60608632b2213fe33bc92e7
-artifact: none
+artifact: https://ihabmmali.github.io/appi/plugin.video.appi-0.7.24.zip
 ---
 # META-1 — Surface media runtime and season episode counts
 
@@ -91,3 +91,8 @@ Release gate run `36763219643` passed all 108 unit/smoke tests (1 skipped). Pack
 Self-review completed against artifact commit `dec2cb5f491aba7568e2f6d7ba28be91ba247369`. Release run `36763427233` passed 108 unit/smoke tests (1 skipped), tracker validation and deterministic package inspection. Tests cover runtime present, absent and unsupported plus local season-count singular/plural behavior.
 
 Review confirms runtime is stored in seconds, missing/unsupported runtime is non-fatal, episode runtime stays episode-specific and season counts are derived without a new network call. Verification remains partial pending target-device presentation acceptance.
+
+## 0.7.24 publication evidence
+Released through PR #14 / merge `cda54a246c5d440116dfe05717da0392e62f13f8`. Final exact-candidate gate `36763721939` passed 108 tests (1 skipped), workflow validation, deterministic rebuild, ZIP/hash/index inspection and packaging. GitHub Pages deployment `36763934374` succeeded. Published artifact SHA-256: `6eee9e80e0a0e0766c62ea199052113fdf75b5fab0bf1eb25da2c0b06823451d`.
+
+Delivery is released. Verification remains partial/review until this task's documented target-device acceptance checks are completed.
