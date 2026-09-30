@@ -134,3 +134,11 @@ Implementation session `builder-publisher-2026-09-29` uses base `ff256d99b7097dc
 The candidate separates ordinary sequential media delivery from reservoir restoration. `recover_segment()` still applies HLS-19 retry/no-progress bounds to the exact requested segment, but once that segment is safely cached it emits exact-ready telemetry and returns it immediately for normal sequential playback. It no longer calls `_wait_reservoir()` before serving that media. Producer threads continue filling in the background and the session clears recovery state only when the configured recovery reserve is restored (or all required remaining media is cached).
 
 Discontinuous seek/cold-resume requests deliberately retain the HLS-12 fresh-epoch reserve gate. New telemetry records exact-segment-ready and first-byte-served boundaries with requested track/index/sequence and reserve state, making it possible to prove that cached required media is not held behind a larger reserve target. Tests cover sequential depleted-media release without invoking the reserve wait; target Fire TV reproduction/A-B acceptance remains mandatory.
+
+
+## Scope
+For 0.7.23, change only Buffered Look Ahead recovery delivery semantics needed to stop starving Kodi: retry the exact requested media under existing bounded recovery policy, release an available sequential segment immediately, continue look-ahead refill asynchronously, and retain the fresh-epoch reserve gate for discontinuous seek/cold resume. Do not alter HLS modes 0–2.
+
+
+## Evidence
+Published 0.7.22 target-device A/B evidence shows the same stream freezing/catching up/stopping in Buffered Look Ahead while Manual fixed-quality/ISA plays normally. Source inspection confirmed `recover_segment()` withheld an already downloaded sequential segment behind `_wait_reservoir()`, which could turn low reserve into a 504. Candidate implementation commit `65868eabc584c2d60bffca8804060b84683e32a1` releases that exact segment immediately for sequential playback while retaining seek/cold-resume reserve gating. Automated unit/smoke tests passed in run `36661239740`; tracker validation, packaging, and target-device acceptance are still pending at this checkpoint.

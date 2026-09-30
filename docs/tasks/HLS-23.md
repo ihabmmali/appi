@@ -104,3 +104,11 @@ Implementation session `builder-publisher-2026-09-29` uses base `ff256d99b7097dc
 The candidate makes `buffered_debug_overlay` the master gate: when false, `status_text()` returns no text even during recovery/caching and `BufferOverlay.update()` closes any existing renderer. Enabled detail is four bounded lines rather than one pipe-delimited line. The bundled renderer changes to a 1180×180 textbox; the compatibility path uses a textbox when available and otherwise four bounded label rows. State-transition logging records effective enabled state, requested mode, renderer, pre-existing window and close reason without stream URLs.
 
 Automated coverage is added for OFF during recovery, enabled→visible→disabled closure, stale-text non-reappearance, and bounded multiline XML layout. Target Fire TV visibility/scale verification remains required.
+
+
+## Scope
+For 0.7.23, change only the Buffered Look Ahead on-screen renderer and its instrumentation: make the existing debug-overlay setting authoritative, close stale renderer state when disabled, use a bounded multiline layout when enabled, and keep GUI failures non-fatal. Do not alter reservoir/recovery behavior or HLS modes 0–2.
+
+
+## Evidence
+Published 0.7.22 target-device evidence shows buffering/debug text while the setting is disabled and single-line detail overflowing the screen. Source inspection confirmed the simple recovery string deliberately bypassed the debug flag. Candidate implementation commit `65868eabc584c2d60bffca8804060b84683e32a1` makes OFF silent, closes existing windows, uses four bounded rows, and adds transition logs. Automated unit/smoke tests passed in run `36661239740`; tracker validation, packaging, and target-device acceptance are still pending at this checkpoint.
