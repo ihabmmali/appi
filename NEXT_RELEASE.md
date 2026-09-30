@@ -1,6 +1,6 @@
 # Next Appi release
 
-Planning status: committed. Version: not assigned.
+Planning status: release candidate. Version: 0.7.24.
 
 Appi 0.7.23 is published. Current baseline and fallback details: [PROJECT_STATE.md](PROJECT_STATE.md).
 

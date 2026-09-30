@@ -38,13 +38,22 @@ class Dialog:
 xg.Dialog=Dialog; sys.modules['xbmcgui']=xg
 xa=types.ModuleType('xbmcaddon')
 class Addon:
-    def getSetting(self,n): return settings.get(n,'')
+    def __init__(self): self.snapshot=dict(settings)
+    def getSetting(self,n): return self.snapshot.get(n,'')
     def getAddonInfo(self,n): return profile if n=='profile' else ''
 xa.Addon=Addon; sys.modules['xbmcaddon']=xa
 xv=types.ModuleType('xbmcvfs'); xv.translatePath=lambda p: temp if p=='special://temp/' else p; xv.exists=os.path.exists; xv.mkdirs=lambda p: os.makedirs(p,exist_ok=True); xv.copy=lambda a,b: True
 sys.modules['xbmcvfs']=xv
 from resources.lib import subtitle_store, subtitle_service
 from resources.lib import playback_history
+settings['buffered_debug_overlay']='false'
+raw,effective=subtitle_service._enabled_state('buffered_debug_overlay', False)
+assert raw=='false' and effective is False
+settings['buffered_debug_overlay']='true'
+raw,effective=subtitle_service._enabled_state('buffered_debug_overlay', False)
+assert raw=='true' and effective is True
+settings['buffered_debug_overlay']='false'
+assert subtitle_service._enabled('buffered_debug_overlay', True) is False
 # Create one persistent subtitle through the store index directly using the public capture path.
 subtitle_store.prepare_session('movies','m:tt1')
 source=os.path.join(temp,'one.srt')

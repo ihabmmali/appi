@@ -2,6 +2,15 @@
 
 Each entry records the package shipped, its main user-visible changes, and verification at release time. For the current baseline and next tasks read [PROJECT_STATE.md](PROJECT_STATE.md) and [KNOWN_ISSUES.md](KNOWN_ISSUES.md); the [CHANGELOG.md](CHANGELOG.md) is the implemented feature history.
 
+## 0.7.24 candidate — 2026-09-30
+
+- Committed scope: release-blocking HLS-25, HLS-26 and META-1. Base `e359459e1e3734e1c60608632b2213fe33bc92e7`; branch `release/0.7.24`.
+- HLS-25 separates Kodi localhost consumer write timeout/disconnect from provider failures, and keeps duplicate, same-resource Range, recent re-read and adjacent pause/resume requests in the active epoch while true discontinuities and cold non-zero starts retain fresh-epoch seek handling.
+- HLS-26 re-reads the debug-overlay setting through a fresh Kodi Addon settings object in the persistent service; OFF remains authoritative while the accepted Back-to-dismiss interaction is preserved when the overlay is intentionally ON.
+- META-1 adds optional runtime metadata in seconds through Kodi's native duration field and locally derived episode counts on season folders, with compatibility fallback when runtime is unsupported.
+- Source implementation: `4cfd2939567113d34e73ecb97d3c5fed9d7089bd`; automated coverage: `94c62ee25271b13a13b78038f344bcf51e8d0ffc`. Existing HLS modes 0–2 and Buffered Look Ahead reservoir/producer defaults are unchanged.
+- Candidate publication policy retains 0.7.23, 0.7.22, 0.7.21, 0.7.14, 0.7.12 and 0.7.8 alongside 0.7.24. Fire TV/provider acceptance remains separate and is not claimed by automated verification.
+
 ## 0.7.23 — 2026-09-29
 
 - Committed scope: HLS-22, HLS-23 and release-blocking HLS-24. Base `ff256d99b7097dcea3787c3a86582bec29354972`; branch `release/0.7.23`.

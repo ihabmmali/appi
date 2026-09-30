@@ -44,6 +44,27 @@ def build_tv_groups(episodes):
     return summaries, groups
 
 
+def season_episode_counts(episodes):
+    counts = {}
+    for item in episodes:
+        try:
+            season = int(item.get('season'))
+        except (TypeError, ValueError):
+            continue
+        counts[season] = counts.get(season, 0) + 1
+    return counts
+
+
+def season_label(season, episode_count):
+    try:
+        number = int(season)
+    except (TypeError, ValueError):
+        number = season
+    count = max(0, int(episode_count or 0))
+    noun = 'episode' if count == 1 else 'episodes'
+    return 'Season {} ({} {})'.format(number, count, noun)
+
+
 def sort_movies(items, mode=0):
     items = list(items)
     title_key = lambda item: (item.get('title') or item.get('display_title') or '').casefold()

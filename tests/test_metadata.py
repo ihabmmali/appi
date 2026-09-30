@@ -74,6 +74,7 @@ def rpc(raw):
       'customproperties':{'IMDb_Rating':'7.8','IMDb_Votes':'12,345','IMDb_ID':'tt123'},
       'cast':[{'name':'Actor One','role':'Lead','thumbnail':'https://img/a.jpg'}],
       'director':['Director One'],
+      'runtime':2730,
       'uniqueid':{'tmdb':'55'}
     }
     return json.dumps({'jsonrpc':'2.0','id':1,'result':{'files':[item]}})
@@ -95,6 +96,7 @@ assert data['poster']=='https://img/poster.jpg'
 assert data['cast'][0]['name']=='Actor One'
 assert data['directors']==['Director One']
 assert data['episode_title']=='Pilot'
+assert data['runtime_seconds']==2730
 assert data['imdb_rating']==7.8 and data['imdb_votes']==12345
 # The generic JSON-RPC rating is deliberately ignored; only IMDb_Rating is accepted.
 assert data['imdb_rating']!=9.9
@@ -119,6 +121,7 @@ with metadata._connect() as connection:
     ).fetchone()
     episode_data=json.loads(episode_row[0]); show_data=json.loads(show_row[0])
     assert 'poster' not in episode_data and 'cast' not in episode_data
+    assert episode_data['runtime_seconds']==2730
     assert show_data['poster']=='https://img/poster.jpg'
     assert show_data['cast'][0]['name']=='Actor One'
 batch=[
@@ -143,6 +146,51 @@ with metadata._connect() as connection:
     assert connection.execute('SELECT COUNT(*) FROM metadata').fetchone()[0] == 100
 metadata.clear_all()
 assert metadata.status()['cached']==0
+'''
+        result = subprocess.run(
+            [sys.executable, '-c', textwrap.dedent(code), str(PLUGIN)],
+            capture_output=True, text=True,
+        )
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+    def test_runtime_is_optional_and_unsupported_property_falls_back(self):
+        code = r'''
+import json, os, sys, tempfile, types
+from pathlib import Path
+PLUGIN=Path(sys.argv[1]); sys.path.insert(0,str(PLUGIN))
+profile=tempfile.mkdtemp(prefix='appi-meta-runtime-')
+settings={'metadata_enabled':'true'}
+calls=[]
+xbmc=types.ModuleType('xbmc'); xbmc.LOGWARNING=2; xbmc.log=lambda *a,**k:None
+xbmc.getCondVisibility=lambda q:q=='System.HasAddon(plugin.video.themoviedb.helper)'
+class Player:
+    def isPlayingVideo(self): return False
+xbmc.Player=Player
+def rpc(raw):
+    request=json.loads(raw); props=list(request['params']['properties']); calls.append(props)
+    if 'runtime' in props:
+        return json.dumps({'jsonrpc':'2.0','id':1,'error':{'message':'Invalid params'}})
+    return json.dumps({'jsonrpc':'2.0','id':1,'result':{'files':[{
+        'title':'Legacy','plot':'works without runtime',
+        'customproperties':{},'uniqueid':{}
+    }]}})
+xbmc.executeJSONRPC=rpc; sys.modules['xbmc']=xbmc
+xa=types.ModuleType('xbmcaddon')
+class Addon:
+    def getSetting(self,n): return settings.get(n,'')
+    def getAddonInfo(self,n): return profile if n=='profile' else ''
+xa.Addon=Addon; sys.modules['xbmcaddon']=xa
+xv=types.ModuleType('xbmcvfs'); xv.translatePath=lambda p:p; xv.exists=os.path.exists; xv.mkdirs=lambda p:os.makedirs(p,exist_ok=True)
+sys.modules['xbmcvfs']=xv
+from resources.lib import metadata
+payload={'media_type':'movie','title':'Legacy','year':2020,'imdb_id':''}
+assert metadata.queue(payload)
+assert metadata.process_one()
+assert 'runtime' in calls[0] and 'runtime' not in calls[1], calls
+data=metadata.get(payload)
+assert data['plot']=='works without runtime'
+assert 'runtime_seconds' not in data
+assert metadata._normalise_result({'title':'Legacy'}, payload).get('runtime_seconds') is None
 '''
         result = subprocess.run(
             [sys.executable, '-c', textwrap.dedent(code), str(PLUGIN)],

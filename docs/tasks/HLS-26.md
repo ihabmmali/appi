@@ -1,11 +1,11 @@
 ---
 id: HLS-26
 role: implementation
-status: ready
+status: review
 delivery: unreleased
-verification: pending
-owner: unassigned
-base_commit: unset
+verification: partial
+owner: builder-publisher-2026-09-30
+base_commit: e359459e1e3734e1c60608632b2213fe33bc92e7
 artifact: none
 ---
 # HLS-26 — Make the Buffered debug overlay setting authoritative and non-blocking
@@ -18,6 +18,9 @@ Preserve the current user-accepted **Back-to-dismiss** behavior unless there is 
 Do not replace the current renderer with an experimental or skin-specific workaround merely to make the overlay coexist with Kodi's OSD.
 
 This is a successor to HLS-23 target-device verification. The multiline formatting introduced in 0.7.23 is acceptable and should be preserved.
+
+## Scope
+Repair the authoritative runtime setting boundary only. Preserve the current multiline renderer and user-accepted Back-to-dismiss behavior; do not introduce a new focus/window mechanism or alter buffering/recovery behavior.
 
 ## 0.7.23 target-device evidence
 The user reports:
@@ -142,3 +145,15 @@ The mandatory requirement is strict adherence to the debug-display switch:
 - while ON, Back may dismiss the display for the remainder of that playback session.
 
 Do not make a speculative renderer replacement part of acceptance.
+
+## 0.7.24 implementation evidence
+Source implementation: `4cfd2939567113d34e73ecb97d3c5fed9d7089bd`. Automated coverage: `94c62ee25271b13a13b78038f344bcf51e8d0ffc`.
+
+The persistent service now reads `buffered_debug_overlay` through a fresh `xbmcaddon.Addon()` instance, records raw/effective transition state and makes OFF suppress/close the renderer. The renderer itself is unchanged, preserving the accepted Back-to-dismiss interaction.
+
+Release gate run `36763219643` passed all 108 unit/smoke tests (1 skipped). Packaging was blocked only by task-record Scope validation. Fire TV OFF-before-playback and ON-to-OFF acceptance remain pending.
+
+## 0.7.24 self-review
+Self-review completed against artifact commit `dec2cb5f491aba7568e2f6d7ba28be91ba247369`. Release run `36763427233` passed 108 unit/smoke tests (1 skipped), tracker validation and deterministic package inspection. Automated coverage proves fresh settings reads and OFF/ON/OFF boolean propagation at the service boundary.
+
+No renderer replacement or focus workaround was introduced. Verification remains partial because OFF-before-playback and ON→OFF behavior must still be confirmed on the target Fire TV; Back-to-dismiss remains the accepted ON-state interaction.

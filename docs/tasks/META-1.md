@@ -1,17 +1,20 @@
 ---
 id: META-1
 role: implementation
-status: ready
+status: review
 delivery: unreleased
-verification: pending
-owner: unassigned
-base_commit: unset
+verification: partial
+owner: builder-publisher-2026-09-30
+base_commit: e359459e1e3734e1c60608632b2213fe33bc92e7
 artifact: none
 ---
 # META-1 — Surface media runtime and season episode counts
 
 ## Objective
 Improve Appi's media information by surfacing runtime/length where the metadata provider exposes it, and by showing the number of locally indexed episodes inside every TV season folder.
+
+## Scope
+Add optional runtime normalization/application to the existing metadata path and derive season counts solely from the locally indexed per-show episodes. Preserve existing metadata fields, browsing targets and network behavior outside the optional runtime request.
 
 ## Current behavior
 Appi's metadata worker currently requests TMDb Helper/Kodi JSON-RPC properties including title, plot, year, cast, director, artwork, IMDb number/IDs and custom properties, but it does not request or cache a runtime/duration field.
@@ -76,3 +79,15 @@ Current `metadata.py` does not request, normalize or cache runtime. Current `_ap
 
 ## Outcome and next action
 Add runtime as optional metadata and centralize season-count label construction so both season views stay consistent.
+
+## 0.7.24 implementation evidence
+Source implementation: `4cfd2939567113d34e73ecb97d3c5fed9d7089bd`. Automated coverage: `94c62ee25271b13a13b78038f344bcf51e8d0ffc`.
+
+Metadata lookup requests optional `runtime`, normalizes supported numeric runtime/duration to seconds, retries compatible JSON-RPC property combinations after Invalid params, caches `runtime_seconds` and applies it through Kodi's native duration tag. Season labels use locally derived counts with correct singular/plural wording.
+
+Release gate run `36763219643` passed all 108 unit/smoke tests (1 skipped). Packaging was blocked only by task-record Scope validation; target-device presentation remains pending.
+
+## 0.7.24 self-review
+Self-review completed against artifact commit `dec2cb5f491aba7568e2f6d7ba28be91ba247369`. Release run `36763427233` passed 108 unit/smoke tests (1 skipped), tracker validation and deterministic package inspection. Tests cover runtime present, absent and unsupported plus local season-count singular/plural behavior.
+
+Review confirms runtime is stored in seconds, missing/unsupported runtime is non-fatal, episode runtime stays episode-specific and season counts are derived without a new network call. Verification remains partial pending target-device presentation acceptance.

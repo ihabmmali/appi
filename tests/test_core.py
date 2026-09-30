@@ -9,7 +9,10 @@ ROOT = Path(__file__).resolve().parents[1]
 PLUGIN = ROOT / 'plugin.video.appi'
 sys.path.insert(0, str(PLUGIN))
 
-from resources.lib.catalog import build_tv_groups, paginate, sort_movies, sort_shows  # noqa: E402
+from resources.lib.catalog import (  # noqa: E402
+    build_tv_groups, paginate, season_episode_counts, season_label,
+    sort_movies, sort_shows,
+)
 from resources.lib.http import classify_stream  # noqa: E402
 from resources.lib.m3u import parse_m3u  # noqa: E402
 
@@ -47,6 +50,19 @@ class CoreTests(unittest.TestCase):
         self.assertEqual([x['show_title'] for x in sort_shows(shows, 2)], ['Alpha', 'Gamma', 'Beta'])
         self.assertEqual([x['show_title'] for x in sort_shows(shows, 4)], ['Beta', 'Alpha', 'Gamma'])
         self.assertEqual([x['show_title'] for x in sort_shows(shows, 5)], ['Gamma', 'Alpha', 'Beta'])
+
+    def test_season_episode_counts_and_labels_use_local_catalogue(self):
+        episodes = [
+            {'season': 1, 'episode': 1},
+            {'season': 1, 'episode': 2},
+            {'season': 2, 'episode': 1},
+            {'season': None, 'episode': 99},
+        ]
+        counts = season_episode_counts(episodes)
+        self.assertEqual(counts, {1: 2, 2: 1})
+        self.assertEqual(season_label(1, counts[1]), 'Season 1 (2 episodes)')
+        self.assertEqual(season_label(2, counts[2]), 'Season 2 (1 episode)')
+        self.assertEqual(season_label(3, counts.get(3, 0)), 'Season 3 (0 episodes)')
 
     def test_fixed_size_pagination(self):
         items = list(range(225))
