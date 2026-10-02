@@ -3,7 +3,7 @@ id: HLS-25
 role: implementation
 status: review
 delivery: released
-verification: partial
+verification: failed
 owner: builder-publisher-2026-09-30
 base_commit: e359459e1e3734e1c60608632b2213fe33bc92e7
 artifact: https://ihabmmali.github.io/appi/plugin.video.appi-0.7.24.zip
@@ -175,3 +175,21 @@ Review confirms local Kodi body-write timeout/disconnect does not call the fatal
 Released through PR #14 / merge `cda54a246c5d440116dfe05717da0392e62f13f8`. Final exact-candidate gate `36763721939` passed 108 tests (1 skipped), workflow validation, deterministic rebuild, ZIP/hash/index inspection and packaging. GitHub Pages deployment `36763934374` succeeded. Published artifact SHA-256: `6eee9e80e0a0e0766c62ea199052113fdf75b5fab0bf1eb25da2c0b06823451d`.
 
 Delivery is released. Verification remains partial/review until this task's documented target-device acceptance checks are completed.
+
+
+## 0.7.24 target-device pause continuity failure
+Fire TV testing on 2026-10-01 provides mixed but important evidence.
+
+Positive:
+- the prior `Buffered stream failed (TimeoutError)` pause failure has not recurred so far;
+- no silent playback crashes have been observed so far;
+- short and long pauses no longer destroy the buffered session in the previously observed way.
+
+Remaining failure:
+- after resume, video frequently freezes while audio continues smoothly;
+- video often catches up after one or two freezes and normal playback resumes;
+- on some attempts the video never recovers while audio remains active.
+
+Therefore HLS-25's local-consumer error handling appears materially improved, but its documented target-device requirement that pause/resume succeed is **not met**. Verification is failed rather than partial.
+
+HLS-27 owns the successor repair and must distinguish false post-pause seek/epoch creation from video decoder/request resynchronization without undoing HLS-25's non-fatal consumer-timeout behavior.

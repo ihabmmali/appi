@@ -1,6 +1,6 @@
 # Appi project state
 
-Updated: 2026-09-30. Start with [AGENTS.md](AGENTS.md) for role routing.
+Updated: 2026-10-01. Start with [AGENTS.md](AGENTS.md) for role routing.
 
 ## Current baseline
 
@@ -14,11 +14,12 @@ Updated: 2026-09-30. Start with [AGENTS.md](AGENTS.md) for role routing.
 ## Current work
 
 - **0.7.24 is published.** Shipped scope: HLS-25, HLS-26 and META-1. Delivery is released; all three remain review/partial because their documented target-device acceptance checks are still outstanding.
-- HLS-25 makes Kodi-side localhost write timeout/disconnect non-fatal to the Buffered Look Ahead session and separates duplicate/Range/re-read/adjacent-resume traffic from true seek discontinuities. Fire TV pause/resume and true-seek acceptance remain pending.
+- HLS-25 successfully removed the previously observed fatal pause TimeoutError/session teardown on Fire TV, but target-device verification is now failed because video continuity after resume is still unreliable. Audio commonly continues while video freezes/catches up and can occasionally remain frozen.
 - HLS-26 re-reads the debug-overlay setting from current Kodi settings in the persistent service. OFF is authoritative by source/tests; target-device OFF-before-playback and ON→OFF checks remain pending. The accepted Back-to-dismiss behavior remains unchanged when ON.
 - META-1 surfaces optional runtime through Kodi's native duration tag and locally derived season episode counts. Target-device presentation acceptance remains pending.
 - Existing HLS modes 0–2, reservoir thresholds, producer concurrency and HLS-24 exact-segment release behavior remain intentionally unchanged.
-- HLS-19 remains failed/under review from prior target-device extended-pause evidence; 0.7.24's HLS-25 repair is the new implementation intended to address the local-consumer timeout cause.
+- HLS-27 is a next-release **release-blocking candidate** to diagnose and repair video-only pause/resume resynchronization. The leading source hypothesis is false fresh-epoch creation when post-pause video resumes more than one segment beyond Appi's expected index; actual player-position and per-track request telemetry must prove this before repair.
+- HLS-19 remains failed/under review from prior target-device extended-pause evidence; 0.7.24 confirms the local-consumer fatal timeout was improved, but end-to-end pause/resume remains unresolved.
 - PLAY-1, HLS-1 and UI-1 remain backlog investigations. [NEXT_RELEASE.md](NEXT_RELEASE.md) is reset with no product scope committed. [KNOWN_ISSUES.md](KNOWN_ISSUES.md) remains the canonical task index.
 
 ## Context on demand

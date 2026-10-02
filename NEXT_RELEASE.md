@@ -10,6 +10,7 @@ No product task is currently committed for the next release.
 
 | Task | Selection | Priority | Reason |
 | --- | --- | --- | --- |
+| [HLS-27](docs/tasks/HLS-27.md) | candidate | **release blocker** | 0.7.24 survives pause without the old timeout, but video can freeze/catch up or remain frozen while audio continues; prove and repair post-pause video/audio resynchronization without timeout/buffer tuning |
 | [PLAY-1](docs/tasks/PLAY-1.md) | backlog | investigation | Resume persistence is working; only investigate the playback-start Trakt API error |
 | [HLS-1](docs/tasks/HLS-1.md) | backlog | investigation | Use buffered-mode/diagnostic evidence to diagnose any underlying provider stalls that remain |
 | [UI-1](docs/tasks/UI-1.md) | backlog | investigation | Skin comparison needed |
@@ -24,6 +25,8 @@ No product task is currently committed for the next release.
 6. Copy shipped task IDs and scope changes into RELEASE_NOTES, then reset this planning file for the next cycle.
 
 ## Scope decisions
+
+2026-10-01: HLS-27 added as a release-blocking candidate after 0.7.24 target-device testing. HLS-25 materially improved pause behavior: the fatal TimeoutError/silent teardown has not recurred so far. However pause/resume continuity still fails because video can freeze for one or two cycles and catch up while audio continues smoothly, and on some attempts video never recovers. Source review shows resume classification only tolerates exactly `expected + 1`; a video request farther ahead becomes a true forward-discontinuity and can recenter the shared epoch. Treat that as the primary hypothesis, not a proven cause. Instrument actual player position plus first post-resume audio/video requests before changing classification. HLS-25 verification is failed because its documented successful pause/resume acceptance remains unmet.
 
 2026-09-30: Appi 0.7.24 published through PR #14 / merge `cda54a246c5d440116dfe05717da0392e62f13f8`. Final exact-candidate gate `36763721939` passed 108 tests (1 skipped), workflow validation, deterministic rebuild, ZIP/hash/index inspection and packaging; Pages deployment `36763934374` succeeded. Shipped scope: HLS-25, HLS-26 and META-1. Delivery is released while target-device verification remains review/partial. The published index retains 0.7.23, 0.7.22, 0.7.21, 0.7.14, 0.7.12 and 0.7.8 alongside 0.7.24. Planning is reset; no next-release product scope is committed.
 
