@@ -1,6 +1,6 @@
 # Appi project state
 
-Updated: 2026-10-01. Start with [AGENTS.md](AGENTS.md) for role routing.
+Updated: 2026-10-04. Start with [AGENTS.md](AGENTS.md) for role routing.
 
 ## Current baseline
 
@@ -18,6 +18,8 @@ Updated: 2026-10-01. Start with [AGENTS.md](AGENTS.md) for role routing.
 - HLS-26 re-reads the debug-overlay setting from current Kodi settings in the persistent service. OFF is authoritative by source/tests; target-device OFF-before-playback and ON→OFF checks remain pending. The accepted Back-to-dismiss behavior remains unchanged when ON.
 - META-1 surfaces optional runtime through Kodi's native duration tag and locally derived season episode counts. Target-device presentation acceptance remains pending.
 - Existing HLS modes 0–2, reservoir thresholds, producer concurrency and HLS-24 exact-segment release behavior remain intentionally unchanged.
+- HLS-28 is a next-release candidate to restore provider-supplied HLS subtitle tracks in Buffered Look Ahead. Source already proxies subtitle EXT-X-MEDIA URIs, so the missing tracks are a compatibility/discovery defect to diagnose rather than an inherent buffering limitation.
+- SUB-1 is reopened as a next-release candidate because downloaded movie subtitles still disappear intermittently. The prior immediate-stop repair did not establish reliable current-baseline persistence across all provider/temp-path behaviors.
 - HLS-27 is a next-release **release-blocking candidate** to diagnose and repair video-only pause/resume resynchronization. The leading source hypothesis is false fresh-epoch creation when post-pause video resumes more than one segment beyond Appi's expected index; actual player-position and per-track request telemetry must prove this before repair.
 - HLS-19 remains failed/under review from prior target-device extended-pause evidence; 0.7.24 confirms the local-consumer fatal timeout was improved, but end-to-end pause/resume remains unresolved.
 - PLAY-1, HLS-1 and UI-1 remain backlog investigations. [NEXT_RELEASE.md](NEXT_RELEASE.md) is reset with no product scope committed. [KNOWN_ISSUES.md](KNOWN_ISSUES.md) remains the canonical task index.

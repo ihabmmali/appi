@@ -1,7 +1,7 @@
 ---
 id: SUB-1
-role: review
-status: review
+role: implementation
+status: ready
 delivery: released
 verification: failed
 owner: ChatGPT build session 2026-09-26
@@ -73,3 +73,37 @@ Treat SUB-1 as a current-baseline regression. A review worker should reproduce t
 - Post-merge release verification: GitHub Actions run 36287058096 passed the full automated gate.
 - Artifact: `plugin.video.appi-0.7.13.zip`; 0.7.8 remains the known-good fallback.
 - Delivery is released; verification remains partial until the task's documented target-device checks are completed.
+
+
+## 0.7.24 intermittent movie recurrence
+On 2026-10-04 the user reports that externally downloaded subtitles for movie media still occasionally disappear/not restore. There is no reliable reproduction pattern yet; it occurs intermittently.
+
+This confirms SUB-1 remains an active current-baseline defect despite the earlier immediate-stop fix. The canonical task is reopened for implementation rather than creating a duplicate subtitle-persistence task.
+
+### Current evidence boundary
+The current persistence path only detects files visible through `_snapshot_temp()`, which:
+- scans Kodi's translated temp directory;
+- recognizes a fixed set of subtitle extensions;
+- intentionally stops recursion below roughly two directory levels.
+
+A provider/add-on that writes outside that scanned area, uses a deeper temporary path, replaces a file in a way not observed by the poller, or removes/moves the file before the final capture can therefore evade persistence. These are hypotheses only.
+
+### Additional diagnostics required
+For every downloaded/selected external subtitle during an Appi movie session, record:
+- media key/canonical movie ref;
+- current selected subtitle path if Kodi exposes it;
+- temp paths/fingerprints observed by the poller;
+- whether the file was first observed, stabilized, copied, indexed and restored;
+- copy/index failure reason;
+- final-capture invocation and result;
+- whether the source file disappeared before capture;
+- saved destination and whether it still exists at next playback;
+- restore attempt path and Kodi `setSubtitles()` result.
+
+Do not log subtitle contents.
+
+### Additional acceptance
+- Repeat movie download -> select -> stop/resume cycles enough times to cover the intermittent case, including different subtitle providers where available.
+- A subtitle that Kodi has successfully selected must not be lost merely because its provider uses a different temporary-directory layout or cleanup timing.
+- If Kodi exposes the selected subtitle path directly, prefer using that authoritative path or a similarly reliable player API over relying solely on shallow temp-directory discovery.
+- Preserve TV-episode persistence and Clear Saved Subtitles behavior.
