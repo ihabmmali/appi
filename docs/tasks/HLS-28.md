@@ -2,11 +2,11 @@
 id: HLS-28
 role: implementation
 status: review
-delivery: unreleased
+delivery: released
 verification: partial
 owner: builder-publisher-2026-10-10
 base_commit: a6f22d924cd490c387ec6a3a201eab9cb349e52a
-artifact: none
+artifact: https://ihabmmali.github.io/appi/plugin.video.appi-0.7.25.zip
 ---
 # HLS-28 — Preserve embedded HLS subtitle tracks in Buffered Look Ahead
 
@@ -109,3 +109,7 @@ Owner: builder-publisher-2026-10-10. Base: `a6f22d924cd490c387ec6a3a201eab9cb349
 
 The selected master preserves original EXT-X-MEDIA language/name/forced/default attributes while rewriting subtitle-rendition URIs. Referenced subtitle playlists are opened on demand; subtitle WebVTT/MP4 segments no longer create a prefetching audio/video track, retain their suffix and return appropriate MIME types. Regression coverage creates two subtitle renditions and checks localhost HTTP content types and that the mandatory track count and epoch do not change. Self-review only. Confirm in Kodi's real subtitle-track selector on Fire TV, with seeking and pauses, before marking verified.
 
+
+## 0.7.25 publication and pending verification
+
+Published in PR #16 merge `9de26765b4af163974162ebb76f43e14a1001a5c` on 2026-10-10. Exact candidate gate [38063374015](https://github.com/ihabmmali/appi/actions/runs/38063374015) passed 112 automated tests (1 skipped), workflow checker, deterministic build and ZIP/hash/index inspection; package checksum `a46637a96b15ae01e75df3a59b0558d993f54c2f4c43506406a91036ba77d1c0`. GitHub Pages build/deploy [38063465450](https://github.com/ihabmmali/appi/actions/runs/38063465450) completed successfully. Delivery: **released**. Verification: **partial**; documented Kodi Fire TV target-device acceptance remains outstanding and is not inferred from CI.
