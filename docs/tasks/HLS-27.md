@@ -134,7 +134,7 @@ Target Fire TV acceptance is mandatory.
   - repeated pause/resume cycles.
 
 ## Authorization
-Created from Appi 0.7.24 Fire TV target-device testing reported by the user on 2026-10-01. HLS-27 is logged as a ready release-blocking candidate and is not committed to release scope until explicitly selected under AGENTS.md.
+Created from Appi 0.7.24 Fire TV target-device testing reported by the user on 2026-10-01. On 2026-10-10 the user explicitly instructed that all current candidates be committed. HLS-27 is committed next-release scope and remains a release blocker.
 
 ## Evidence
 0.7.24 source marks all tracks `resume_pending=True` when leaving the paused state, but only treats exactly `expected + 1` as a non-seek adjacent resume. A larger forward request becomes a true discontinuity and invokes the shared `_coordinate_seek()` path, which recenters all tracks.

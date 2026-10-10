@@ -1,18 +1,18 @@
 # Next Appi release
 
-Planning status: open. Version: not assigned.
+Planning status: committed. Version: not assigned.
 
 Appi 0.7.24 is published. Current baseline and fallback details: [PROJECT_STATE.md](PROJECT_STATE.md).
 
 ## Proposed scope
 
-No product task is currently committed for the next release.
+Committed next-release scope: HLS-27, HLS-28 and SUB-1.
 
 | Task | Selection | Priority | Reason |
 | --- | --- | --- | --- |
-| [HLS-27](docs/tasks/HLS-27.md) | candidate | **release blocker** | 0.7.24 survives pause without the old timeout, but video can freeze/catch up or remain frozen while audio continues; prove and repair post-pause video/audio resynchronization without timeout/buffer tuning |
-| [HLS-28](docs/tasks/HLS-28.md) | candidate | subtitle compatibility | Provider HLS subtitle tracks visible in other modes disappear in Buffered Look Ahead; prove provider-vs-local-master discovery and preserve subtitle renditions without making them reservoir-critical |
-| [SUB-1](docs/tasks/SUB-1.md) | candidate | subtitle persistence regression | Downloaded movie subtitles still disappear intermittently; instrument capture/index/restore path and repair the current-baseline recurrence |
+| [HLS-27](docs/tasks/HLS-27.md) | committed | **release blocker** | 0.7.24 survives pause without the old timeout, but video can freeze/catch up or remain frozen while audio continues; prove and repair post-pause video/audio resynchronization without timeout/buffer tuning |
+| [HLS-28](docs/tasks/HLS-28.md) | committed | subtitle compatibility | Provider HLS subtitle tracks visible in other modes disappear in Buffered Look Ahead; prove provider-vs-local-master discovery and preserve subtitle renditions without making them reservoir-critical |
+| [SUB-1](docs/tasks/SUB-1.md) | committed | subtitle persistence regression | Downloaded movie subtitles still disappear intermittently; instrument capture/index/restore path and repair the current-baseline recurrence |
 | [PLAY-1](docs/tasks/PLAY-1.md) | backlog | investigation | Resume persistence is working; only investigate the playback-start Trakt API error |
 | [HLS-1](docs/tasks/HLS-1.md) | backlog | investigation | Use buffered-mode/diagnostic evidence to diagnose any underlying provider stalls that remain |
 | [UI-1](docs/tasks/UI-1.md) | backlog | investigation | Skin comparison needed |
@@ -27,6 +27,8 @@ No product task is currently committed for the next release.
 6. Copy shipped task IDs and scope changes into RELEASE_NOTES, then reset this planning file for the next cycle.
 
 ## Scope decisions
+
+2026-10-10: user explicitly instructed that **all current candidates be committed**. Committed next-release scope is HLS-27, HLS-28 and SUB-1. HLS-27 remains the release-blocking video-only pause/resume resynchronization repair; HLS-28 restores provider-supplied HLS subtitle-track discovery in Buffered Look Ahead without making subtitle renditions reservoir-critical; SUB-1 reopens intermittent downloaded-subtitle persistence for current-baseline repair. PLAY-1, HLS-1 and UI-1 remain backlog investigations because they are not candidates. This is release-scope commitment only; implementation, integration, build and publication remain separately authorized lifecycle actions.
 
 2026-10-04: HLS-28 added after target-device evidence that provider-supplied HLS subtitle tracks visible in other playback modes are absent in Buffered Look Ahead. This is not treated as an inherent buffering limitation: source already preserves generic EXT-X-MEDIA subtitle declarations/URIs, but mode 3 uses Appi's rewritten localhost master without InputStream Adaptive and lacks subtitle-rendition regression coverage. Reproduce provider-versus-local-master discovery and repair the proven compatibility boundary without making subtitle tracks reservoir-critical or blindly switching mode 3 to ISA. SUB-1 is also reopened as a candidate because downloaded movie subtitles still disappear intermittently on the current baseline; instrument capture/index/restore rather than assuming the prior immediate-stop fix covered all provider/temp-path behaviors.
 

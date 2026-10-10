@@ -91,7 +91,7 @@ Do not switch mode 3 to ISA merely because modes 1/2 expose subtitles. Prior wor
 - Fire TV target-device comparison against the same stream in a working non-buffered mode is mandatory.
 
 ## Authorization
-Reported by the user on 2026-10-04 from target-device testing. The user requested no action only if missing stream subtitles were an inherent buffering limitation. Source review shows they are not intentionally excluded by the buffering architecture, so HLS-28 is logged as a ready candidate for repair.
+Reported by the user on 2026-10-04 from target-device testing. The user requested no action only if missing stream subtitles were an inherent buffering limitation. Source review shows they are not intentionally excluded by the buffering architecture. On 2026-10-10 the user explicitly instructed that all current candidates be committed. HLS-28 is committed next-release scope.
 
 ## Evidence
 0.7.24 source rewrites `EXT-X-MEDIA` URIs generically, including subtitle renditions, but only AUDIO/VIDEO associated groups are proactively prepared and Buffered mode does not use InputStream Adaptive. There is no subtitle-rendition regression coverage for the rewritten localhost master.

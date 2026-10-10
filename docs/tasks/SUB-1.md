@@ -107,3 +107,9 @@ Do not log subtitle contents.
 - A subtitle that Kodi has successfully selected must not be lost merely because its provider uses a different temporary-directory layout or cleanup timing.
 - If Kodi exposes the selected subtitle path directly, prefer using that authoritative path or a similarly reliable player API over relying solely on shallow temp-directory discovery.
 - Preserve TV-episode persistence and Clear Saved Subtitles behavior.
+
+
+## 2026-10-10 release-scope recommit
+The user explicitly instructed that all current candidates be committed for the next release. The reopened current-baseline subtitle persistence regression is therefore committed next-release scope under SUB-1.
+
+This recommit authorizes release scope selection only. Implementation, integration, build and publication remain separate lifecycle actions under AGENTS.md.
