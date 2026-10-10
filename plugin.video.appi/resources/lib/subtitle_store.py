@@ -2,6 +2,7 @@ import hashlib
 import json
 import os
 import shutil
+import tempfile
 import time
 
 import xbmcaddon
@@ -23,10 +24,16 @@ def _ensure_dirs():
 
 def _atomic_json(path, payload):
     _ensure_dirs()
-    temp = path + '.tmp'
-    with open(temp, 'w', encoding='utf-8') as handle:
-        json.dump(payload, handle, ensure_ascii=False, separators=(',', ':'))
-    os.replace(temp, path)
+    # Separate plugin and service processes may write concurrently. A shared
+    # `.tmp` filename can make one process rename the other's temp file.
+    descriptor, temporary = tempfile.mkstemp(prefix='.appi-sub-', dir=os.path.dirname(path))
+    try:
+        with os.fdopen(descriptor, 'w', encoding='utf-8') as handle:
+            json.dump(payload, handle, ensure_ascii=False, separators=(',', ':'))
+        os.replace(temporary, path)
+    finally:
+        if os.path.exists(temporary):
+            os.remove(temporary)
 
 
 def _read_json(path, default):
@@ -42,6 +49,9 @@ def media_key(catalog, ref):
     return hashlib.sha1('{}|{}'.format(catalog, ref).encode('utf-8')).hexdigest()
 
 
+_ROOTS_CACHE = (0.0, [])
+
+
 def _subtitle_roots():
     """Scan the normal temp area and Kodi's configured local subtitle folder.
 
@@ -49,6 +59,10 @@ def _subtitle_roots():
     custom download folder is therefore discovered from Kodi settings.
     Network paths are deliberately not walked with os.walk.
     """
+    global _ROOTS_CACHE
+    now = time.monotonic()
+    if now - _ROOTS_CACHE[0] < 30.0:
+        return list(_ROOTS_CACHE[1])
     roots = [TEMP]
     try:
         import xbmc
@@ -67,7 +81,9 @@ def _subtitle_roots():
                     roots.append(folder)
     except (AttributeError, TypeError, ValueError, OSError):
         pass
-    return list(dict.fromkeys(roots))
+    roots = list(dict.fromkeys(roots))
+    _ROOTS_CACHE = (now, roots)
+    return list(roots)
 
 
 def _diagnostic(event, session, **fields):
