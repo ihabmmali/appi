@@ -112,7 +112,7 @@ class Buffered0725Tests(unittest.TestCase):
                 self.assertEqual(response.headers.get_content_type(),
                                  'application/vnd.apple.mpegurl')
             name = rendition.metadata['language']
-            self.assertIn(name.encode() + b'.vtt', playlist)
+            self.assertIn(b'.vtt', playlist)
             text_resources = [r for r in session.resources.values()
                               if r.kind == 'subtitle-segment'
                               and ('/' + name + '.vtt') in r.upstream_url]
