@@ -1741,7 +1741,7 @@ class BufferedHlsSession:
                 core = resource.upstream_url.split('|', 1)[0]
                 extension = os.path.splitext(urlparse(core).path)[1].lower()
                 allowed = {'.ts', '.aac', '.ac3', '.eac3', '.mp3', '.mp4', '.m4s',
-                           '.m4a', '.vtt', '.webvtt', '.m3u8', '.cmfv', '.cmfa'}
+                           '.m4a', '.vtt', '.webvtt', '.ttml', '.xml', '.srt', '.m3u8', '.cmfv', '.cmfa'}
                 suffix = extension if extension in allowed else {
                     'playlist': '.m3u8', 'map': '.mp4', 'key': '.key',
                     'segment': resource.metadata.get('suffix', '.ts'),
@@ -2264,6 +2264,7 @@ class BufferedHlsSession:
         pending_byterange = ''
         last_byterange_end = -1
         segments = []
+        subtitle_index = 0
         track_id = (
             playlist_resource.metadata.get('track_id')
             or 'track-{}'.format(playlist_resource.id)
@@ -2348,7 +2349,9 @@ class BufferedHlsSession:
                 continue
 
             if is_media:
-                index = len(segments)
+                index = subtitle_index if is_subtitle else len(segments)
+                if is_subtitle:
+                    subtitle_index += 1
                 sequence = media_sequence + index
                 upstream = hls.resolve_variant_url(base_url, stripped)
                 resource = self._register(
