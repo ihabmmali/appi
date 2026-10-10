@@ -81,6 +81,14 @@ The persistent playback service re-reads settings through a fresh Kodi Addon obj
 
 Metadata runtime is optional and normalized to seconds. Kodi JSON-RPC property compatibility is probed without making runtime mandatory; supported values are applied through `VideoInfoTag.setDuration`. Season counts are derived only from Appi's locally indexed per-show episodes and do not require a remote metadata request.
 
+## Buffered Look Ahead — 0.7.25 candidate
+
+Kodi's service polls the fractional player position in addition to paused/playing state; the mode-3 session records pause start, resume position, unchanged-position state and up to ten follow-up HTTP requests per track. A post-pause forward video request more than one segment ahead may stay in the existing epoch only when Kodi's position was observed unchanged and that requested segment overlaps the playhead within its own actual duration. Other discontinuities still initiate HLS-12 fresh epochs. This does not prove decoder resynchronization on Fire TV.
+
+Provider `EXT-X-MEDIA:TYPE=SUBTITLES` renditions are kept in the rewritten master; their playlists and segment payloads are proxied lazily without creating required reservoir tracks. Text WebVTT, TTML and fMP4 subtitle resource types are exposed to Kodi according to their suffix. The optional subtitle path cannot change the startup audio/video track count.
+
+Subtitle download capture now includes bounded nested temporary folders and Kodi's configured local custom subtitle location, finalized on AV changes and stop. Saved copies are atomically moved into Appi-owned storage with filename-free lifecycle logging. Kodi's Player subtitle API exposes stream language, not an original selected external-file path.
+
 ## Settings parser safety — 0.7.18
 
 Kodi's native string-option parser expects a text child in every static option. No preference therefore uses the non-empty `none` sentinel (normalized to no preference in Python), never an empty XML option. Source/ZIP checks validate option text and listed defaults. The 0.7.17 empty options are retained only in the archived regression fixture; that release failed startup acceptance.
