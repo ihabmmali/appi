@@ -38,12 +38,12 @@ Updated: 2026-10-04. Each linked task is the canonical requirements/status/evide
 | HLS-24 | review | implementation | [Stop Buffered Look Ahead from starving Kodi during recovery](docs/tasks/HLS-24.md) |
 | HLS-25 | review | implementation | [Make Buffered Look Ahead pause/resume consumer-safe](docs/tasks/HLS-25.md) |
 | HLS-26 | review | implementation | [Make the Buffered debug overlay setting authoritative and non-blocking](docs/tasks/HLS-26.md) |
-| HLS-27 | ready | implementation | [Repair video-only pause/resume resynchronization](docs/tasks/HLS-27.md) |
-| HLS-28 | ready | implementation | [Preserve embedded HLS subtitle tracks in Buffered Look Ahead](docs/tasks/HLS-28.md) |
+| HLS-27 | review | implementation | [Repair video-only pause/resume resynchronization](docs/tasks/HLS-27.md) |
+| HLS-28 | review | implementation | [Preserve embedded HLS subtitle tracks in Buffered Look Ahead](docs/tasks/HLS-28.md) |
 | HLS-21 | review | research | [Prove whether Buffered Look Ahead timeouts are true reservoir depletion](docs/tasks/HLS-21.md) |
 | HLS-11 | review | implementation | [Repair multi-variant HLS seek, resume-point and recovery timeout](docs/tasks/HLS-11.md) |
 | HLS-12 | review | implementation | [Replace Buffered Look Ahead seek/resume with fresh buffer epochs](docs/tasks/HLS-12.md) |
-| SUB-1 | ready | implementation | [Restore downloaded subtitle persistence across playback sessions](docs/tasks/SUB-1.md) |
+| SUB-1 | review | implementation | [Restore downloaded subtitle persistence across playback sessions](docs/tasks/SUB-1.md) |
 | META-1 | review | implementation | [Surface media runtime and season episode counts](docs/tasks/META-1.md) |
 | PLAY-1 | proposed | research | [Investigate playback-start Trakt API error](docs/tasks/PLAY-1.md) |
 | UI-1 | proposed | research | [Playback Program Settings visibility](docs/tasks/UI-1.md) |
