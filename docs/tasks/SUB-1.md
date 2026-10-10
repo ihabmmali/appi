@@ -1,10 +1,10 @@
 ---
 id: SUB-1
 role: implementation
-status: ready
+status: review
 delivery: released
-verification: failed
-owner: ChatGPT build session 2026-09-26
+verification: partial
+owner: builder-publisher-2026-10-10
 base_commit: 8a9b1ad21b3944d8045e1d1abff2a2556c3035cc
 artifact: https://github.com/ihabmmali/appi/blob/main/plugin.video.appi-0.7.13.zip
 ---
@@ -113,3 +113,10 @@ Do not log subtitle contents.
 The user explicitly instructed that all current candidates be committed for the next release. The reopened current-baseline subtitle persistence regression is therefore committed next-release scope under SUB-1.
 
 This recommit authorizes release scope selection only. Implementation, integration, build and publication remain separate lifecycle actions under AGENTS.md.
+
+## 0.7.25 recurrence repair — implementation and self-review (device checks pending)
+
+Owner: builder-publisher-2026-10-10. Base: `a6f22d924cd490c387ec6a3a201eab9cb349e52a`; branch: `release/0.7.25`.
+
+Capture scans a bounded deeper Kodi temp hierarchy plus a configured local custom subtitle-storage folder using the documented `subtitles.storagemode` and `subtitles.custompath` settings. Capture on `onAVChange` uses a final-pass copy before a provider can remove a transient source; ordinary polls retain the stable-fingerprint gate. Saved file copies now use an atomic temporary path and index recording. File-name-free media-key/capture/restore diagnostics distinguish detection, copy, index and restore boundaries; final capture exceptions are no longer silently swallowed. Regression coverage tests nested temp/custom folders, final capture, separate movie identities and clearing. Existing episode and provider behavior should be retested on target Fire TV, especially any provider storing files outside discoverable local folders. Kodi `Player.getSubtitles()` does not expose a selected filesystem path; do not claim support for arbitrary external locations. Self-review only; verification is partial pending device tests.
+

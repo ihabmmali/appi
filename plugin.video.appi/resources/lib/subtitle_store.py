@@ -2,6 +2,7 @@ import hashlib
 import json
 import os
 import shutil
+import tempfile
 import time
 
 import xbmcaddon
@@ -23,10 +24,16 @@ def _ensure_dirs():
 
 def _atomic_json(path, payload):
     _ensure_dirs()
-    temp = path + '.tmp'
-    with open(temp, 'w', encoding='utf-8') as handle:
-        json.dump(payload, handle, ensure_ascii=False, separators=(',', ':'))
-    os.replace(temp, path)
+    # Separate plugin and service processes may write concurrently. A shared
+    # `.tmp` filename can make one process rename the other's temp file.
+    descriptor, temporary = tempfile.mkstemp(prefix='.appi-sub-', dir=os.path.dirname(path))
+    try:
+        with os.fdopen(descriptor, 'w', encoding='utf-8') as handle:
+            json.dump(payload, handle, ensure_ascii=False, separators=(',', ':'))
+        os.replace(temporary, path)
+    finally:
+        if os.path.exists(temporary):
+            os.remove(temporary)
 
 
 def _read_json(path, default):
@@ -42,27 +49,87 @@ def media_key(catalog, ref):
     return hashlib.sha1('{}|{}'.format(catalog, ref).encode('utf-8')).hexdigest()
 
 
+_ROOTS_CACHE = (0.0, [])
+
+
+def _subtitle_roots():
+    """Scan the normal temp area and Kodi's configured local subtitle folder.
+
+    Player.getSubtitles() reports a language, not a filename. A provider's
+    custom download folder is therefore discovered from Kodi settings.
+    Network paths are deliberately not walked with os.walk.
+    """
+    global _ROOTS_CACHE
+    now = time.monotonic()
+    if now - _ROOTS_CACHE[0] < 30.0:
+        return list(_ROOTS_CACHE[1])
+    roots = [TEMP]
+    try:
+        import xbmc
+        request = {
+            'jsonrpc': '2.0', 'id': 1, 'method': 'Settings.GetSettingValue',
+            'params': {'setting': 'subtitles.storagemode'},
+        }
+        mode = json.loads(xbmc.executeJSONRPC(json.dumps(request)))
+        if mode.get('result', {}).get('value') == 1:
+            request['params']['setting'] = 'subtitles.custompath'
+            reply = json.loads(xbmc.executeJSONRPC(json.dumps(request)))
+            chosen = reply.get('result', {}).get('value') or ''
+            if chosen and '://' not in chosen.replace('special://', ''):
+                folder = xbmcvfs.translatePath(chosen)
+                if folder and os.path.isdir(folder):
+                    roots.append(folder)
+    except (AttributeError, ImportError, TypeError, ValueError, OSError):
+        pass
+    roots = list(dict.fromkeys(roots))
+    _ROOTS_CACHE = (now, roots)
+    return list(roots)
+
+
+def _diagnostic(event, session, **fields):
+    """Bounded filename-free lifecycle evidence; never log subtitle contents."""
+    try:
+        import xbmc
+        payload = {'media_key': session.get('key', ''), 'event': event}
+        payload.update(fields)
+        xbmc.log('Appi subtitle persistence ' + json.dumps(payload, sort_keys=True),
+                 getattr(xbmc, 'LOGINFO', 1))
+    except Exception:
+        pass
+
+
 def _snapshot_temp():
     result = {}
-    if not TEMP or not os.path.isdir(TEMP):
-        return result
-    for root, dirs, files in os.walk(TEMP):
-        # Kodi's temp tree can contain many unrelated caches. Subtitle add-ons
-        # normally write near the root; cap recursion to keep the service light.
-        relative = os.path.relpath(root, TEMP)
-        depth = 0 if relative == '.' else relative.count(os.sep) + 1
-        if depth >= 2:
-            dirs[:] = []
-        for name in files:
-            ext = os.path.splitext(name)[1].lower()
-            if ext not in SUB_EXTENSIONS:
-                continue
-            path = os.path.join(root, name)
-            try:
-                stat = os.stat(path)
-            except OSError:
-                continue
-            result[path] = [int(stat.st_mtime_ns), int(stat.st_size)]
+    # A two-level scan missed provider cache folders. Keep a bounded walk
+    # rather than recursing through the entire Kodi add-on/user-data tree.
+    for root_directory in _subtitle_roots():
+        if not root_directory or not os.path.isdir(root_directory):
+            continue
+        checked = 0
+        for root, dirs, files in os.walk(root_directory):
+            relative = os.path.relpath(root, root_directory)
+            depth = 0 if relative == '.' else relative.count(os.sep) + 1
+            dirs[:] = [d for d in dirs if not os.path.islink(os.path.join(root, d))]
+            if depth >= 4:
+                dirs[:] = []
+            for name in files:
+                if checked >= 2000:
+                    dirs[:] = []
+                    break
+                checked += 1
+                if os.path.splitext(name)[1].lower() not in SUB_EXTENSIONS:
+                    continue
+                path = os.path.join(root, name)
+                # Never recapture Appi's own persistence folder.
+                if os.path.commonpath([os.path.abspath(SUB_ROOT), os.path.abspath(path)]) == os.path.abspath(SUB_ROOT):
+                    continue
+                try:
+                    stat = os.stat(path)
+                except OSError:
+                    continue
+                result[path] = [int(stat.st_mtime_ns), int(stat.st_size)]
+            if checked >= 2000:
+                break
     return result
 
 
@@ -95,6 +162,7 @@ def prepare_session(catalog, ref, subtitle_mode='global'):
         'subtitle_mode': subtitle_mode if subtitle_mode in {'global', 'saved', 'off', 'search'} else 'global',
     }
     _atomic_json(SESSION_PATH, payload)
+    _diagnostic('session-start', payload, baseline_count=len(payload['baseline']))
     return saved_subtitles(catalog, ref)
 
 
@@ -152,6 +220,8 @@ def capture_temp_changes(finalize=False):
         previous = pending.get(path)
         if previous != fingerprint and not finalize:
             pending[path] = fingerprint
+            _diagnostic('file-observed', session, source_id=hashlib.sha1(path.encode('utf-8')).hexdigest()[:12],
+                        bytes=fingerprint[1])
             continue
 
         if fingerprint[1] <= 0:
@@ -161,11 +231,20 @@ def capture_temp_changes(finalize=False):
         os.makedirs(folder, exist_ok=True)
         destination = _unique_destination(folder, path)
         if not os.path.exists(destination):
+            temporary = destination + '.partial'
             try:
-                shutil.copy2(path, destination)
-            except OSError:
+                shutil.copy2(path, temporary)
+                os.replace(temporary, destination)
+            except OSError as exc:
+                _diagnostic('copy-failed', session, error=type(exc).__name__)
+                try:
+                    os.remove(temporary)
+                except OSError:
+                    pass
                 continue
         copied.append(destination)
+        _diagnostic('file-captured', session, bytes=fingerprint[1],
+                    final_pass=bool(finalize))
         baseline[path] = fingerprint
         pending.pop(path, None)
 
@@ -192,4 +271,9 @@ def capture_temp_changes(finalize=False):
         entry['updated_at'] = time.time()
         index[key] = entry
         _atomic_json(INDEX_PATH, index)
+        _diagnostic('index-updated', session, count=len(existing),
+                    last_exists=os.path.isfile(entry['last']))
+    elif finalize:
+        _diagnostic('final-pass-no-new-files', session, observed_count=len(current),
+                    pending_count=len(pending))
     return copied

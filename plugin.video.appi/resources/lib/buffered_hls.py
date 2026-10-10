@@ -526,6 +526,7 @@ class _Track:
         self.failed = ''
         self.recovering = False
         self.resume_pending = False
+        self._resume_requests_left = 0
         self._serve_lock = threading.Lock()
         self._condition = threading.Condition()
         self._stop = threading.Event()
@@ -759,7 +760,9 @@ class _Track:
         resuming = bool(
             self.resume_pending or self.session._player_state == 'paused'
         )
-        self.resume_pending = False
+        # A duplicate/range retry must not consume the first advancing
+        # post-pause classification opportunity.
+        self.resume_pending = bool(resuming and index <= previous_requested)
 
         if previous_requested < 0:
             return ('cold-resume', True) if index > 0 else ('sequential', False)
@@ -775,6 +778,17 @@ class _Track:
             return 'recent-reread', False
         if resuming and index == expected + 1:
             return 'adjacent', False
+        # A paused HTTP response may have advanced last_requested without
+        # advancing Kodi's decoder. Classify against the observed player time,
+        # not an arbitrary permitted segment-index gap.
+        if resuming and self.session._resume_position_unchanged and index > expected:
+            position = self.session._resume_position
+            start = self.timeline_offset(index)
+            duration = self.segments[index].duration
+            if position is not None and start <= position + duration and (
+                start + duration >= position - duration
+            ):
+                return 'resume-continuity', False
         if index > expected:
             return 'forward-discontinuity', True
         return 'backward-discontinuity', True
@@ -798,14 +812,25 @@ class _Track:
                 epoch = self.session.epoch
                 self.last_requested = max(self.last_requested, index)
 
-        if classification != 'sequential':
+        if classification != 'sequential' or self._resume_requests_left > 0:
+            if self._resume_requests_left:
+                self._resume_requests_left -= 1
             reserve_bytes, reserve_seconds, _ = self.session._playable_reserve()
+            timeline_start = self.timeline_offset(index)
             self.session._event(
                 'buffer_consumer_request',
                 stage='request-classification',
                 track_id=self.id,
                 requested_index=index,
                 segment_sequence=self.segments[index].sequence,
+                timeline_start_s=round(timeline_start, 3),
+                timeline_end_s=round(timeline_start + self.segments[index].duration, 3),
+                pause_position_s=self.session._pause_position,
+                resume_position_s=self.session._resume_position,
+                player_position_s=self.session._player_position,
+                pause_position_unchanged=self.session._resume_position_unchanged,
+                segment_cached=self._cached(index),
+                segment_fetching=self.segments[index].resource.fetching,
                 range_request=range_requested,
                 range_class='byte-range' if range_requested else 'none',
                 player_state=self.session._player_state,
@@ -1012,6 +1037,10 @@ class BufferedHlsSession:
         self._handoff_marks = set()
         self._player_state = 'preparing'
         self._paused_since = 0.0
+        self._player_position = None
+        self._pause_position = None
+        self._resume_position = None
+        self._resume_position_unchanged = False
         self.master = self._register(source_url, 'playlist', metadata={'root': True})
 
     def _required_startup_tracks(self):
@@ -1712,10 +1741,11 @@ class BufferedHlsSession:
                 core = resource.upstream_url.split('|', 1)[0]
                 extension = os.path.splitext(urlparse(core).path)[1].lower()
                 allowed = {'.ts', '.aac', '.ac3', '.eac3', '.mp3', '.mp4', '.m4s',
-                           '.m4a', '.vtt', '.webvtt', '.m3u8', '.cmfv', '.cmfa'}
+                           '.m4a', '.vtt', '.webvtt', '.ttml', '.xml', '.srt', '.m3u8', '.cmfv', '.cmfa'}
                 suffix = extension if extension in allowed else {
                     'playlist': '.m3u8', 'map': '.mp4', 'key': '.key',
                     'segment': resource.metadata.get('suffix', '.ts'),
+                    'subtitle-segment': resource.metadata.get('suffix', '.vtt'),
                 }.get(resource.kind, '.bin')
         return 'http://127.0.0.1:{}/hls/{}/{}{}'.format(
             self._server.server_address[1], self.token, resource_id, suffix)
@@ -2026,6 +2056,18 @@ class BufferedHlsSession:
         except OSError:
             pass
 
+    def _subtitle_content_type(self, upstream_url):
+        extension = os.path.splitext(urlparse(upstream_url.split('|', 1)[0]).path)[1].lower()
+        return {
+            '.vtt': 'text/vtt',
+            '.webvtt': 'text/vtt',
+            '.ttml': 'application/ttml+xml',
+            '.xml': 'application/ttml+xml',
+            '.srt': 'application/x-subrip',
+            '.m4s': 'application/mp4',
+            '.mp4': 'application/mp4',
+        }.get(extension, '')
+
     def _register(self, upstream_url, kind, content_type='', metadata=None, byte_range=''):
         with self._lock:
             key = (upstream_url, kind, byte_range, (metadata or {}).get('track_id'))
@@ -2080,6 +2122,8 @@ class BufferedHlsSession:
             )
             return path, resource.content_type or 'video/mp2t'
         self._ensure_binary(resource)
+        if resource.kind == 'subtitle-segment':
+            return resource.path, self._subtitle_content_type(resource.upstream_url) or resource.content_type or 'application/octet-stream'
         return resource.path, resource.content_type or 'application/octet-stream'
 
     def _serve_playlist(self, resource):
@@ -2220,13 +2264,15 @@ class BufferedHlsSession:
         pending_byterange = ''
         last_byterange_end = -1
         segments = []
+        subtitle_index = 0
         track_id = (
             playlist_resource.metadata.get('track_id')
             or 'track-{}'.format(playlist_resource.id)
         )
         is_media = any(line.startswith('#EXTINF:') for line in lines)
-        track = self.tracks.get(track_id) if is_media else None
-        if is_media and not track:
+        is_subtitle = playlist_resource.metadata.get('rendition_type') == 'subtitles'
+        track = self.tracks.get(track_id) if is_media and not is_subtitle else None
+        if is_media and not is_subtitle and not track:
             track = _Track(
                 self,
                 track_id,
@@ -2303,21 +2349,29 @@ class BufferedHlsSession:
                 continue
 
             if is_media:
-                index = len(segments)
+                index = subtitle_index if is_subtitle else len(segments)
+                if is_subtitle:
+                    subtitle_index += 1
                 sequence = media_sequence + index
                 upstream = hls.resolve_variant_url(base_url, stripped)
                 resource = self._register(
                     upstream,
-                    'segment',
+                    'subtitle-segment' if is_subtitle else 'segment',
+                    content_type=self._subtitle_content_type(upstream) if is_subtitle else '',
                     metadata={
-                        'track_id': track_id,
+                        'track_id': track_id if not is_subtitle else '',
                         'index': index,
                         'sequence': sequence,
-                        'suffix': '.m4s' if any(line.startswith('#EXT-X-MAP:') for line in lines) else '.ts',
+                        'suffix': (
+                            os.path.splitext(urlparse(upstream.split('|', 1)[0]).path)[1].lower()
+                            or ('.m4s' if any(line.startswith('#EXT-X-MAP:') for line in lines)
+                                else ('.vtt' if is_subtitle else '.ts'))
+                        ),
                     },
                     byte_range=pending_byterange,
                 )
-                segments.append(_Segment(resource, sequence, current_duration, index))
+                if track:
+                    segments.append(_Segment(resource, sequence, current_duration, index))
                 output.append(self._local_url(resource.id))
                 current_duration = 0.0
                 pending_byterange = ''
@@ -2540,11 +2594,11 @@ class BufferedHlsManager:
                 except OSError:
                     pass
 
-    def poll(self, player_active=False, player_state=None):
+    def poll(self, player_active=False, player_state=None, player_position=None):
         with self._lock:
-            self._poll(player_active, player_state)
+            self._poll(player_active, player_state, player_position)
 
-    def _poll(self, player_active=False, player_state=None):
+    def _poll(self, player_active=False, player_state=None, player_position=None):
         # Process only fresh requests. No folder/navigation state is consulted.
         requests = []
         for name in os.listdir(self.control):
@@ -2604,10 +2658,18 @@ class BufferedHlsManager:
                         epoch_id=session.epoch,
                     )
                     session._player_state = state
+                session._player_position = (
+                    float(player_position) if isinstance(player_position, (float, int))
+                    and not isinstance(player_position, bool) else None
+                )
                 if state == 'paused':
                     if not session._paused_since:
                         session._paused_since = time.monotonic()
-                        session._event('buffer_pause_started', epoch_id=session.epoch)
+                        session._pause_position = session._player_position
+                        session._resume_position = None
+                        session._resume_position_unchanged = False
+                        session._event('buffer_pause_started', epoch_id=session.epoch,
+                                       player_position_s=session._pause_position)
                     elif (
                         session.pause_retention_seconds > 0
                         and time.monotonic() - session._paused_since
@@ -2619,13 +2681,23 @@ class BufferedHlsManager:
                         if not session:
                             return
                 elif session._paused_since:
+                    session._resume_position = session._player_position
+                    session._resume_position_unchanged = bool(
+                        session._pause_position is not None
+                        and session._resume_position is not None
+                        and abs(session._resume_position - session._pause_position) <= 1.0
+                    )
                     session._event(
                         'buffer_pause_ended',
                         epoch_id=session.epoch,
                         paused_s=round(time.monotonic() - session._paused_since, 3),
+                        pause_position_s=session._pause_position,
+                        resume_position_s=session._resume_position,
+                        position_unchanged=session._resume_position_unchanged,
                     )
                     for track in list(session.tracks.values()):
                         track.resume_pending = True
+                        track._resume_requests_left = 10
                     session._paused_since = 0.0
 
                 handoff = os.path.join(self.control, 'handoff-' + session.token + '.json')

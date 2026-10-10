@@ -2,6 +2,13 @@
 
 Implemented features, grouped by add-on version. A version listed here means its source/package was published in the repository; it does not by itself certify device testing. For details and earlier 0.7.x entries, see [README.md](README.md). This file is the concise ongoing release history; [RELEASE_NOTES.md](RELEASE_NOTES.md) records what each package shipped and how it was verified.
 
+## 0.7.25 — 2026-10-10 (release candidate)
+
+- HLS-27: record Kodi's pause/resume playhead position and per-track segment request timelines; classify nearby video restart boundaries without an arbitrary index gap when player position is unchanged, while genuine seeks retain fresh epochs.
+- HLS-28: proxy optional provider subtitle playlists and text/MP4 subtitle segments lazily, preserving language/group declarations and correct resource content types without consuming startup reservoir slots.
+- SUB-1: improve external subtitle capture across deeper Kodi temp and local custom download directories; snapshot on AV changes, persist copies atomically and record filename-free capture/restore diagnostics.
+- Existing native/manual/automatic playback modes and buffered reservoir/producer defaults are preserved. Automated and target-device verification are tracked separately.
+
 ## 0.7.24 — 2026-09-30
 
 - HLS-25 separates Kodi localhost consumer-write timeout/disconnect from provider transport failures and explicitly classifies duplicate, Range, recent re-read, adjacent-resume and true-discontinuity requests so false seek epochs no longer invalidate a healthy reservoir.

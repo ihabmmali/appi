@@ -1,11 +1,11 @@
 ---
 id: HLS-27
 role: implementation
-status: ready
+status: review
 delivery: unreleased
-verification: pending
-owner: unassigned
-base_commit: unset
+verification: partial
+owner: builder-publisher-2026-10-10
+base_commit: a6f22d924cd490c387ec6a3a201eab9cb349e52a
 artifact: none
 ---
 # HLS-27 — Repair video-only pause/resume resynchronization
@@ -14,6 +14,10 @@ artifact: none
 Fix the remaining Appi 0.7.24 Buffered Look Ahead pause/resume defect where the session now survives pause without the old fatal TimeoutError, but video can freeze after resume while audio continues normally.
 
 This is a release-blocking correctness candidate. Do not solve it by increasing buffer size, recovery timeout, localhost socket timeout, or by changing the selected rendition.
+
+## Scope
+
+Mode-3-only post-pause position telemetry and per-track request classification; retain the configured reservoir, producer concurrency, exact-segment recovery, nonfatal Kodi-consumer errors and modes 0–2.
 
 ## 0.7.24 target-device evidence
 The user reports a clear improvement over 0.7.23:
@@ -143,3 +147,10 @@ The user's audio-continuous/video-frozen observation makes per-track resume beha
 
 ## Outcome and next action
 Instrument the first post-pause audio/video request sequence and actual Kodi playback position, prove whether video is being falsely promoted to a seek or whether correct cached video delivery is failing decoder resynchronization, then repair only the proven boundary.
+
+## 0.7.25 implementation and self-review (automated/device checks pending)
+
+Owner: builder-publisher-2026-10-10. Base: `a6f22d924cd490c387ec6a3a201eab9cb349e52a`; release branch: `release/0.7.25`.
+
+Source records Kodi player time at pause and resume, samples the first ten requests per track including timeline/epoch/cache state, and uses unchanged player position plus the requested segment's own timeline duration to distinguish a nearby decodable-boundary resume from an actual seek. Duplicate/range retries do not exhaust the first advancing post-pause classification. Genuine position changes and far-ahead requests still seek. Regression scenarios in `tests/test_release_0725.py`; self-review only. Kodi Fire TV pause lengths and video/audio decoder convergence still require acceptance testing. This source change is not yet a device-proven cure for permanent video freeze.
+

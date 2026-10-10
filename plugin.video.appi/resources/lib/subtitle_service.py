@@ -42,6 +42,13 @@ def _integer(setting, default):
         return int(default)
 
 
+def _subtitle_diagnostic(event, session, **fields):
+    # Older test stubs and partial deployments may not expose this helper.
+    recorder = getattr(subtitle_store, '_diagnostic', None)
+    if callable(recorder):
+        recorder(event, session, **fields)
+
+
 class AppiPlayer(xbmc.Player):
     def __init__(self, buffered_manager=None):
         super().__init__()
@@ -83,9 +90,13 @@ class AppiPlayer(xbmc.Player):
             try:
                 self.setSubtitles(path)
                 self.showSubtitles(True)
+                _subtitle_diagnostic('restore-applied', session, path_exists=True)
                 return True
             except Exception as exc:
-                xbmc.log('Appi could not restore saved subtitles: {}'.format(exc), xbmc.LOGWARNING)
+                _subtitle_diagnostic('restore-failed', session, error=type(exc).__name__)
+                xbmc.log('Appi could not restore saved subtitles: {}'.format(type(exc).__name__), xbmc.LOGWARNING)
+        else:
+            _subtitle_diagnostic('restore-not-found', session, mode=mode)
         return False
 
     def _begin_preferred_languages(self):
@@ -243,16 +254,19 @@ class AppiPlayer(xbmc.Player):
         self.apply_pending_languages()
         if _enabled('persist_subtitles', True):
             try:
-                subtitle_store.capture_temp_changes()
+                # Kodi may replace/remove the provider's temporary file
+                # immediately after selection. Capture on AV change instead of
+                # waiting for the next stable polling interval.
+                subtitle_store.capture_temp_changes(finalize=True)
             except Exception as exc:
-                xbmc.log('Appi subtitle capture failed: {}'.format(exc), xbmc.LOGWARNING)
+                xbmc.log('Appi subtitle capture failed: {}'.format(type(exc).__name__), xbmc.LOGWARNING)
 
     def _finish(self, result='stopped'):
         if _enabled('persist_subtitles', True):
             try:
                 subtitle_store.capture_temp_changes(finalize=True)
-            except Exception:
-                pass
+            except Exception as exc:
+                xbmc.log('Appi final subtitle capture failed: {}'.format(type(exc).__name__), xbmc.LOGWARNING)
         subtitle_store.clear_session()
         if self._buffered_manager:
             self._buffered_manager.playback_finished(self._buffered_token, result)
@@ -331,8 +345,15 @@ def run():
             player_state = 'playing'
         else:
             player_state = 'stopped'
+        player_position = None
+        if active_video:
+            try:
+                player_position = float(player.getTime())
+            except (AttributeError, RuntimeError, TypeError, ValueError):
+                pass
         try:
-            buffered_manager.poll(player_active=active_video, player_state=player_state)
+            buffered_manager.poll(player_active=active_video, player_state=player_state,
+                                  player_position=player_position)
             buffered_manager.flush_diagnostics(diagnostics.event)
             session = buffered_manager.active
             status = session.status() if session else None

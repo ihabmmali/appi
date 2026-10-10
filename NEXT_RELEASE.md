@@ -26,6 +26,12 @@ Committed next-release scope: HLS-27, HLS-28 and SUB-1.
 5. Before release, check committed tasks and evidence. Record any authorized deferral/exception explicitly.
 6. Copy shipped task IDs and scope changes into RELEASE_NOTES, then reset this planning file for the next cycle.
 
+## 0.7.25 candidate verification
+
+2026-10-10: Builder-publisher implementation on `release/0.7.25` from `a6f22d924cd490c387ec6a3a201eab9cb349e52a` covers all committed tasks HLS-27, HLS-28 and SUB-1. Source, regression tests and candidate docs are staged; the release gate and exact ZIP verification are pending. HLS-27, HLS-28 and SUB-1 remain review/partial until required Fire TV checks. Publication is not asserted by staging.
+
+2026-10-10: Initial exact-candidate gate 38063204127 generated the package successfully but correctly blocked publication on four test-fixture/runtime-compatibility failures: two stale 0.7.24 version assertions, an unguarded non-Kodi `xbmc` import and a mock subtitle-store diagnostic helper. All four were corrected before this re-gate. Automated checks and Fire TV device acceptance remain separate.
+
 ## Scope decisions
 
 2026-10-10: user explicitly instructed that **all current candidates be committed**. Committed next-release scope is HLS-27, HLS-28 and SUB-1. HLS-27 remains the release-blocking video-only pause/resume resynchronization repair; HLS-28 restores provider-supplied HLS subtitle-track discovery in Buffered Look Ahead without making subtitle renditions reservoir-critical; SUB-1 reopens intermittent downloaded-subtitle persistence for current-baseline repair. PLAY-1, HLS-1 and UI-1 remain backlog investigations because they are not candidates. This is release-scope commitment only; implementation, integration, build and publication remain separately authorized lifecycle actions.

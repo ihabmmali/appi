@@ -2,6 +2,15 @@
 
 Each entry records the package shipped, its main user-visible changes, and verification at release time. For the current baseline and next tasks read [PROJECT_STATE.md](PROJECT_STATE.md) and [KNOWN_ISSUES.md](KNOWN_ISSUES.md); the [CHANGELOG.md](CHANGELOG.md) is the implemented feature history.
 
+## 0.7.25 — 2026-10-10 (candidate; publication pending)
+
+- Committed scope: release-blocking HLS-27, HLS-28, SUB-1. Base `a6f22d924cd490c387ec6a3a201eab9cb349e52a`; branch `release/0.7.25`. Implementation is self-reviewed, not independently reviewed.
+- HLS-27 records actual Kodi playhead at pause/resume and the next ten per-track requests. A playback-position-consistent video request at a nearby segment boundary no longer forces an unrelated audio recenter. Genuine user seeks and cold resume continue through the existing seek-epoch path.
+- HLS-28 lazily proxies optional subtitle renditions, preserving declaration labels and appropriate subtitle segment MIME/extension without adding them to mandatory audio/video buffering. Confirm actual stream selection in Kodi.
+- SUB-1 captures files immediately on AV changes as well as on playback stop; includes nested temp and configured local custom subtitle folders, atomic copies and redacted capture/index/restore diagnostics. Kodi Python does not provide a selected subtitle file path, so provider-specific locations still require target verification.
+- Retain 0.7.24, 0.7.23, 0.7.22, 0.7.21, 0.7.14, 0.7.12 and 0.7.8 as visible previous builds. 0.7.8 remains historical fallback.
+- Checks and publication identity: pending the exact-candidate GitHub Actions gate. Fire TV acceptance remains pending for repeated short/long pauses, HLS subtitle stream selection and intermittent external-subtitle restoration. Do not equate automated tests to device validation.
+
 ## 0.7.24 — 2026-09-30
 
 - Committed scope: release-blocking HLS-25, HLS-26 and META-1. Base `e359459e1e3734e1c60608632b2213fe33bc92e7`; branch `release/0.7.24`.

@@ -1,11 +1,11 @@
 ---
 id: HLS-28
 role: implementation
-status: ready
+status: review
 delivery: unreleased
-verification: pending
-owner: unassigned
-base_commit: unset
+verification: partial
+owner: builder-publisher-2026-10-10
+base_commit: a6f22d924cd490c387ec6a3a201eab9cb349e52a
 artifact: none
 ---
 # HLS-28 — Preserve embedded HLS subtitle tracks in Buffered Look Ahead
@@ -14,6 +14,10 @@ artifact: none
 Ensure Buffered Look Ahead exposes the same provider-supplied HLS subtitle tracks that Kodi exposes for the same stream in the other playback modes.
 
 This is a compatibility/correctness candidate, not an inherent limitation of buffering.
+
+## Scope
+
+Mode-3-only HLS subtitle URI, media-playlist and segment proxy compatibility; keep subtitle downloads optional/lazy and separate from mandatory audio/video reservoir accounting.
 
 ## Target-device evidence
 On Appi 0.7.24, the user reports streams with one or more subtitle tracks that are visible in other playback modes show no corresponding stream subtitle tracks when played through Buffered Look Ahead.
@@ -98,3 +102,10 @@ Reported by the user on 2026-10-04 from target-device testing. The user requeste
 
 ## Outcome and next action
 Reproduce with a known subtitle-bearing HLS master, compare provider versus rewritten master and Kodi stream discovery, then repair the proven proxy/playback handoff boundary without making subtitles part of the required reservoir.
+
+## 0.7.25 implementation and self-review (automated/device checks pending)
+
+Owner: builder-publisher-2026-10-10. Base: `a6f22d924cd490c387ec6a3a201eab9cb349e52a`; release branch: `release/0.7.25`.
+
+The selected master preserves original EXT-X-MEDIA language/name/forced/default attributes while rewriting subtitle-rendition URIs. Referenced subtitle playlists are opened on demand; subtitle WebVTT/MP4 segments no longer create a prefetching audio/video track, retain their suffix and return appropriate MIME types. Regression coverage creates two subtitle renditions and checks localhost HTTP content types and that the mandatory track count and epoch do not change. Self-review only. Confirm in Kodi's real subtitle-track selector on Fire TV, with seeking and pauses, before marking verified.
+
