@@ -2,11 +2,11 @@
 id: HLS-27
 role: implementation
 status: review
-delivery: unreleased
+delivery: released
 verification: partial
 owner: builder-publisher-2026-10-10
 base_commit: a6f22d924cd490c387ec6a3a201eab9cb349e52a
-artifact: none
+artifact: https://ihabmmali.github.io/appi/plugin.video.appi-0.7.25.zip
 ---
 # HLS-27 — Repair video-only pause/resume resynchronization
 
@@ -154,3 +154,7 @@ Owner: builder-publisher-2026-10-10. Base: `a6f22d924cd490c387ec6a3a201eab9cb349
 
 Source records Kodi player time at pause and resume, samples the first ten requests per track including timeline/epoch/cache state, and uses unchanged player position plus the requested segment's own timeline duration to distinguish a nearby decodable-boundary resume from an actual seek. Duplicate/range retries do not exhaust the first advancing post-pause classification. Genuine position changes and far-ahead requests still seek. Regression scenarios in `tests/test_release_0725.py`; self-review only. Kodi Fire TV pause lengths and video/audio decoder convergence still require acceptance testing. This source change is not yet a device-proven cure for permanent video freeze.
 
+
+## 0.7.25 publication and pending verification
+
+Published in PR #16 merge `9de26765b4af163974162ebb76f43e14a1001a5c` on 2026-10-10. Exact candidate gate [38063374015](https://github.com/ihabmmali/appi/actions/runs/38063374015) passed 112 automated tests (1 skipped), workflow checker, deterministic build and ZIP/hash/index inspection; package checksum `a46637a96b15ae01e75df3a59b0558d993f54c2f4c43506406a91036ba77d1c0`. GitHub Pages build/deploy [38063465450](https://github.com/ihabmmali/appi/actions/runs/38063465450) completed successfully. Delivery: **released**. Verification: **partial**; documented Kodi Fire TV target-device acceptance remains outstanding and is not inferred from CI.
