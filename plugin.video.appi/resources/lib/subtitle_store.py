@@ -79,7 +79,7 @@ def _subtitle_roots():
                 folder = xbmcvfs.translatePath(chosen)
                 if folder and os.path.isdir(folder):
                     roots.append(folder)
-    except (AttributeError, TypeError, ValueError, OSError):
+    except (AttributeError, ImportError, TypeError, ValueError, OSError):
         pass
     roots = list(dict.fromkeys(roots))
     _ROOTS_CACHE = (now, roots)
