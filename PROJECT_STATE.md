@@ -5,24 +5,20 @@ Updated: 2026-10-10. Start with [AGENTS.md](AGENTS.md) for role routing.
 ## Current baseline
 
 - Repository: https://github.com/ihabmmali/appi ; default branch: main.
-- Current published packaged add-on: **0.7.24**. The experimental 0.8.0 archive is not the main baseline.
-- Publication: PR #14, merge `cda54a246c5d440116dfe05717da0392e62f13f8`. Final exact-candidate gate run `36763721939` passed 108 tests (1 skipped), workflow tracker validation, deterministic rebuild, ZIP/index inspection and packaging.
-- Published 0.7.24 ZIP SHA-256: `6eee9e80e0a0e0766c62ea199052113fdf75b5fab0bf1eb25da2c0b06823451d`. GitHub Pages deployment run `36763934374` succeeded. Install page: https://ihabmmali.github.io/appi/ .
-- The published index intentionally keeps **0.7.23**, **0.7.22**, **0.7.21**, **0.7.14**, **0.7.12** and **0.7.8** visible alongside 0.7.24.
-- Keep **0.7.8** as the historical known-good fallback while newer Buffered Look Ahead behavior completes target-device acceptance.
+- Current published packaged add-on: **0.7.25**. The experimental 0.8.0 archive is not the baseline.
+- Publication: [PR #16](https://github.com/ihabmmali/appi/pull/16), merge `9de26765b4af163974162ebb76f43e14a1001a5c`. Final exact-candidate verification/package run `38063374015` passed 112 tests (1 skipped), workflow checker, deterministic package and ZIP/index/hash inspection.
+- Published 0.7.25 ZIP SHA-256: `a46637a96b15ae01e75df3a59b0558d993f54c2f4c43506406a91036ba77d1c0`. GitHub Pages deployment `38063465450` succeeded. Install page: https://ihabmmali.github.io/appi/ .
+- The published index intentionally keeps **0.7.24**, **0.7.23**, **0.7.22**, **0.7.21**, **0.7.14**, **0.7.12** and **0.7.8** visible alongside 0.7.25.
+- Retain **0.7.8** as historical known-good fallback during Buffered Look Ahead device acceptance.
 
 ## Current work
 
-- **0.7.24 is published.** Shipped scope: HLS-25, HLS-26 and META-1. Delivery is released; all three remain review/partial because their documented target-device acceptance checks are still outstanding.
-- HLS-25 successfully removed the previously observed fatal pause TimeoutError/session teardown on Fire TV, but target-device verification is now failed because video continuity after resume is still unreliable. Audio commonly continues while video freezes/catches up and can occasionally remain frozen.
-- HLS-26 re-reads the debug-overlay setting from current Kodi settings in the persistent service. OFF is authoritative by source/tests; target-device OFF-before-playback and ON→OFF checks remain pending. The accepted Back-to-dismiss behavior remains unchanged when ON.
-- META-1 surfaces optional runtime through Kodi's native duration tag and locally derived season episode counts. Target-device presentation acceptance remains pending.
-- Existing HLS modes 0–2, reservoir thresholds, producer concurrency and HLS-24 exact-segment release behavior remain intentionally unchanged.
-- HLS-28 is committed next-release scope to restore provider-supplied HLS subtitle tracks in Buffered Look Ahead. Source already proxies subtitle EXT-X-MEDIA URIs, so the missing tracks are a compatibility/discovery defect to diagnose rather than an inherent buffering limitation.
-- SUB-1 is reopened and committed next-release scope because downloaded movie subtitles still disappear intermittently. The prior immediate-stop repair did not establish reliable current-baseline persistence across all provider/temp-path behaviors.
-- HLS-27 is committed **release-blocking** next-release scope to diagnose and repair video-only pause/resume resynchronization. The leading source hypothesis is false fresh-epoch creation when post-pause video resumes more than one segment beyond Appi's expected index; actual player-position and per-track request telemetry must prove this before repair.
-- HLS-19 remains failed/under review from prior target-device extended-pause evidence; 0.7.24 confirms the local-consumer fatal timeout was improved, but end-to-end pause/resume remains unresolved.
-- PLAY-1, HLS-1 and UI-1 remain backlog investigations. [NEXT_RELEASE.md](NEXT_RELEASE.md) commits HLS-27, HLS-28 and SUB-1 for the next release; version is not yet assigned. [KNOWN_ISSUES.md](KNOWN_ISSUES.md) remains the canonical task index.
+- **0.7.25 is published.** Shipped scope: HLS-27, HLS-28 and SUB-1. Their delivery is released, but verification remains review/partial pending target Fire TV acceptance.
+- HLS-27 measures Kodi playback position across pause/resume and the first per-track post-resume requests, suppressing false video-request epochs only when a nearby segment timeline is consistent with an unchanged playhead. True user seeks and non-zero cold resume retain fresh seek epochs. This is an automated/source-level correctness change, not yet proven to eliminate all Fire TV video freezes.
+- HLS-28 proxies provider HLS subtitle media playlists and segments lazily with compatible subtitle URI/MIME handling; subtitle tracks do not enter mandatory startup/reservoir accounting. Actual Kodi stream-track visibility and selection on Fire TV remain to verify.
+- SUB-1 improves nested/local custom-directory subtitle capture, on-AV-change final copying, atomic saved-file persistence and redacted capture/restore diagnostics. Intermittent provider-specific recurrence still requires device testing.
+- HLS modes 0–2 and HLS-13 reservoir thresholds, HLS-22 concurrency and HLS-24 exact-segment recovery remain intentionally unchanged. HLS-25 nonfatal localhost-consumer timeout handling remains intact.
+- PLAY-1, HLS-1 and UI-1 remain backlog investigations. NEXT_RELEASE is open with **no new release scope committed**. KNOWN_ISSUES remains the canonical task index.
 
 ## Context on demand
 
