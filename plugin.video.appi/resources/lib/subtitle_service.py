@@ -42,6 +42,13 @@ def _integer(setting, default):
         return int(default)
 
 
+def _subtitle_diagnostic(event, session, **fields):
+    # Older test stubs and partial deployments may not expose this helper.
+    recorder = getattr(subtitle_store, '_diagnostic', None)
+    if callable(recorder):
+        recorder(event, session, **fields)
+
+
 class AppiPlayer(xbmc.Player):
     def __init__(self, buffered_manager=None):
         super().__init__()
@@ -83,13 +90,13 @@ class AppiPlayer(xbmc.Player):
             try:
                 self.setSubtitles(path)
                 self.showSubtitles(True)
-                subtitle_store._diagnostic('restore-applied', session, path_exists=True)
+                _subtitle_diagnostic('restore-applied', session, path_exists=True)
                 return True
             except Exception as exc:
-                subtitle_store._diagnostic('restore-failed', session, error=type(exc).__name__)
+                _subtitle_diagnostic('restore-failed', session, error=type(exc).__name__)
                 xbmc.log('Appi could not restore saved subtitles: {}'.format(type(exc).__name__), xbmc.LOGWARNING)
         else:
-            subtitle_store._diagnostic('restore-not-found', session, mode=mode)
+            _subtitle_diagnostic('restore-not-found', session, mode=mode)
         return False
 
     def _begin_preferred_languages(self):
