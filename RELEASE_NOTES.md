@@ -2,14 +2,17 @@
 
 Each entry records the package shipped, its main user-visible changes, and verification at release time. For the current baseline and next tasks read [PROJECT_STATE.md](PROJECT_STATE.md) and [KNOWN_ISSUES.md](KNOWN_ISSUES.md); the [CHANGELOG.md](CHANGELOG.md) is the implemented feature history.
 
-## 0.7.25 — 2026-10-10 (candidate; publication pending)
+## 0.7.25 — 2026-10-10
 
 - Committed scope: release-blocking HLS-27, HLS-28, SUB-1. Base `a6f22d924cd490c387ec6a3a201eab9cb349e52a`; branch `release/0.7.25`. Implementation is self-reviewed, not independently reviewed.
 - HLS-27 records actual Kodi playhead at pause/resume and the next ten per-track requests. A playback-position-consistent video request at a nearby segment boundary no longer forces an unrelated audio recenter. Genuine user seeks and cold resume continue through the existing seek-epoch path.
 - HLS-28 lazily proxies optional subtitle renditions, preserving declaration labels and appropriate subtitle segment MIME/extension without adding them to mandatory audio/video buffering. Confirm actual stream selection in Kodi.
 - SUB-1 captures files immediately on AV changes as well as on playback stop; includes nested temp and configured local custom subtitle folders, atomic copies and redacted capture/index/restore diagnostics. Kodi Python does not provide a selected subtitle file path, so provider-specific locations still require target verification.
 - Retain 0.7.24, 0.7.23, 0.7.22, 0.7.21, 0.7.14, 0.7.12 and 0.7.8 as visible previous builds. 0.7.8 remains historical fallback.
-- Checks and publication identity: pending the exact-candidate GitHub Actions gate. Fire TV acceptance remains pending for repeated short/long pauses, HLS subtitle stream selection and intermittent external-subtitle restoration. Do not equate automated tests to device validation.
+- First gate `38063204127` blocked packaging on four test compatibility/fixture failures; corrected exact-candidate gate [`38063374015`](https://github.com/ihabmmali/appi/actions/runs/38063374015) passed 112 tests (1 skipped), workflow validation, deterministic rebuild, ZIP/hash/index inspection and packaging.
+- Deterministic release artifact commit `d04c81d8032b8dbed143c6964a4bad37b7e5a1c4`; ZIP SHA-256 `a46637a96b15ae01e75df3a59b0558d993f54c2f4c43506406a91036ba77d1c0`.
+- Published through [PR #16](https://github.com/ihabmmali/appi/pull/16) / merge `9de26765b4af163974162ebb76f43e14a1001a5c`. [GitHub Pages deployment `38063465450`](https://github.com/ihabmmali/appi/actions/runs/38063465450) completed successfully. Package: [plugin.video.appi-0.7.25.zip](https://ihabmmali.github.io/appi/plugin.video.appi-0.7.25.zip).
+- HLS-27, HLS-28 and SUB-1 delivery is released, **verification partial**; real Fire TV short/long pause, embedded subtitle selection and intermittent external subtitle persistence acceptance is still required. Modes 0–2 are unchanged and 0.7.8 remains a historical known-good fallback.
 
 ## 0.7.24 — 2026-09-30
 

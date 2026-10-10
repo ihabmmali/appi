@@ -1,20 +1,17 @@
 # Next Appi release
 
-Planning status: committed. Version: not assigned.
+Planning status: open. Version: not assigned.
 
-Appi 0.7.24 is published. Current baseline and fallback details: [PROJECT_STATE.md](PROJECT_STATE.md).
+Appi 0.7.25 is published. Current baseline and fallback details: [PROJECT_STATE.md](PROJECT_STATE.md).
 
 ## Proposed scope
 
-Committed next-release scope: HLS-27, HLS-28 and SUB-1.
+No new product scope is committed. HLS-27, HLS-28 and SUB-1 shipped in 0.7.25; required target Fire TV verification remains open in their canonical review records.
 
 | Task | Selection | Priority | Reason |
 | --- | --- | --- | --- |
-| [HLS-27](docs/tasks/HLS-27.md) | committed | **release blocker** | 0.7.24 survives pause without the old timeout, but video can freeze/catch up or remain frozen while audio continues; prove and repair post-pause video/audio resynchronization without timeout/buffer tuning |
-| [HLS-28](docs/tasks/HLS-28.md) | committed | subtitle compatibility | Provider HLS subtitle tracks visible in other modes disappear in Buffered Look Ahead; prove provider-vs-local-master discovery and preserve subtitle renditions without making them reservoir-critical |
-| [SUB-1](docs/tasks/SUB-1.md) | committed | subtitle persistence regression | Downloaded movie subtitles still disappear intermittently; instrument capture/index/restore path and repair the current-baseline recurrence |
-| [PLAY-1](docs/tasks/PLAY-1.md) | backlog | investigation | Resume persistence is working; only investigate the playback-start Trakt API error |
-| [HLS-1](docs/tasks/HLS-1.md) | backlog | investigation | Use buffered-mode/diagnostic evidence to diagnose any underlying provider stalls that remain |
+| [PLAY-1](docs/tasks/PLAY-1.md) | backlog | investigation | Playback-start Trakt API notification; resume-point persistence currently works |
+| [HLS-1](docs/tasks/HLS-1.md) | backlog | investigation | Diagnose remaining provider stalls with bounded device/diagnostic evidence |
 | [UI-1](docs/tasks/UI-1.md) | backlog | investigation | Skin comparison needed |
 
 ## How to plan the release
@@ -26,11 +23,9 @@ Committed next-release scope: HLS-27, HLS-28 and SUB-1.
 5. Before release, check committed tasks and evidence. Record any authorized deferral/exception explicitly.
 6. Copy shipped task IDs and scope changes into RELEASE_NOTES, then reset this planning file for the next cycle.
 
-## 0.7.25 candidate verification
+## Last release outcome
 
-2026-10-10: Builder-publisher implementation on `release/0.7.25` from `a6f22d924cd490c387ec6a3a201eab9cb349e52a` covers all committed tasks HLS-27, HLS-28 and SUB-1. Source, regression tests and candidate docs are staged; the release gate and exact ZIP verification are pending. HLS-27, HLS-28 and SUB-1 remain review/partial until required Fire TV checks. Publication is not asserted by staging.
-
-2026-10-10: Initial exact-candidate gate 38063204127 generated the package successfully but correctly blocked publication on four test-fixture/runtime-compatibility failures: two stale 0.7.24 version assertions, an unguarded non-Kodi `xbmc` import and a mock subtitle-store diagnostic helper. All four were corrected before this re-gate. Automated checks and Fire TV device acceptance remain separate.
+2026-10-10: Appi 0.7.25 published via PR #16 / merge `9de26765b4af163974162ebb76f43e14a1001a5c`. Corrected exact-candidate gate `38063374015` passed 112 tests (1 skipped), workflow validation, deterministic rebuild and artifact inspection. GitHub Pages deployment `38063465450` succeeded; ZIP SHA-256 `a46637a96b15ae01e75df3a59b0558d993f54c2f4c43506406a91036ba77d1c0`. Shipped HLS-27, HLS-28 and SUB-1. All three remain review/partial pending device acceptance. The published index retains 0.7.24, 0.7.23, 0.7.22, 0.7.21, 0.7.14, 0.7.12 and 0.7.8. Scope was reset for the next planning cycle.
 
 ## Scope decisions
 

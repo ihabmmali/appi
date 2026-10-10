@@ -6,7 +6,7 @@ delivery: released
 verification: partial
 owner: builder-publisher-2026-10-10
 base_commit: 8a9b1ad21b3944d8045e1d1abff2a2556c3035cc
-artifact: https://github.com/ihabmmali/appi/blob/main/plugin.video.appi-0.7.13.zip
+artifact: https://ihabmmali.github.io/appi/plugin.video.appi-0.7.25.zip
 ---
 # SUB-1 — Restore downloaded subtitle persistence across playback sessions
 
@@ -120,3 +120,7 @@ Owner: builder-publisher-2026-10-10. Base: `a6f22d924cd490c387ec6a3a201eab9cb349
 
 Capture scans a bounded deeper Kodi temp hierarchy plus a configured local custom subtitle-storage folder using the documented `subtitles.storagemode` and `subtitles.custompath` settings. Capture on `onAVChange` uses a final-pass copy before a provider can remove a transient source; ordinary polls retain the stable-fingerprint gate. Saved file copies now use an atomic temporary path and index recording. File-name-free media-key/capture/restore diagnostics distinguish detection, copy, index and restore boundaries; final capture exceptions are no longer silently swallowed. Regression coverage tests nested temp/custom folders, final capture, separate movie identities and clearing. Existing episode and provider behavior should be retested on target Fire TV, especially any provider storing files outside discoverable local folders. Kodi `Player.getSubtitles()` does not expose a selected filesystem path; do not claim support for arbitrary external locations. Self-review only; verification is partial pending device tests.
 
+
+## 0.7.25 publication and pending verification
+
+Published in PR #16 merge `9de26765b4af163974162ebb76f43e14a1001a5c` on 2026-10-10. Exact candidate gate [38063374015](https://github.com/ihabmmali/appi/actions/runs/38063374015) passed 112 automated tests (1 skipped), workflow checker, deterministic build and ZIP/hash/index inspection; package checksum `a46637a96b15ae01e75df3a59b0558d993f54c2f4c43506406a91036ba77d1c0`. GitHub Pages build/deploy [38063465450](https://github.com/ihabmmali/appi/actions/runs/38063465450) completed successfully. Delivery: **released**. Verification: **partial**; documented Kodi Fire TV target-device acceptance remains outstanding and is not inferred from CI.
