@@ -23,7 +23,7 @@ Add `https://ihabmmali.github.io/appi/` in Kodi File Manager, then install the c
 - Buffered Look Ahead now records pause/resume player position and preserves one playback epoch for nearby decodable video restart boundaries when playback position has not changed, without weakening genuine seek detection.
 - Embedded provider subtitle renditions are proxied on demand with appropriate subtitle segment types and without loading them into the required audio/video buffer.
 - External subtitle persistence scans deeper local temp and custom Kodi subtitle folders, captures promptly after AV stream changes and uses safer atomic file persistence with diagnostic events.
-- Modes 0–2, buffering policy and bitrate selection are unchanged. Fire TV acceptance testing for pause recovery and subtitle behavior remains necessary.
+- Modes 0–2, buffering policy and bitrate selection are unchanged. Automated gate 38063374015 passed 112 tests (1 skipped); GitHub Pages deployment 38063465450 succeeded. Fire TV acceptance testing for pause recovery and subtitle behavior remains necessary.
 
 ## 0.7.24 — 2026-09-30
 
