@@ -1782,6 +1782,11 @@ class BufferedHlsSession:
                         language=resource.metadata.get('language', ''),
                         segments=len(segments), bytes=len(combined))
             return path, 'text/vtt'
+        except SubtitleUnavailable:
+            raise
+        except Exception as exc:
+            # Subtitle HTTP or parsing failures must never terminate A/V.
+            raise SubtitleUnavailable(type(exc).__name__) from exc
         finally:
             with resource.condition:
                 resource.fetching = False

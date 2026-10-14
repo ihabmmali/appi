@@ -1649,17 +1649,28 @@ def play_ref(params):
         or subtitle_mode in {'saved', 'search'}
         or (subtitle_mode == 'global' and auto_saved)
     )
+    saved = []
     if need_session:
         saved = subtitle_store.prepare_session(catalog_name, ref, subtitle_mode=subtitle_mode)
         use_saved = (
             subtitle_mode == 'saved'
             or (subtitle_mode == 'global' and auto_saved)
         )
-        if saved and use_saved:
-            try:
-                list_item.setSubtitles(saved)
-            except Exception as exc:
-                xbmc.log('Appi could not attach saved subtitles: {}'.format(exc), xbmc.LOGWARNING)
+        if not use_saved:
+            saved = []
+    # The optional WebVTT bridge uses Kodi's external-subtitle entry point,
+    # not InputStream Adaptive, keeping Buffered A/V playback unchanged.
+    # Saved subtitles remain first so prior user preference is retained.
+    sidecars = (
+        list(getattr(buffered_url, 'subtitle_urls', ()))
+        if stream.get('kind') == 'hls' and hls_mode == 3
+        and subtitle_mode != 'off' else []
+    )
+    if saved or sidecars:
+        try:
+            list_item.setSubtitles(list(saved or []) + sidecars)
+        except Exception as exc:
+            xbmc.log('Appi could not attach subtitles: {}'.format(exc), xbmc.LOGWARNING)
 
     playback_history.start_session(catalog_name, ref, item, key or '')
     if stream.get('kind') == 'hls' and hls_mode == 3:
