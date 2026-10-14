@@ -2,6 +2,13 @@
 
 Implemented features, grouped by add-on version. A version listed here means its source/package was published in the repository; it does not by itself certify device testing. For details and earlier 0.7.x entries, see [README.md](README.md). This file is the concise ongoing release history; [RELEASE_NOTES.md](RELEASE_NOTES.md) records what each package shipped and how it was verified.
 
+## 0.7.26 — 2026-10-14
+
+- HLS-28: add a mode-3-only lazy WebVTT subtitle compatibility bridge through Kodi's external-subtitle API, advertising the selected HLS variant's subtitle group and preserving the existing rewritten localhost master playlist.
+- Convert finite, unencrypted HLS WebVTT segments into a bounded on-demand subtitle resource; optional subtitle failure is isolated from buffered audio/video playback. Log privacy-safe rendition discovery and subtitle request events.
+- Preserve audio/video reservoir, startup/high/low-water accounting, prefetch, epoch/seek, pause and recovery paths without refactoring, and leave modes 0–2 unchanged.
+- Candidate gate [38654020600](https://github.com/ihabmmali/appi/actions/runs/38654020600) passed 115 tests (1 skipped), validation, ZIP hash/index inspection and packaging. Kodi Fire TV acceptance remains pending; no claim of native embedded-track parity for unsupported subtitle formats.
+
 ## 0.7.25 — 2026-10-10
 
 - HLS-27: record Kodi's pause/resume playhead position and per-track segment request timelines; classify nearby video restart boundaries without an arbitrary index gap when player position is unchanged, while genuine seeks retain fresh epochs.

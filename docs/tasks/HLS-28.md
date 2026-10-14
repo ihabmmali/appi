@@ -1,10 +1,10 @@
 ---
 id: HLS-28
 role: implementation
-status: ready
+status: review
 delivery: released
-verification: failed
-owner: builder-publisher-2026-10-10
+verification: partial
+owner: builder-publisher-2026-10-14
 base_commit: a6f22d924cd490c387ec6a3a201eab9cb349e52a
 artifact: https://ihabmmali.github.io/appi/plugin.video.appi-0.7.25.zip
 ---
@@ -168,3 +168,13 @@ After the 0.7.25 Fire TV acceptance failure, the user explicitly instructed that
 HLS-28 is therefore committed next-release scope again. The implementation must address the failed Kodi subtitle-track discovery/presentation acceptance described above; the prior 0.7.25 localhost transport implementation is not sufficient evidence of success.
 
 This authorization commits release scope only. Implementation, integration, build and publication remain separate lifecycle actions under AGENTS.md.
+
+## 0.7.26 candidate implementation and self-review — 2026-10-14
+
+Reopened from the failed 0.7.25 Fire TV acceptance. Owner: builder-publisher-2026-10-14; base `bc9b52d6c2e0de240591c467cb0d3b35d7d33b5b`; branch `release/0.7.26`. The user authorized implementation, integration, build and publication. Source changes limited to optional subtitle path, mode-3 handoff, diagnostics and associated release files.
+
+HLS-28 now advertises WebVTT subtitle renditions associated with the selected HLS variant as distinct optional localhost external subtitle paths via Kodi's `ListItem.setSubtitles`. This avoids switching mode-3 A/V decoding to InputStream Adaptive and avoids refactoring the working buffered audio/video prefetch, startup/reservoir, seek and recovery algorithm. Native rewritten master subtitle groups are still preserved and localhost subtitle playlist requests are instrumented, allowing a real Kodi device check to distinguish original master discovery from sidecar selection. No subtitle download is part of reservoir readiness.
+
+Automated tests test two selected-group languages, exclusion of an unrelated group, correct lazy HTTP WebVTT and file cue assembly, preserving the master `SUBTITLES` association, unchanged required track count/epoch, and optional HTTP failures without session teardown. Exact-candidate gate [38654020600](https://github.com/ihabmmali/appi/actions/runs/38654020600) passed 115 tests (1 skipped), workflow validation, deterministic ZIP hash and retained index inspection. Package SHA-256 `030a8a332fd22332a6bcb6555b1d3346e1330a533ce84ebe30c64a3b0a27a456` on release branch. Review is **self-review only**.
+
+**Outstanding acceptance:** This is a compatibility fallback for finite unencrypted WebVTT, not a proof of native embedded subtitle discovery; live, fMP4, encrypted and non-WebVTT formats remain unsupported by conversion. Verify 0.7.26 on the *actual Fire TV* against the same failing stream in a working non-buffered mode: language choice count/labels, cue timing, change track, seek/pause persistence and buffered video/audio continuity. Delivery is not equivalent to full acceptance. 0.7.25's device failure remains recorded above.

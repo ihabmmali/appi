@@ -18,6 +18,13 @@ Appi is a Kodi video add-on for user-configured movie and TV-show M3U catalogues
 
 Add `https://ihabmmali.github.io/appi/` in Kodi File Manager, then install the current `plugin.video.appi-<version>.zip`.
 
+## 0.7.26 — 2026-10-14
+
+- Buffered Look Ahead now offers compatible HLS WebVTT subtitle renditions from the **selected variant's subtitle group** to Kodi as separate, language-labelled external subtitle resources, without switching the video/audio playback engine.
+- WebVTT cue assembly is requested only when Kodi opens a subtitle resource, not at startup. Missing subtitle resources cannot fail the video/audio session. Saved downloaded subtitles retain first priority.
+- The existing audio/video buffer reservoir, quality selection, prefetch, seeking, pause and recovery algorithms and HLS modes 0–2 are unchanged. Live, encrypted, fMP4 and non-WebVTT subtitle formats are outside this compatibility fallback.
+- The automated candidate build passed 115 tests (1 skipped), workflow validation, deterministic package and index inspection; Fire TV subtitle-selection acceptance remains unverified. All previous visible release links are retained.
+
 ## 0.7.25 — 2026-10-10
 
 - Buffered Look Ahead now records pause/resume player position and preserves one playback epoch for nearby decodable video restart boundaries when playback position has not changed, without weakening genuine seek detection.

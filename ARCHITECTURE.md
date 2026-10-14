@@ -89,6 +89,10 @@ Provider `EXT-X-MEDIA:TYPE=SUBTITLES` renditions are kept in the rewritten maste
 
 Subtitle download capture now includes bounded nested temporary folders and Kodi's configured local custom subtitle location, finalized on AV changes and stop. Saved copies are atomically moved into Appi-owned storage with filename-free lifecycle logging. Kodi's Player subtitle API exposes stream language, not an original selected external-file path.
 
+## Buffered Look Ahead subtitle compatibility — 0.7.26
+
+The original localhost HLS master, video/audio tracks and buffer reservoir remain the player input for mode 3. Because Kodi native HLS may not enumerate `EXT-X-MEDIA` WebVTT tracks in the same way as InputStream Adaptive, the addon additionally hands selected-variant subtitle group members to `ListItem.setSubtitles` as distinct localhost WebVTT URLs. The service does not preload subtitle renditions or make them part of startup, prefetch watermarks, or track epochs. A bounded on-demand path combines finite unencrypted WebVTT rendition segments, reporting non-fatal unavailable subtitling without failing the A/V session. Other subtitle encodings and live playlists remain unsupported by this bridge; Kodi device track selector compatibility is unverified. Modes 0–2 remain untouched.
+
 ## Settings parser safety — 0.7.18
 
 Kodi's native string-option parser expects a text child in every static option. No preference therefore uses the non-empty `none` sentinel (normalized to no preference in Python), never an empty XML option. Source/ZIP checks validate option text and listed defaults. The 0.7.17 empty options are retained only in the archived regression fixture; that release failed startup acceptance.
