@@ -1,6 +1,6 @@
 # Appi project state
 
-Updated: 2026-10-10. Start with [AGENTS.md](AGENTS.md) for role routing.
+Updated: 2026-10-14. Start with [AGENTS.md](AGENTS.md) for role routing.
 
 ## Current baseline
 
@@ -15,10 +15,10 @@ Updated: 2026-10-10. Start with [AGENTS.md](AGENTS.md) for role routing.
 
 - **0.7.25 is published.** Shipped scope: HLS-27, HLS-28 and SUB-1. Their delivery is released, but verification remains review/partial pending target Fire TV acceptance.
 - HLS-27 measures Kodi playback position across pause/resume and the first per-track post-resume requests, suppressing false video-request epochs only when a nearby segment timeline is consistent with an unchanged playhead. True user seeks and non-zero cold resume retain fresh seek epochs. This is an automated/source-level correctness change, not yet proven to eliminate all Fire TV video freezes.
-- HLS-28 proxies provider HLS subtitle media playlists and segments lazily with compatible subtitle URI/MIME handling; subtitle tracks do not enter mandatory startup/reservoir accounting. Actual Kodi stream-track visibility and selection on Fire TV remain to verify.
+- HLS-28 target-device verification has failed on 0.7.25. The same media exposes its provider/built-in HLS subtitle streams in every other playback mode, but none are available in Buffered Look Ahead. Proxy transport works in automated tests, so the next diagnostic boundary is Kodi discovery of the rewritten master versus presentation of the requested subtitle rendition.
 - SUB-1 improves nested/local custom-directory subtitle capture, on-AV-change final copying, atomic saved-file persistence and redacted capture/restore diagnostics. Intermittent provider-specific recurrence still requires device testing.
 - HLS modes 0–2 and HLS-13 reservoir thresholds, HLS-22 concurrency and HLS-24 exact-segment recovery remain intentionally unchanged. HLS-25 nonfatal localhost-consumer timeout handling remains intact.
-- PLAY-1, HLS-1 and UI-1 remain backlog investigations. NEXT_RELEASE is open with **no new release scope committed**. KNOWN_ISSUES remains the canonical task index.
+- HLS-28 is reopened as a next-release candidate after failed 0.7.25 Fire TV subtitle-track acceptance. PLAY-1, HLS-1 and UI-1 remain backlog investigations. NEXT_RELEASE has no new committed scope. KNOWN_ISSUES remains the canonical task index.
 
 ## Context on demand
 

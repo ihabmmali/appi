@@ -1,9 +1,9 @@
 ---
 id: HLS-28
 role: implementation
-status: review
+status: ready
 delivery: released
-verification: partial
+verification: failed
 owner: builder-publisher-2026-10-10
 base_commit: a6f22d924cd490c387ec6a3a201eab9cb349e52a
 artifact: https://ihabmmali.github.io/appi/plugin.video.appi-0.7.25.zip
@@ -113,3 +113,50 @@ The selected master preserves original EXT-X-MEDIA language/name/forced/default 
 ## 0.7.25 publication and pending verification
 
 Published in PR #16 merge `9de26765b4af163974162ebb76f43e14a1001a5c` on 2026-10-10. Exact candidate gate [38063374015](https://github.com/ihabmmali/appi/actions/runs/38063374015) passed 112 automated tests (1 skipped), workflow checker, deterministic build and ZIP/hash/index inspection; package checksum `a46637a96b15ae01e75df3a59b0558d993f54c2f4c43506406a91036ba77d1c0`. GitHub Pages build/deploy [38063465450](https://github.com/ihabmmali/appi/actions/runs/38063465450) completed successfully. Delivery: **released**. Verification: **partial**; documented Kodi Fire TV target-device acceptance remains outstanding and is not inferred from CI.
+
+
+## 0.7.25 Fire TV acceptance failure
+Target-device testing reported on 2026-10-14 fails HLS-28 acceptance.
+
+For the same media item:
+- built-in/provider subtitle streams are visible in the other Appi playback modes;
+- switching that same media to Buffered Look Ahead makes those subtitle streams unavailable.
+
+This is a clean same-media A/B and confirms the defect is specific to the Buffered Look Ahead presentation path.
+
+The 0.7.25 implementation proved only that Appi can rewrite and serve subtitle rendition playlists/segments over localhost. It did **not** prove that Kodi discovers those renditions as selectable subtitle tracks. Verification is therefore failed and HLS-28 is reopened for implementation.
+
+### Required next diagnostic split
+Instrument one known failing stream and determine whether Kodi ever requests the rewritten local subtitle rendition playlist.
+
+#### Case A — Kodi never requests the subtitle playlist
+Treat this as master/discovery failure. Capture and compare:
+- original provider master;
+- selected/pruned Appi master before URI rewriting;
+- final localhost master returned to Kodi;
+- selected variant's exact `SUBTITLES` attribute;
+- matching `#EXT-X-MEDIA:TYPE=SUBTITLES` lines;
+- GROUP-ID, NAME, LANGUAGE, DEFAULT, AUTOSELECT, FORCED, CHARACTERISTICS and URI values;
+- Kodi-visible subtitle stream list.
+
+The rewritten master must remain HLS-valid and preserve the exact association between the selected variant and its subtitle group.
+
+#### Case B — Kodi requests the subtitle playlist
+Treat this as subtitle-rendition presentation failure. Capture:
+- request/response for the subtitle media playlist;
+- response MIME type;
+- rewritten subtitle media-playlist contents;
+- segment suffixes/MIME types;
+- whether Kodi subsequently requests subtitle segments;
+- any Kodi parser/player log errors;
+- Kodi-visible subtitle stream list.
+
+Do not assume that successful HTTP 200 responses are sufficient evidence of a Kodi-compatible subtitle rendition.
+
+### Additional acceptance
+- A known failing same-media comparison must expose the same provider subtitle choices in Buffered Look Ahead as in the working comparison mode.
+- Acceptance must be based on Kodi's actual subtitle selector on the Fire TV, not only HTTP/proxy unit tests.
+- Add a regression test that preserves the exact selected-variant-to-SUBTITLES-group relationship after variant pruning and URI rewriting.
+- Add diagnostic evidence showing whether Kodi requested the subtitle playlist.
+- Keep subtitle renditions lazy/non-reservoir-critical.
+- Do not alter modes 0-2.

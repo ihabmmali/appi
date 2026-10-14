@@ -10,6 +10,7 @@ No new product scope is committed. HLS-27, HLS-28 and SUB-1 shipped in 0.7.25; r
 
 | Task | Selection | Priority | Reason |
 | --- | --- | --- | --- |
+| [HLS-28](docs/tasks/HLS-28.md) | candidate | subtitle compatibility regression | 0.7.25 target-device acceptance failed: same media exposes built-in HLS subtitles in every other mode but none in Buffered Look Ahead; determine master discovery vs subtitle-playlist presentation failure |
 | [PLAY-1](docs/tasks/PLAY-1.md) | backlog | investigation | Playback-start Trakt API notification; resume-point persistence currently works |
 | [HLS-1](docs/tasks/HLS-1.md) | backlog | investigation | Diagnose remaining provider stalls with bounded device/diagnostic evidence |
 | [UI-1](docs/tasks/UI-1.md) | backlog | investigation | Skin comparison needed |
@@ -28,6 +29,8 @@ No new product scope is committed. HLS-27, HLS-28 and SUB-1 shipped in 0.7.25; r
 2026-10-10: Appi 0.7.25 published via PR #16 / merge `9de26765b4af163974162ebb76f43e14a1001a5c`. Corrected exact-candidate gate `38063374015` passed 112 tests (1 skipped), workflow validation, deterministic rebuild and artifact inspection. GitHub Pages deployment `38063465450` succeeded; ZIP SHA-256 `a46637a96b15ae01e75df3a59b0558d993f54c2f4c43506406a91036ba77d1c0`. Shipped HLS-27, HLS-28 and SUB-1. All three remain review/partial pending device acceptance. The published index retains 0.7.24, 0.7.23, 0.7.22, 0.7.21, 0.7.14, 0.7.12 and 0.7.8. Scope was reset for the next planning cycle.
 
 ## Scope decisions
+
+2026-10-14: HLS-28 reopened as a candidate after 0.7.25 Fire TV acceptance failed. Same-media A/B confirms provider/built-in subtitle tracks are visible in every other playback mode but disappear in Buffered Look Ahead. The 0.7.25 implementation proved localhost subtitle playlist/segment transport but not Kodi track discovery. Next work must first determine whether Kodi ever requests the rewritten subtitle playlist: no request means master/group discovery failure; a request with no visible track means rendition-playlist/content presentation failure. HLS-28 verification is now failed.
 
 2026-10-10: user explicitly instructed that **all current candidates be committed**. Committed next-release scope is HLS-27, HLS-28 and SUB-1. HLS-27 remains the release-blocking video-only pause/resume resynchronization repair; HLS-28 restores provider-supplied HLS subtitle-track discovery in Buffered Look Ahead without making subtitle renditions reservoir-critical; SUB-1 reopens intermittent downloaded-subtitle persistence for current-baseline repair. PLAY-1, HLS-1 and UI-1 remain backlog investigations because they are not candidates. This is release-scope commitment only; implementation, integration, build and publication remain separately authorized lifecycle actions.
 
