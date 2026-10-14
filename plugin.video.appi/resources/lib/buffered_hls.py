@@ -372,7 +372,7 @@ def request_playback(source_url, target_seconds=DEFAULT_TARGET_SECONDS,
                 dialog.update(100, 'Buffer ready — starting Kodi playback…')
                 note_handoff(response['local_url'], 'plugin_ready_observed')
                 success = True
-                return response['local_url']
+                return BufferedURL(response['local_url'], response.get('subtitle_urls') or ())
             dialog.update(int(response.get('percent', 0)), response.get('message', 'Preparing stream…'))
             monitor.waitForAbort(0.1)
         raise RuntimeError('Stream preparation timed out before the configured playable reservoir was ready. Please retry playback.')
@@ -1070,6 +1070,7 @@ class BufferedHlsSession:
         self.last_access = time.monotonic()
         self._selected_representation = ''
         self._selected_variant_attrs = {}
+        self.subtitle_urls = []
         self._startup_track_ids = []
         self._startup_complete = False
         self.epoch = 1
@@ -1636,6 +1637,7 @@ class BufferedHlsSession:
         )
         return {
             'ready': self.ready, 'error': self.error, 'local_url': self.local_url,
+            'subtitle_urls': list(self.subtitle_urls),
             'choices': self.choices if not self.choice_event.is_set() else [],
             'message': message, 'percent': percent,
             'cached_ahead_bytes': reserve_bytes, 'buffer_target_bytes': target_bytes,
@@ -1703,6 +1705,88 @@ class BufferedHlsSession:
             )
             self.serve(chosen.id)
 
+    def _register_subtitle_sidecars(self):
+        # Kodi's native HLS demuxer may not discover WebVTT subtitle groups.
+        # Advertise optional external subtitle URLs; no subtitle is fetched
+        # or made reservoir-critical during startup.
+        group = self._selected_variant_attrs.get('SUBTITLES', '')
+        if not group:
+            return
+        used = set()
+        for rendition in list(self.resources.values()):
+            info = rendition.metadata
+            if (rendition.kind != 'playlist' or
+                    info.get('rendition_type') != 'subtitles' or
+                    info.get('group_id') != group):
+                continue
+            language = re.sub(r'[^a-z0-9-]', '', (info.get('language') or 'und').lower()) or 'und'
+            suffix, counter = language, 2
+            while suffix in used:
+                suffix = '{}-{}'.format(language, counter)
+                counter += 1
+            used.add(suffix)
+            sidecar = self._register(
+                rendition.upstream_url, 'subtitle-sidecar', content_type='text/vtt',
+                metadata={'playlist_id': rendition.id, 'language': language})
+            self.subtitle_urls.append(self._local_url(sidecar.id, '.' + suffix + '.vtt'))
+        self._event('buffer_subtitle_sidecars_advertised',
+                    count=len(self.subtitle_urls), group_associated=True)
+
+    def _serve_subtitle_sidecar(self, resource):
+        # Independent of _Track, _ensure_binary, all watermarks and epochs.
+        with resource.condition:
+            while resource.fetching and not self._stop.is_set():
+                resource.condition.wait(timeout=0.2)
+            if resource.path and os.path.isfile(resource.path):
+                return resource.path, 'text/vtt'
+            if self._stop.is_set():
+                raise SubtitleUnavailable('session stopped')
+            resource.fetching = True
+        try:
+            rendition = self.resources.get(resource.metadata['playlist_id'])
+            if rendition is None:
+                raise SubtitleUnavailable('missing rendition')
+            playlist, _ = self.serve(rendition.id)
+            playlist = playlist.decode('utf-8-sig')
+            if '#EXT-X-ENDLIST' not in playlist:
+                raise SubtitleUnavailable('live subtitles not supported')
+            if '#EXT-X-MAP:' in playlist or '#EXT-X-KEY:' in playlist:
+                raise SubtitleUnavailable('non-WebVTT subtitles not supported')
+            segments, duration, total = [], 0.0, 0
+            for line in playlist.splitlines():
+                line = line.strip()
+                if line.startswith('#EXTINF:'):
+                    duration = _float(line.split(':', 1)[1].split(',', 1)[0])
+                elif line and not line.startswith('#'):
+                    match = re.search(r'/hls/[a-f0-9]{24}/(\d{6})', line)
+                    part = self.resources.get(match.group(1)) if match else None
+                    if part is None or part.kind != 'subtitle-segment':
+                        raise SubtitleUnavailable('invalid segment')
+                    if len(segments) >= 2000:
+                        raise SubtitleUnavailable('too many subtitle segments')
+                    payload = _fetch(part.upstream_url, byte_range=part.byte_range).data
+                    total += len(payload)
+                    if len(payload) > 524288 or total > 8388608:
+                        raise SubtitleUnavailable('subtitle size limit exceeded')
+                    segments.append((duration, payload))
+            if not segments:
+                raise SubtitleUnavailable('empty rendition')
+            combined = _merge_webvtt(segments)
+            path = os.path.join(self.root, 'sidecar-' + resource.id + '.vtt')
+            temp = path + '.tmp'
+            with open(temp, 'wb') as handle:
+                handle.write(combined)
+            os.replace(temp, path)
+            resource.path = path
+            self._event('buffer_subtitle_sidecar_ready',
+                        language=resource.metadata.get('language', ''),
+                        segments=len(segments), bytes=len(combined))
+            return path, 'text/vtt'
+        finally:
+            with resource.condition:
+                resource.fetching = False
+                resource.condition.notify_all()
+
     def _preload_startup_dependencies(self):
         dependencies = [
             resource for resource in list(self.resources.values())
@@ -1724,6 +1808,7 @@ class BufferedHlsSession:
             if variants:
                 self.serve(variants[0].id)
             self._prepare_associated_media()
+            self._register_subtitle_sidecars()
             self._preload_startup_dependencies()
             if self._stop.is_set():
                 return
@@ -1918,6 +2003,12 @@ class BufferedHlsSession:
                 requested = self.headers.get('Range', '')
                 try:
                     if resource.kind == 'playlist':
+                        if resource.metadata.get('rendition_type') == 'subtitles':
+                            session._event('buffer_subtitle_playlist_requested',
+                                           language=resource.metadata.get('language', ''),
+                                           group_associated=bool(
+                                               resource.metadata.get('group_id') ==
+                                               session._selected_variant_attrs.get('SUBTITLES')))
                         session._mark_handoff(
                             'first_master_playlist_request'
                             if resource is session.master
@@ -1936,6 +2027,9 @@ class BufferedHlsSession:
                         self.end_headers()
                         _write_to_client(self.wfile, data)
                         return
+                    if resource.kind == 'subtitle-sidecar':
+                        session._event('buffer_subtitle_sidecar_requested',
+                                       language=resource.metadata.get('language', ''))
                     if resource.kind in {'key', 'map'}:
                         session._mark_handoff('first_key_or_map_request', resource_kind=resource.kind)
                     elif resource.kind == 'segment':
@@ -2022,6 +2116,13 @@ class BufferedHlsSession:
                             self.send_error(502)
                         except Exception:
                             pass
+                except SubtitleUnavailable as exc:
+                    session._event('buffer_subtitle_sidecar_unavailable',
+                                   reason=str(exc), resource_kind=resource.kind)
+                    try:
+                        self.send_error(404, 'Subtitle not available')
+                    except Exception:
+                        pass
                 except RecoveryExhausted as exc:
                     session._event(
                         'buffer_recovery_exhausted',
@@ -2171,6 +2272,8 @@ class BufferedHlsSession:
     def serve_file(self, resource_id, request_context=None):
         self.last_access = time.monotonic()
         resource = self.resources[resource_id]
+        if resource.kind == 'subtitle-sidecar':
+            return self._serve_subtitle_sidecar(resource)
         if resource.kind == 'segment':
             track = self.tracks.get(resource.metadata.get('track_id'))
             if not track:
