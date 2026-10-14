@@ -160,3 +160,11 @@ Do not assume that successful HTTP 200 responses are sufficient evidence of a Ko
 - Add diagnostic evidence showing whether Kodi requested the subtitle playlist.
 - Keep subtitle renditions lazy/non-reservoir-critical.
 - Do not alter modes 0-2.
+
+
+## 2026-10-14 release-scope recommit
+After the 0.7.25 Fire TV acceptance failure, the user explicitly instructed that this reopened HLS-28 change be committed for the next release.
+
+HLS-28 is therefore committed next-release scope again. The implementation must address the failed Kodi subtitle-track discovery/presentation acceptance described above; the prior 0.7.25 localhost transport implementation is not sufficient evidence of success.
+
+This authorization commits release scope only. Implementation, integration, build and publication remain separate lifecycle actions under AGENTS.md.
