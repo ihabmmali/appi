@@ -1,16 +1,15 @@
 # Next Appi release
 
-Planning status: committed. Version: not assigned.
+Planning status: open. Version: not assigned.
 
-Appi 0.7.25 is published. Current baseline and fallback details: [PROJECT_STATE.md](PROJECT_STATE.md).
+Appi 0.7.26 is published. Current baseline and fallback details: [PROJECT_STATE.md](PROJECT_STATE.md).
 
 ## Proposed scope
 
-Committed next-release scope: HLS-28. HLS-27, HLS-28 and SUB-1 shipped in 0.7.25; HLS-28 is reopened because its target Fire TV subtitle-track acceptance failed.
+No new product scope is committed. HLS-28 shipped as a compatibility candidate in 0.7.26, but Fire TV subtitle-selector acceptance remains pending in its canonical task.
 
 | Task | Selection | Priority | Reason |
 | --- | --- | --- | --- |
-| [HLS-28](docs/tasks/HLS-28.md) | committed | subtitle compatibility regression | 0.7.25 target-device acceptance failed: same media exposes built-in HLS subtitles in every other mode but none in Buffered Look Ahead; determine master discovery vs subtitle-playlist presentation failure |
 | [PLAY-1](docs/tasks/PLAY-1.md) | backlog | investigation | Playback-start Trakt API notification; resume-point persistence currently works |
 | [HLS-1](docs/tasks/HLS-1.md) | backlog | investigation | Diagnose remaining provider stalls with bounded device/diagnostic evidence |
 | [UI-1](docs/tasks/UI-1.md) | backlog | investigation | Skin comparison needed |
@@ -25,6 +24,8 @@ Committed next-release scope: HLS-28. HLS-27, HLS-28 and SUB-1 shipped in 0.7.25
 6. Copy shipped task IDs and scope changes into RELEASE_NOTES, then reset this planning file for the next cycle.
 
 ## Last release outcome
+
+2026-10-14: Appi 0.7.26 published via PR #18 / merge `cd69c96a12afa3ad185a5e82270de621d78d474b` with HLS-28's optional WebVTT compatibility bridge. Exact documented-candidate run `38654303815` passed 115 tests (one skipped), workflow validation, deterministic package/hash/index inspection and packaging. ZIP SHA-256 `030a8a332fd22332a6bcb6555b1d3346e1330a533ce84ebe30c64a3b0a27a456`. Deployment run `38654402568` initiated; check final result. Index keeps all prior visible releases. Delivery released, HLS-28 verification remains review/partial until Fire TV device acceptance. Next planning cycle has no committed product scope.
 
 2026-10-10: Appi 0.7.25 published via PR #16 / merge `9de26765b4af163974162ebb76f43e14a1001a5c`. Corrected exact-candidate gate `38063374015` passed 112 tests (1 skipped), workflow validation, deterministic rebuild and artifact inspection. GitHub Pages deployment `38063465450` succeeded; ZIP SHA-256 `a46637a96b15ae01e75df3a59b0558d993f54c2f4c43506406a91036ba77d1c0`. Shipped HLS-27, HLS-28 and SUB-1. All three remain review/partial pending device acceptance. The published index retains 0.7.24, 0.7.23, 0.7.22, 0.7.21, 0.7.14, 0.7.12 and 0.7.8. Scope was reset for the next planning cycle.
 

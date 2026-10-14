@@ -5,8 +5,8 @@ status: review
 delivery: released
 verification: partial
 owner: builder-publisher-2026-10-14
-base_commit: a6f22d924cd490c387ec6a3a201eab9cb349e52a
-artifact: https://ihabmmali.github.io/appi/plugin.video.appi-0.7.25.zip
+base_commit: bc9b52d6c2e0de240591c467cb0d3b35d7d33b5b
+artifact: https://ihabmmali.github.io/appi/plugin.video.appi-0.7.26.zip
 ---
 # HLS-28 — Preserve embedded HLS subtitle tracks in Buffered Look Ahead
 
@@ -178,3 +178,7 @@ HLS-28 now advertises WebVTT subtitle renditions associated with the selected HL
 Automated tests test two selected-group languages, exclusion of an unrelated group, correct lazy HTTP WebVTT and file cue assembly, preserving the master `SUBTITLES` association, unchanged required track count/epoch, and optional HTTP failures without session teardown. Exact-candidate gate [38654020600](https://github.com/ihabmmali/appi/actions/runs/38654020600) passed 115 tests (1 skipped), workflow validation, deterministic ZIP hash and retained index inspection. Package SHA-256 `030a8a332fd22332a6bcb6555b1d3346e1330a533ce84ebe30c64a3b0a27a456` on release branch. Review is **self-review only**.
 
 **Outstanding acceptance:** This is a compatibility fallback for finite unencrypted WebVTT, not a proof of native embedded subtitle discovery; live, fMP4, encrypted and non-WebVTT formats remain unsupported by conversion. Verify 0.7.26 on the *actual Fire TV* against the same failing stream in a working non-buffered mode: language choice count/labels, cue timing, change track, seek/pause persistence and buffered video/audio continuity. Delivery is not equivalent to full acceptance. 0.7.25's device failure remains recorded above.
+
+## 0.7.26 integrated and published
+
+User-authorized release through [PR #18](https://github.com/ihabmmali/appi/pull/18), merge `cd69c96a12afa3ad185a5e82270de621d78d474b`. The final exact-candidate [GitHub Actions 38654303815](https://github.com/ihabmmali/appi/actions/runs/38654303815) passed 115 tests (one skipped), workflow check, deterministic package, index/ZIP inspection and packaging. ZIP SHA-256 `030a8a332fd22332a6bcb6555b1d3346e1330a533ce84ebe30c64a3b0a27a456`. Delivery **released**, verification **partial** because target Kodi/Fire TV subtitle selector and video continuity must still be tested with the same provider stream. Do not mark HLS-28 done on successful CI alone.
