@@ -7,7 +7,7 @@ Updated: 2026-10-14. Start with [AGENTS.md](AGENTS.md) for role routing.
 - Repository: https://github.com/ihabmmali/appi ; default branch: main.
 - Current published packaged add-on: **0.7.26**. The experimental 0.8.0 archive is not the baseline.
 - Publication: [PR #18](https://github.com/ihabmmali/appi/pull/18), merge `cd69c96a12afa3ad185a5e82270de621d78d474b`. Final exact-candidate verification/package run `38654303815` passed 115 tests (1 skipped), workflow checker, deterministic package and ZIP/index/hash inspection.
-- Published 0.7.26 ZIP SHA-256: `030a8a332fd22332a6bcb6555b1d3346e1330a533ce84ebe30c64a3b0a27a456`. GitHub Pages deployment `38654402568` initiated; check completion. Install page: https://ihabmmali.github.io/appi/ .
+- Published 0.7.26 ZIP SHA-256: `030a8a332fd22332a6bcb6555b1d3346e1330a533ce84ebe30c64a3b0a27a456`. GitHub Pages deployment `38654402568` succeeded; release closeout deployment `38654500642` also succeeded. Install page: https://ihabmmali.github.io/appi/ .
 - The published index intentionally keeps **0.7.25**, **0.7.24**, **0.7.23**, **0.7.22**, **0.7.21**, **0.7.14**, **0.7.12** and **0.7.8** visible alongside 0.7.26.
 - Retain **0.7.8** as historical known-good fallback during Buffered Look Ahead device acceptance.
 
