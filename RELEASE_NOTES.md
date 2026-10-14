@@ -2,6 +2,16 @@
 
 Each entry records the package shipped, its main user-visible changes, and verification at release time. For the current baseline and next tasks read [PROJECT_STATE.md](PROJECT_STATE.md) and [KNOWN_ISSUES.md](KNOWN_ISSUES.md); the [CHANGELOG.md](CHANGELOG.md) is the implemented feature history.
 
+## 0.7.26 — 2026-10-14
+
+- Authorized scope: reopened HLS-28 only after the 0.7.25 same-media Fire TV subtitle selector comparison failed. Source base `bc9b52d6c2e0de240591c467cb0d3b35d7d33b5b`; release branch `release/0.7.26`. Self-review only, not independent device review.
+- Kodi's native HLS demuxer may not discover provider WebVTT renditions offered through HLS `EXT-X-MEDIA` even though InputStream Adaptive does. Rather than alter the proven buffer algorithm or switch mode 3 to ISA, Appi additionally advertises the selected subtitle group's language renditions to Kodi through `ListItem.setSubtitles`, using optional localhost `.vtt` sidecars.
+- Sidecars are built lazily by combining bounded finite unencrypted WebVTT segments. Errors return an optional subtitle HTTP response rather than terminating the audio/video session. Saved/downloaded subtitle choices retain precedence. Diagnostic events distinguish native rendition playlist requests from optional sidecar requests.
+- Modes 0–2 and the mode-3 video/audio reservoir, startup/refill, quality, seek, retry, and pause/resume algorithms are not modified. Live, encrypted, fMP4 and non-WebVTT renditions are not converted; subtitle label/flag parity remains subject to target-device testing.
+- Verified candidate build and artifact publication on release branch: [GitHub Actions 38654020600](https://github.com/ihabmmali/appi/actions/runs/38654020600), 115 tests (1 skipped), workflow checker, deterministic packaging, ZIP/hash/index inspection. ZIP SHA-256 `030a8a332fd22332a6bcb6555b1d3346e1330a533ce84ebe30c64a3b0a27a456`; artifact commit `89f3f173ce30b28ab51401f56eefb9088e2d4568`.
+- The generated installation index includes 0.7.26 and retains all previous visible packages: 0.7.25, 0.7.24, 0.7.23, 0.7.22, 0.7.21, 0.7.14, 0.7.12 and 0.7.8. Keep 0.7.25 available for immediate rollback.
+- Integration/Pages verification to be recorded after merge. Required Fire TV actual-subtitle-selector A/B, multi-language switching, pause/seek persistence and buffering non-regression remain outstanding; automated tests do not certify device acceptance.
+
 ## 0.7.25 — 2026-10-10
 
 - Committed scope: release-blocking HLS-27, HLS-28, SUB-1. Base `a6f22d924cd490c387ec6a3a201eab9cb349e52a`; branch `release/0.7.25`. Implementation is self-reviewed, not independently reviewed.
